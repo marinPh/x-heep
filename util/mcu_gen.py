@@ -89,13 +89,7 @@ def generate_xheep(args):
             raise SystemExit(sys.exc_info()[1])
 
     # Load pads HJSON configuration file
-    with open(args.pads_cfg, "r") as file:
-        try:
-            srcfull = file.read()
-            pad_cfg = hjson.loads(srcfull, use_decimal=True)
-            pad_cfg = JsonRef.replace_refs(pad_cfg)
-        except ValueError:
-            raise SystemExit(sys.exc_info()[1])
+    pad_cfg = x_heep_gen.load_config.load_pad_cfg(pathlib.PurePath(str(args.pads_cfg)))
 
     if args.external_domains != None and args.external_domains != "":
         external_domains = int(args.external_domains)

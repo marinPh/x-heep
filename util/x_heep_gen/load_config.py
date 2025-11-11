@@ -494,3 +494,36 @@ def load_cfg_file(f: PurePath) -> XHeep:
 
     else:
         raise RuntimeError(f"unsupported file extension {f.suffix}")
+
+def load_pad_cfg(f: PurePath) -> dict:
+    """
+    Load the Configuration by extension type. It currently supports .hjson and .py
+
+    :param PurePath f: path of the configuration
+    :return: the object representing the mcu configuration
+    :rtype: XHeep
+    :raise RuntimeError: when and invalid configuration is passed or when the sanity checks failed
+    """
+    if not isinstance(f, PurePath):
+        raise TypeError("parameter should be of type PurePath")
+
+    if f.suffix == ".hjson":
+        with open(f, "r") as file:
+            try:
+                srcfull = file.read()
+                pad_cfg = hjson.loads(srcfull, use_decimal=True)
+                pad_cfg = JsonRef.replace_refs(pad_cfg)
+                return pad_cfg
+            except ValueError:
+                raise SystemExit(sys.exc_info()[1])
+
+    elif f.suffix == ".py":
+        # The python script should have a function config() that takes no parameters and
+        # returns an instance of the XHeep type.
+        spec = importlib.util.spec_from_file_location("configs._config", f)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.config()
+
+    else:
+        raise RuntimeError(f"unsupported file extension {f.suffix}")

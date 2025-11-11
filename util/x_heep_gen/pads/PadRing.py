@@ -189,9 +189,6 @@ def build_pads_from_block(
         pad_mapping = coerce_enum(PadMapping, block.get("mapping"), None)
 
         pad_driven_manually = as_bool(block.get("driven_manually"), False)
-        print(
-            f"Creating Pad Block: {base_name} of type {pad_type} mapped to {pad_mapping} is driven manually: {pad_driven_manually}"
-        )
         pad_skip_declaration = as_bool(block.get("skip_declaration"), False)
         pad_keep_internal = as_bool(block.get("keep_internal"), False)
         pad_constant_attribute = as_bool(
@@ -526,9 +523,9 @@ def build_pads_from_block(
     const_assign_parts = []
     mux_process_parts = []
     next_index = start_index
-
     for key, block in pads_block.items():
         base_name = key
+        print(f"print block: {block}")
         pad_num = int(block["num"])
         pad_type = (
             block["type"].strip(",")
@@ -540,9 +537,6 @@ def build_pads_from_block(
         pad_mapping = coerce_enum(PadMapping, block.get("mapping"), None)
 
         pad_driven_manually = as_bool(block.get("driven_manually"), False)
-        print(
-            f"Creating Pad Block: {base_name} of type {pad_type} mapped to {pad_mapping} is driven manually: {pad_driven_manually}"
-        )
         pad_skip_declaration = as_bool(block.get("skip_declaration"), False)
         pad_keep_internal = as_bool(block.get("keep_internal"), False)
         pad_constant_attribute = as_bool(
