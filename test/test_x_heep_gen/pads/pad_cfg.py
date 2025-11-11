@@ -2,74 +2,96 @@ from typing import Dict, List, Tuple
 import sys
 
 from util.x_heep_gen.pads.Pad_domain import pad, rng, mux, _mk_cfg
-_ALL: List[Tuple[str, Dict]] = [
 
-    # Singles
-    pad("clk", "input"),
-    pad("rst", "input", active="low", driven_manually=True),
-    pad("boot_select", "input"),
-    pad("execute_from_flash", "input"),
+_PHYS = {
+    "floorplan_dimensions": {"width": 2000, "length": 1500},
+    "edge_offset": {"bondpad": 20, "pad": 90},
+    "spacing": {"bondpad": 25},
+    "dimensions": {
+        "BONDPAD1": {"width": 50},
+        "BONDPAD2": {"width": 60},
+        "BONDPAD3": {"width": 70},
+        "BONDPAD4": {"width": 80},
+        "PAD1": {"width": 40},
+        "PAD2": {"width": 45},
+        "PAD3": {"width": 50},
+        "PAD4": {"width": 55},
+    },
+}
 
-    pad("jtag_tck", "input"),
-    pad("jtag_tms", "input"),
-    pad("jtag_trst", "input", active="low"),
-    pad("jtag_tdi", "input"),
-    pad("jtag_tdo", "output"),
+# ---- Pads (converted 1:1) ---------------------------------------------------
 
-    pad("uart_rx", "input"),
-    pad("uart_tx", "output"),
+_ALL = [
+    pad("clk", "input",
+        mapping="right",
+        layout_attributes={"index": 0, "cell": "PAD1", "orient": "r90", "bondpad": "BONDPAD1"}),
 
-    pad("exit_valid", "output"),
+    pad("rst", "input",
+        active="low", driven_manually=True,
+        mapping="right",
+        layout_attributes={"index": 1, "cell": "PAD2", "orient": "r90", "bondpad": "BONDPAD2"}),
 
-    # Ranges
-    rng("gpio", 14, "inout", offset=0),
+    mux("pdm2pcm_clk", "inout",
+        alts=[("pdm2pcm_clk", "inout"), ("gpio_19", "inout")],
+        mapping="right",
+        layout_attributes={"index": 2, "cell": "PAD3", "orient": "r90", "bondpad": "BONDPAD3"}),
 
-    # SPI flash
-    pad("spi_flash_sck", "inout"),
-    rng("spi_flash_cs", 2, "inout"),
-    rng("spi_flash_sd", 4, "inout"),
+    pad("boot_select", "input",
+        mapping="right",
+        layout_attributes={"index": 0, "cell": "PAD4", "orient": "mx90", "bondpad": "BONDPAD4"}),
 
-    # SPI host
-    pad("spi_sck", "inout"),
-    rng("spi_cs", 2, "inout"),
-    rng("spi_sd", 4, "inout"),
+    pad("jtag_tms", "input",
+        mapping="right",
+        layout_attributes={"index": 1, "cell": "PAD1", "orient": "mx90", "bondpad": "BONDPAD1"}),
 
-    # SPI slave (muxed)
-    mux("spi_slave_sck",  "inout", [("spi_slave_sck","input"),  ("gpio_14","inout")]),
-    mux("spi_slave_cs",   "inout", [("spi_slave_cs","input"),   ("gpio_15","inout")]),
-    mux("spi_slave_miso", "inout", [("spi_slave_miso","inout"), ("gpio_16","inout")]),
-    mux("spi_slave_mosi", "inout", [("spi_slave_mosi","input"), ("gpio_17","inout")]),
+    pad("jtag_tdo", "output",
+        mapping="right",
+        layout_attributes={"index": 2, "cell": "PAD2", "orient": "mx90", "bondpad": "BONDPAD2"}),
 
-    # PDM2PCM (muxed)
-    mux("pdm2pcm_pdm", "inout", [("pdm2pcm_pdm","inout"), ("gpio_18","inout")]),
-    mux("pdm2pcm_clk", "inout", [("pdm2pcm_clk","inout"), ("gpio_19","inout")]),
+    rng("gpio", 14, "inout",
+        offset=0,
+        mapping="left",
+        layout_attributes={"index": 3, "cell": "PAD3", "orient": "mx90", "bondpad": "BONDPAD3"}),
 
-    # I2S (muxed)
-    mux("i2s_sck", "inout", [("i2s_sck","inout"), ("gpio_20","inout")]),
-    mux("i2s_ws",  "inout", [("i2s_ws","inout"),  ("gpio_21","inout")]),
-    mux("i2s_sd",  "inout", [("i2s_sd","inout"),  ("gpio_22","inout")]),
+    pad("execute_from_flash", "input",
+        mapping="bottom",
+        layout_attributes={"index": 0, "cell": "PAD4", "orient": "mx", "bondpad": "BONDPAD4"}),
 
-    # SPI2 (muxed)
-    mux("spi2_cs_0", "inout", [("spi2_cs_0","inout"), ("gpio_23","inout")]),
-    mux("spi2_cs_1", "inout", [("spi2_cs_1","inout"), ("gpio_24","inout")]),
-    mux("spi2_sck",  "inout", [("spi2_sck","inout"),  ("gpio_25","inout")]),
-    mux("spi2_sd_0", "inout", [("spi2_sd_0","inout"), ("gpio_26","inout")]),
-    mux("spi2_sd_1", "inout", [("spi2_sd_1","inout"), ("gpio_27","inout")]),
-    mux("spi2_sd_2", "inout", [("spi2_sd_2","inout"), ("gpio_28","inout")]),
-    mux("spi2_sd_3", "inout", [("spi2_sd_3","inout"), ("gpio_29","inout")]),
+    pad("jtag_tck", "input",
+        mapping="bottom",
+        layout_attributes={"index": 1, "cell": "PAD1", "orient": "mx", "bondpad": "BONDPAD1"}),
 
-    # I2C (muxed)
-    mux("i2c_scl", "inout", [("i2c_scl","inout"), ("gpio_31","inout")]),
-    mux("i2c_sda", "inout", [("i2c_sda","inout"), ("gpio_30","inout")]),
+    pad("jtag_trst", "input",
+        active="low",
+        mapping="bottom",
+        layout_attributes={"index": 2, "cell": "PAD2", "orient": "mx", "bondpad": "BONDPAD2"}),
+
+    pad("jtag_tdi", "input",
+        mapping="top",
+        layout_attributes={"index": 0, "cell": "PAD3", "orient": "r0", "bondpad": "BONDPAD3"}),
+
+    pad("uart_rx", "input",
+        mapping="top",
+        layout_attributes={"index": 1, "cell": "PAD1", "orient": "r0", "bondpad": "BONDPAD1"}),
+
+    pad("uart_tx", "output",
+        mapping="top",
+        layout_attributes={"index": 2, "cell": "PAD2", "orient": "r0", "bondpad": "BONDPAD2"}),
+
+    pad("exit_valid", "output",
+        mapping="top",
+        layout_attributes={"index": 3, "cell": "PAD4", "orient": "r0", "bondpad": "BONDPAD4"}),
+
+    mux("pdm2pcm_pdm", "inout",
+        alts=[("pdm2pcm_pdm", "inout"), ("gpio_18", "inout")],
+        mapping="top",
+        layout_attributes={"index": 4, "cell": "PAD3", "orient": "r0", "bondpad": "BONDPAD3"}),
 ]
-
-# Build the canonical PAD_CFG (full set)
-
 
 def config() -> Dict:
     """
     Return the full pad configuration dictionary.
     Example: config()
     """
-    PAD_CFG = _mk_cfg(_ALL)
+    PAD_CFG = _mk_cfg(_ALL, _PHYS)
     return PAD_CFG
