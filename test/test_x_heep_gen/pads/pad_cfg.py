@@ -70,4 +70,5 @@ PAD_CFG = (
 )
 
 def config()-> PadRing:
-    return PAD_CFG
+    pad_ring = PadRing( PAD_CFG)
+    return pad_ring

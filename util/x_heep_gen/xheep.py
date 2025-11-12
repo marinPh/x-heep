@@ -38,7 +38,6 @@ class XHeep:
 
         self._base_peripheral_domain = None
         self._user_peripheral_domain = None
-        pad_ring: PadRing = None
 
         self._extensions = {}
 
@@ -228,6 +227,7 @@ class XHeep:
             self._base_peripheral_domain.build()
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.build()
+        self._padring.build()
 
     def validate(self) -> bool:
         """

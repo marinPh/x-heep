@@ -42,11 +42,13 @@ def coerce_enum(enum_cls, raw, default=None):
 
 class PadRing:
     def __init__(self, pad_cfg):
-
-        pads = pad_cfg["pads"]
+        
+        pad_cfg = pad_cfg
+    def build(self):
+        pads = self.pad_cfg["pads"]
 
         try:
-            pads_attributes = pad_cfg["attributes"]
+            pads_attributes = self.pad_cfg["attributes"]
             pads_attributes_bits = pads_attributes["bits"]
         except KeyError:
             pads_attributes = None
@@ -112,7 +114,7 @@ class PadRing:
 
         # If layout parameters exist in the config, compute the pad offset/skip parameters and order the pads on each side
         try:
-            physical_attributes = pad_cfg["physical_attributes"]
+            physical_attributes = self.pad_cfg["physical_attributes"]
             (
                 top_pad_list,
                 bottom_pad_list,

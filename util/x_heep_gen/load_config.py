@@ -4,6 +4,7 @@ from typing import List, Union
 import hjson
 import os
 import sys
+from pads.PadRing import PadRing
 from jsonref import JsonRef
 
 from .cpu.cpu import CPU
@@ -495,7 +496,7 @@ def load_cfg_file(f: PurePath) -> XHeep:
     else:
         raise RuntimeError(f"unsupported file extension {f.suffix}")
 
-def load_pad_cfg(f: PurePath) -> dict:
+def load_pad_cfg(f: PurePath) -> PadRing:
     """
     Load the Configuration by extension type. It currently supports .hjson and .py
 
