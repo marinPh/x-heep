@@ -38,6 +38,7 @@ class XHeep:
 
         self._base_peripheral_domain = None
         self._user_peripheral_domain = None
+        self._padring: PadRing = None
 
         self._extensions = {}
 
