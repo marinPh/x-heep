@@ -42,8 +42,9 @@ def coerce_enum(enum_cls, raw, default=None):
 
 class PadRing:
     def __init__(self, pad_cfg):
-        
+
         pad_cfg = pad_cfg
+
     def build(self):
         pads = self.pad_cfg["pads"]
 

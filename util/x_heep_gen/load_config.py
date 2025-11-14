@@ -496,6 +496,7 @@ def load_cfg_file(f: PurePath) -> XHeep:
     else:
         raise RuntimeError(f"unsupported file extension {f.suffix}")
 
+
 def load_pad_cfg(f: PurePath) -> PadRing:
     """
     Load the Configuration by extension type. It currently supports .hjson and .py
