@@ -4,7 +4,7 @@ from typing import List, Union
 import hjson
 import os
 import sys
-from pads.PadRing import PadRing
+from .pads.PadRing import PadRing
 from jsonref import JsonRef
 
 from .cpu.cpu import CPU
@@ -514,7 +514,8 @@ def load_pad_cfg(f: PurePath) -> PadRing:
                 srcfull = file.read()
                 pad_cfg = hjson.loads(srcfull, use_decimal=True)
                 pad_cfg = JsonRef.replace_refs(pad_cfg)
-                return pad_cfg
+                pad_ring = PadRing(pad_cfg)
+                return pad_ring
             except ValueError:
                 raise SystemExit(sys.exc_info()[1])
 
