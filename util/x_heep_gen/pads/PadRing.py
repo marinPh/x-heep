@@ -1,4 +1,5 @@
 from .Pad import Pad, PadMapping
+from .PadDef import PadDef, RangePads, MultiplexedPads, PadGroup
 
 
 def as_bool(v, default: bool = False) -> bool:
@@ -41,17 +42,21 @@ def coerce_enum(enum_cls, raw, default=None):
 
 
 class PadRing:
-    def __init__(self, pad_cfg):
+    def __init__(self, pad_group: PadGroup):
 
-        pads = pad_cfg["pads"]
+        self.pad_group: PadGroup = pad_group
+        
+
+    def build(self):
+        pads = self.pad_group.pads
 
         try:
-            pads_attributes = pad_cfg["attributes"]
-            pads_attributes_bits = pads_attributes["bits"]
+
+            pads_attributes_bits = self.pad_group.physical_properties["bits"]
         except KeyError:
             pads_attributes = None
             pads_attributes_bits = "-1:0"
-
+            
         # Read HJSON description of External Pads
 
         pad_list = []
@@ -66,7 +71,7 @@ class PadRing:
         (
             pad_list,
             pad_muxed_internal,
-            next_index,
+            _,
             pad_constant_driver_assign,
             pad_mux_process,
         ) = build_pads_from_block(
@@ -110,7 +115,7 @@ class PadRing:
 
         # If layout parameters exist in the config, compute the pad offset/skip parameters and order the pads on each side
         try:
-            physical_attributes = pad_cfg["physical_attributes"]
+            physical_attributes = self.pad_cfg["physical_attributes"]
             (
                 top_pad_list,
                 bottom_pad_list,
@@ -370,9 +375,9 @@ def build_pads_from_block(
     const_assign_parts = []
     mux_process_parts = []
     next_index = start_index
-
     for key, block in pads_block.items():
         base_name = key
+        print(f"print block: {block}")
         pad_num = int(block["num"])
         pad_type = (
             block["type"].strip(",")
