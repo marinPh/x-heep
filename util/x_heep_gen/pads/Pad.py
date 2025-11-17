@@ -1,4 +1,6 @@
 from enum import Enum
+from dataclasses import dataclass
+from typing import Optional
 
 
 class PadMapping(Enum):
@@ -368,12 +370,7 @@ class Pad:
         has_attribute,
         attribute_bits,
         constant_attribute,
-        pad_layout_index,
-        pad_layout_orient,
-        pad_layout_cell,
-        pad_layout_bondpad,
-        pad_layout_offset,
-        pad_layout_skip,
+        pad_layout
     ):
 
         self.name = name
@@ -410,12 +407,12 @@ class Pad:
         self.is_driven_manually = pad_driven_manually
         self.do_skip_declaration = pad_skip_declaration
 
-        self.layout_index = pad_layout_index
-        self.layout_orient = pad_layout_orient
-        self.layout_cell = pad_layout_cell
-        self.layout_bondpad = pad_layout_bondpad
-        self.layout_offset = pad_layout_offset
-        self.layout_skip = pad_layout_skip
+        self.layout_index = pad_layout.index
+        self.layout_orient = pad_layout.orient
+        self.layout_cell =  pad_layout.cell
+        self.layout_bondpad =   pad_layout.bond_pad
+        self.layout_offset = pad_layout.offset
+        self.layout_skip = pad_layout.skip
 
         if len(pad_mux_list) == 0:
             self.signal_name_drive.append(self.signal_name)
