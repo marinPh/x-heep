@@ -370,7 +370,7 @@ class Pad:
         has_attribute,
         attribute_bits,
         constant_attribute,
-        pad_layout
+        pad_layout,
     ):
 
         self.name = name
@@ -409,8 +409,8 @@ class Pad:
 
         self.layout_index = pad_layout.index
         self.layout_orient = pad_layout.orient
-        self.layout_cell =  pad_layout.cell
-        self.layout_bondpad =   pad_layout.bond_pad
+        self.layout_cell = pad_layout.cell
+        self.layout_bondpad = pad_layout.bond_pad
         self.layout_offset = pad_layout.offset
         self.layout_skip = pad_layout.skip
 

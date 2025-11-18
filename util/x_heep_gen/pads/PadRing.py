@@ -59,7 +59,6 @@ class PadRing:
             pads_attributes_bits = "-1:0"
         if pads_attributes_bits is None:
             pads_attributes_bits = "-1:0"
-        
 
         # Read HJSON description of External Pads
 
@@ -341,7 +340,7 @@ def build_pads_from_block(
     pad_muxed_list = []
     const_assign_parts = []
     mux_process_parts = []
-    for i,block in enumerate(pad_group.pads):
+    for i, block in enumerate(pad_group.pads):
         print(f"print block: {block}")
         pad_type = (
             block["type"].strip(",")
