@@ -162,6 +162,7 @@ class PadGroup:
             raise ValidationError(
                 f"PadGroup '{self.name}': pad with name '{pad.name}' already exists."
             )
+        self.add_layout(pad)
         if isinstance(pad, RangePads):
             pads = pad.set_index(len(self.pads))
             self.pads.extend(pads)
@@ -172,11 +173,14 @@ class PadGroup:
     def get_multiplexed_pads(self) -> List[MultiplexedPad]:
         return [pad for pad in self.pads if isinstance(pad, MultiplexedPad)]
 
-    def add_layout(self, layout_name: str, layout: Layout) -> None:
-        self.layouts: Dict[str, Layout] = {}
-        if layout_name in self.layouts:
-            raise ValidationError(
-                f"PadGroup '{self.name}': layout with name '{layout_name}' already exists."
-            )
-        layout.set_index(len(self.layouts))
-        self.layouts[layout_name] = layout
+    def add_layout(self, padDef: PadDef) -> None:
+        for k, v in self.layouts:
+            if k == padDef.layout.name:
+                if v != padDef.layout:
+                    raise ValidationError(
+                        f"PadGroup '{self.name}': layout with name '{padDef.layout.name}' already exists."
+                    )
+                else:
+                    return
+        padDef.layout.set_index(len(self.layouts))
+        self.layouts[padDef.layout.name] = padDef.layout
