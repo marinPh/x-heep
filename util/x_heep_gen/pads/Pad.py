@@ -371,6 +371,7 @@ class Pad:
         attribute_bits,
         constant_attribute,
         pad_layout,
+        orient,
     ):
 
         self.name = name
@@ -389,6 +390,7 @@ class Pad:
         self.signal_name = self.name + "_" + name_active
 
         self.has_attribute = has_attribute
+        
         self.attribute_bits = (
             int(attribute_bits.split(":")[0]) - int(attribute_bits.split(":")[1]) + 1
         )
@@ -408,8 +410,8 @@ class Pad:
         self.do_skip_declaration = pad_skip_declaration
 
         self.layout_index = pad_layout.index
-        self.layout_orient = pad_layout.orient
-        self.layout_cell = pad_layout.cell
+        self.layout_orient = orient
+        self.layout_cell = pad_layout.cell_pad
         self.layout_bondpad = pad_layout.bond_pad
         self.layout_offset = pad_layout.offset
         self.layout_skip = pad_layout.skip

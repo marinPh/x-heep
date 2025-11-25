@@ -508,6 +508,7 @@ def load_pad_cfg(f: PurePath) -> PadRing:
     :rtype: XHeep
     :raise RuntimeError: when and invalid configuration is passed or when the sanity checks failed
     """
+    print("Loading pad configuration from file:", f)
     if not isinstance(f, PurePath):
         raise TypeError("parameter should be of type PurePath")
 

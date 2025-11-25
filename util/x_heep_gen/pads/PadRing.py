@@ -1,5 +1,5 @@
 from .Pad import Pad, PadMapping
-from .PadDef import PadDef, RangePads, MultiplexedPad, PadGroup, Layout
+from .PadDef import PadDef, RangePad, MultiplexedPad, PadGroup, Layout
 from typing import List, Tuple, Dict, Any, Optional
 import numpy as np
 
@@ -45,19 +45,20 @@ def coerce_enum(enum_cls, raw, default=None):
 
 class PadRing:
     def __init__(self, pad_group: PadGroup):
-
+        print("type of pad_group in PadRing:", type(pad_group))
         self.pad_group: PadGroup = pad_group
 
     def build(self):
-        pads = self.pad_group.pads
+        print("Building Pad Ring...")
+        print("type of pad_group:", type(self.pad_group))
 
-        try:
+     
 
-            pads_attributes_bits = self.pad_group.bits
-        except KeyError:
-            pads_attributes = None
-            pads_attributes_bits = "-1:0"
-        if pads_attributes_bits is None:
+        pads_attributes_bits = self.pad_group.bits
+
+            
+        if not pads_attributes_bits :
+            self.pads_attributes = None
             pads_attributes_bits = "-1:0"
 
         # Read HJSON description of External Pads
@@ -71,12 +72,11 @@ class PadRing:
         pad_muxed_list = self.pad_group.get_multiplexed_pads()
         (
             pad_objs,
-            muxed,
+            _,
             pad_constant_driver_assign,
             pad_mux_process,
         ) = build_pads_from_block(
-            pads_block=pads,
-            start_index=0,
+            pad_group = self.pad_group,
             pads_attributes_present=(self.pad_group.bits is not None),
             pads_attributes_bits=pads_attributes_bits,
             default_constant_attribute=False,
@@ -102,28 +102,24 @@ class PadRing:
             last_pad.remove_comma_io_interface()
             pad_objs.append(last_pad)
 
-        physical_attributes = None
         top_pad_list = None
         bottom_pad_list = None
         left_pad_list = None
         right_pad_list = None
         bondpad_offsets = None
 
-        # If layout parameters exist in the config, compute the pad offset/skip parameters and order the pads on each side
-        try:
-            physical_attributes = self.pad_cfg["physical_attributes"]
-            (
-                top_pad_list,
-                bottom_pad_list,
-                left_pad_list,
-                right_pad_list,
-                bondpad_offsets,
-            ) = prepare_pads_for_layout(self.pad_group)
-        except KeyError:
-            pass
+
+        (
+            top_pad_list,
+            bottom_pad_list,
+            left_pad_list,
+            right_pad_list,
+            bondpad_offsets,
+        ) = prepare_pads_for_layout(self.pad_group,pad_objs)
+
 
         self.pad_list = pad_list
-        self.total_pad_list = total_pad_list
+        self.total_pad_list = (pad_list)
         self.pad_muxed_list = pad_muxed_list
         self.total_pad = total_pad
         self.total_pad_muxed = total_pad_muxed
@@ -133,23 +129,32 @@ class PadRing:
         self.left_pad_list = left_pad_list
         self.right_pad_list = right_pad_list
         self.bondpad_offsets = bondpad_offsets
-        self.physical_attributes = physical_attributes
+        self.physical_attributes = self.pad_group.get_physical_attributes()
         self.external_pad_list = external_pad_list
         self.pad_constant_driver_assign = pad_constant_driver_assign
         self.pad_mux_process = pad_mux_process
-        self.pads_attributes = pads_attributes
+        self.pads_attributes = self.pads_attributes
+        
+def pad_subset(pad_list: List[PadDef], all_pads: List[Pad]) -> List[Pad]:
+    
+    subset = []
+    pad_dict = {pad.name: pad for pad in all_pads}
+    for pad_def in pad_list:
+        if pad_def.name in pad_dict:
+            subset.append(pad_dict[pad_def.name])
+    return subset
 
 
-def prepare_pads_for_layout(pad_group: PadGroup):
+def prepare_pads_for_layout(pad_group: PadGroup,pad_list: List[Pad] = None):
     """
     Separate pads into pad lists for the top, bottom, left, and right pads and order them according to their layout_index attribute, and set their positions on the floorplan.
     """
 
     # Separate pads according to side
-    top_pad_list = []
-    bottom_pad_list = []
-    right_pad_list = []
-    left_pad_list = []
+    top_pad_list :List[PadDef]= []
+    bottom_pad_list :List[PadDef]= []
+    right_pad_list :List[PadDef]= []
+    left_pad_list :List[PadDef]= []
     pad_lists = {
         PadMapping.TOP: top_pad_list,
         PadMapping.BOTTOM: bottom_pad_list,
@@ -157,23 +162,31 @@ def prepare_pads_for_layout(pad_group: PadGroup):
         PadMapping.LEFT: left_pad_list,
     }
     for pad in pad_group.pads:
-        if pad.mapping in pad_lists:
+        print("Processing pad:", pad.name, "with mapping:", pad.mapping)
+        if pad.mapping in pad_lists.keys():
             pad_lists[pad.mapping].append(pad)
         else:
             print(
                 "ERROR: Pad {0} has an invalid mapping {1}. Please set mapping to top, bottom, left, or right.".format(
-                    pad.name, getattr(pad, "pad_mapping", None)
+                    pad.name, getattr(pad, "pad_mapping", map.mapping)
                 )
             )
-            return
+            raise ValueError("Invalid pad mapping")
 
     # Order pads according to layout index
-    top_pad_list.sort(key=lambda x: x.layout_index)
-    bottom_pad_list.sort(key=lambda x: x.layout_index)
-    left_pad_list.sort(key=lambda x: x.layout_index)
-    right_pad_list.sort(key=lambda x: x.layout_index)
+    top_pad_list.sort(key=lambda x: x.layout.index)
+    bottom_pad_list.sort(key=lambda x: x.layout.index)
+    left_pad_list.sort(key=lambda x: x.layout.index)
+    right_pad_list.sort(key=lambda x: x.layout.index)
+    
+    print(" Top pads:",len(top_pad_list))
+    print(" Bottom pads:",len(bottom_pad_list))
+    print(" Left pads:",len(left_pad_list))
+    print(" Right pads:",len(right_pad_list))
 
-    # Calculate pad offsets and check whether requested pad configuration fits in the floorplan
+    # Calculate pad offsets and check wheth
+    ## Conver lists of PadDef to lists of Pad objects
+
     top_pad_list, bondpad_offset_top = set_pad_positions(pad_group, top_pad_list)
     bottom_pad_list, bondpad_offset_bottom = set_pad_positions(
         pad_group, bottom_pad_list
@@ -187,8 +200,9 @@ def prepare_pads_for_layout(pad_group: PadGroup):
         "left": bondpad_offset_left,
         "right": bondpad_offset_right,
     }
+    
 
-    return top_pad_list, bottom_pad_list, left_pad_list, right_pad_list, bondpad_offsets
+    return pad_subset(top_pad_list,pad_list), pad_subset(bottom_pad_list,pad_list), pad_subset(left_pad_list,pad_list), pad_subset(right_pad_list,pad_list), bondpad_offsets
 
 
 def build_mux_list(
@@ -202,6 +216,7 @@ def build_mux_list(
 
     mux_list = []
     for mux_name, entry in (block.get("mux") or {}).items():
+        print(" _____pad attributes -> ", pads_attributes_bits)
         mux = Pad(
             mux_name,
             "",
@@ -225,9 +240,15 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
     """Calculate the `offset` and `skip` attributes of the pads such that the bondpads are centered on each side and the pads are aligned with their respective bondpads.
     Perform checks to make sure the pads can all fit on the requested side without violating design constraints or exceeding layout margins.
     """
+    #TODO: what do we give if no pad on this side
+    if len(pad_list)==0:
+        return list(),0
+        
+        
     # Ensure the physical attributes were properly set in the pad config file
     try:
-        fp_length = float(pad_group.fp_dim.length)
+        
+        fp_length = float(pad_group.fp_dim.height) if pad_group.fp_dim.height else float(pad_group.fp_dim.width)
         fp_width = float(pad_group.fp_dim.width)
         edge_to_bp = float(pad_group.edge_to_bp)
         edge_to_pad = float(pad_group.edge_to_pad)
@@ -240,14 +261,15 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
 
     # Determine which dimension we are dealing with
     side = pad_list[0].mapping
-    match side:
-        case PadMapping.TOP | PadMapping.BOTTOM:
-            side_length = fp_length
-        case PadMapping.LEFT | PadMapping.RIGHT:
-            side_length = fp_width
-        case _:
-            print("ERROR: Invalid pad mapping {0}".format(side))
-            return
+    
+    if side in (PadMapping.TOP, PadMapping.BOTTOM):
+        side_length = fp_length
+    elif side in (PadMapping.LEFT, PadMapping.RIGHT):
+        side_length = fp_width
+    else:
+        print("ERROR: Invalid pad mapping {0}".format(side))
+        return
+
 
     # Calculate space occupied by bondpads on the designated side of the chip
     widths = np.array([pad.layout.bond_pad.width for pad in pad_list])
@@ -342,21 +364,15 @@ def build_pads_from_block(
     mux_process_parts = []
     for i, block in enumerate(pad_group.pads):
         print(f"print block: {block}")
-        pad_type = (
-            block["type"].strip(",")
-            if isinstance(block["type"], str)
-            else block["type"]
-        )
+        pad_type = block.type
 
         pad_active = block.active
         pad_mapping = coerce_enum(PadMapping, block.mapping, None)
 
         pad_driven_manually = as_bool(block.driven_manually, False)
-        pad_skip_declaration = as_bool(block.get("skip_declaration"), False)
-        pad_keep_internal = as_bool(block.get("keep_internal"), False)
-        pad_constant_attribute = as_bool(
-            block.get("constant_attribute"), default_constant_attribute
-        )
+        pad_skip_declaration = as_bool(block.skip, False)
+        pad_keep_internal = as_bool(block.keep_internal, False)
+        pad_constant_attribute :bool = default_constant_attribute if not block.constant_attribute else block.constant_attribute
 
         # layout (optional)
         pad_layout = block.layout
@@ -384,9 +400,10 @@ def build_pads_from_block(
             pad_skip_declaration,
             pad_mux_list,
             pads_attributes_present,
-            block.bits,
+            pads_attributes_bits,
             pad_constant_attribute,
             pad_layout,
+            block.orient,
         )
 
         # build sections (internal can skip ring; external always emits ring)
