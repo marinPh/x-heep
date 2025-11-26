@@ -72,7 +72,7 @@ class PadRing:
         pad_muxed_list = self.pad_group.get_multiplexed_pads()
         (
             pad_objs,
-            _,
+            muxed,
             pad_constant_driver_assign,
             pad_mux_process,
         ) = build_pads_from_block(
@@ -93,7 +93,7 @@ class PadRing:
         max_total_pad_mux_bitlengh = 0
         if pad_muxed_list:
             max_total_pad_mux_bitlengh = max(
-                (len(p.pad_mux_list) - 1).bit_length() for p in pad_muxed_list
+                (len(p.alts) - 1).bit_length() for p in pad_muxed_list
             )
 
         # remove trailing comma from last PAD io_interface (kept to preserve behavior)
@@ -120,7 +120,7 @@ class PadRing:
 
         self.pad_list = pad_list
         self.total_pad_list = (pad_list)
-        self.pad_muxed_list = pad_muxed_list
+        self.pad_muxed_list = muxed
         self.total_pad = total_pad
         self.total_pad_muxed = total_pad_muxed
         self.max_total_pad_mux_bitlengh = max_total_pad_mux_bitlengh
@@ -206,7 +206,7 @@ def prepare_pads_for_layout(pad_group: PadGroup,pad_list: List[Pad] = None):
 
 
 def build_mux_list(
-    block,
+    block: MultiplexedPad,
     pad_mapping,
     pads_attributes_present: bool,
     pads_attributes_bits: str,
@@ -215,22 +215,24 @@ def build_mux_list(
 ):
 
     mux_list = []
-    for mux_name, entry in (block.get("mux") or {}).items():
+
+    for mux_name, entry in (block.alts):
         print(" _____pad attributes -> ", pads_attributes_bits)
         mux = Pad(
             mux_name,
             "",
-            entry["type"],
+            entry.type,
             pad_mapping,
             0,
-            entry.get("active", "high"),
-            as_bool(entry.get("driven_manually"), False),
-            as_bool(entry.get("skip_declaration"), False),
+            entry.active,
+            as_bool(entry.driven_manually, False),
+            as_bool(entry.skip, False),
             [],
             pads_attributes_present,
             pads_attributes_bits,
             pad_constant_attribute,
             pad_layout,
+            orient=entry.orient,
         )
         mux_list.append(mux)
     return mux_list
@@ -379,6 +381,7 @@ def build_pads_from_block(
 
         # mux list
         pad_mux_list = []
+        
         if isinstance(block, MultiplexedPad):
             pad_mux_list = build_mux_list(
                 block,
@@ -388,6 +391,7 @@ def build_pads_from_block(
                 pad_constant_attribute,
                 pad_layout,
             )
+            print(f"_________________type of pad_mux_list: {type(pad_mux_list[0])}")
 
         pad_obj = Pad(
             block.name,

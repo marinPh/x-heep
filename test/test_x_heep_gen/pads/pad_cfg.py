@@ -15,7 +15,7 @@ def config() -> PadRing:
     # Floorplan / global physical attributes (from "physical_attributes")
     # -------------------------------------------------------------------------
     # "floorplan_dimensions": { "width": 2000, "length": 1500 }
-    fp_dim = Dimension(width=2000, height=1500, name="floorplan")
+    fp_dim = Dimension(width=2000, height=1500)
 
     # edge offsets and spacing
     edge_to_bp = 20    # edge_offset.bondpad
@@ -28,23 +28,23 @@ def config() -> PadRing:
     # Layouts & per-cell / per-bondpad dimensions (from "dimensions")
     # -------------------------------------------------------------------------
     # BONDPAD1: 50, PAD1: 40
-    bondpad1_dim = Dimension(width=50, height=None, name="BONDPAD1")
-    pad1_dim     = Dimension(width=40, height=None, name="PAD1")
+    bondpad1_dim = Dimension(width=50, height=None)
+    pad1_dim     = Dimension(width=40, height=None)
     pad1_layout  = Layout(name="PAD1", bond_pad=bondpad1_dim, cell_pad=pad1_dim)
 
     # BONDPAD2: 60, PAD2: 45
-    bondpad2_dim = Dimension(width=60, height=None, name="BONDPAD2")
-    pad2_dim     = Dimension(width=45, height=None, name="PAD2")
+    bondpad2_dim = Dimension(width=60, height=None)
+    pad2_dim     = Dimension(width=45, height=None)
     pad2_layout  = Layout(name="PAD2", bond_pad=bondpad2_dim, cell_pad=pad2_dim)
 
     # BONDPAD3: 70, PAD3: 50
-    bondpad3_dim = Dimension(width=70, height=None, name="BONDPAD3")
-    pad3_dim     = Dimension(width=50, height=None, name="PAD3")
+    bondpad3_dim = Dimension(width=70, height=None)
+    pad3_dim     = Dimension(width=50, height=None)
     pad3_layout  = Layout(name="PAD3", bond_pad=bondpad3_dim, cell_pad=pad3_dim)
 
     # BONDPAD4: 80, PAD4: 55
-    bondpad4_dim = Dimension(width=80, height=None, name="BONDPAD4")
-    pad4_dim     = Dimension(width=55, height=None, name="PAD4")
+    bondpad4_dim = Dimension(width=80, height=None)
+    pad4_dim     = Dimension(width=55, height=None)
     pad4_layout  = Layout(name="PAD4", bond_pad=bondpad4_dim, cell_pad=pad4_dim)
 
     # -------------------------------------------------------------------------
@@ -197,19 +197,49 @@ def config() -> PadRing:
 
     # "pdm2pcm_clk": mapping="right", cell=PAD3, orient="r90",
     # mux: { "pdm2pcm_clk": "inout", "gpio_19": "inout" }
+    
+    alt_pdm2pcm_clk = SinglePad(
+        name = "pdm2pcm_clk",
+        type = "inout",
+        mapping = PadMapping("right"),
+        layout = pad3_layout,
+        orient = orient("r90"),
+    )
+    
+    alt_gpio_19 = SinglePad(
+        name = "gpio_19",
+        type = "inout",
+        mapping = PadMapping("right"),
+        layout = pad3_layout,
+        orient = orient("r90"),
+    )
+    
     pdm2pcm_clk = MultiplexedPad(
         name="pdm2pcm_clk",
         type="inout",
         mapping=PadMapping("right"),
         layout=pad3_layout,
         orient=orient("r90"),
+        alts=[("pdm2pcm_clk", alt_pdm2pcm_clk), ("gpio_19", alt_gpio_19)],
     )
-    # store the mux alts in properties or a dedicated field, depending on how you extend MultiplexedPad
-    pdm2pcm_clk.properties["alts"] = [
-        ("pdm2pcm_clk", "inout"),
-        ("gpio_19", "inout"),
-    ]
+
     pad_group.add_pad(pdm2pcm_clk)
+    
+    alt_pdm2pcm = SinglePad(
+        name = "pdm2pcm_pdm",
+        type = "inout",
+        mapping = PadMapping("top"),
+        layout = pad3_layout,
+        orient = orient("r0"),
+    )
+    #TODO: create a nicer way create alts this not ideal
+    alt_gpio_18 = SinglePad(
+        name = "gpio_18",
+        type = "inout",
+        mapping = PadMapping("top"),
+        layout = pad3_layout,
+        orient = orient("r0"),
+    )
 
     # "pdm2pcm_pdm": mapping="top", cell=PAD3, orient="r0",
     # mux: { "pdm2pcm_pdm": "inout", "gpio_18": "inout" }
@@ -219,11 +249,9 @@ def config() -> PadRing:
         mapping=PadMapping("top"),
         layout=pad3_layout,
         orient=orient("r0"),
+        alts= [("pdm2pcm_pdm", alt_pdm2pcm), ("gpio_18", alt_gpio_18)],
     )
-    pdm2pcm_pdm.properties["alts"] = [
-        ("pdm2pcm_pdm", "inout"),
-        ("gpio_18", "inout"),
-    ]
+
     pad_group.add_pad(pdm2pcm_pdm)
 
     # -------------------------------------------------------------------------

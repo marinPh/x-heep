@@ -49,7 +49,6 @@ def _assert_mapping(m: str, where: str) -> None:
 @dataclass(frozen=True)
 class Dimension:
     width: int
-    name: Optional[str] = None
     height: Optional[int] = None
     
     
@@ -83,7 +82,7 @@ class PadDef:
     layout: Layout = field(default_factory=Layout)
     layers: Optional[List[str]] = None
     properties: Dict[str, Any] = field(default_factory=dict)
-    active: bool = True
+    active: str = "high"
     orient: Optional[str] = None
     driven_manually: bool = False
     index: Optional[int] = None
@@ -146,14 +145,11 @@ class SinglePad(PadDef):
     # No additional fields needed for SinglePad
     pass
 
-
+@dataclass(frozen=False)
 class MultiplexedPad(PadDef):
-    alts: List[Tuple[str, str]]  # List of (alt_name, alt_type)
+    alts: Optional[List[Tuple[str, PadDef]]] = None  # List of (alt_name, alt_type)
 
-    def __post_init__(self):
-        super().__post_init__()
-        for alt_name, alt_type in self.alts:
-            _assert_type(alt_type, f"MultiplexedPads '{self.name}' alt '{alt_name}'")
+        
 
 
 @dataclass(frozen=False)
@@ -210,7 +206,8 @@ class PadGroup:
         return [pad for pad in self.pads if isinstance(pad, MultiplexedPad)]
 
     def add_layout(self, padDef: PadDef) -> None:
-        for k, v in self.layouts:
+        print( self.layouts)
+        for k, v in self.layouts.items():
             if k == padDef.layout.name:
                 if v != padDef.layout:
                     raise ValidationError(
