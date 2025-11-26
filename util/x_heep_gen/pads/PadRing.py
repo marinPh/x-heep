@@ -63,7 +63,7 @@ class PadRing:
 
         # Read HJSON description of External Pads
 
-        pad_list = []
+        pad_objs = []
         external_pad_list = []
 
         pad_constant_driver_assign = ""
@@ -86,7 +86,7 @@ class PadRing:
         # external pads (continue indexing, always emit ring)
         # merge, totals
 
-        total_pad = len(pad_list)
+        total_pad = len(pad_objs)
         total_pad_muxed = len(pad_muxed_list)
 
         # max mux selector width (0 if none)
@@ -118,8 +118,8 @@ class PadRing:
         ) = prepare_pads_for_layout(self.pad_group,pad_objs)
 
 
-        self.pad_list = pad_list
-        self.total_pad_list = (pad_list)
+        self.pad_list = pad_objs
+        self.total_pad_list = (pad_objs)
         self.pad_muxed_list = muxed
         self.total_pad = total_pad
         self.total_pad_muxed = total_pad_muxed
