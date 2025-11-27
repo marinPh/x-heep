@@ -1,13 +1,7 @@
 from enum import Enum
 from dataclasses import dataclass
 from typing import Optional
-
-
-class PadMapping(Enum):
-    TOP = "top"
-    RIGHT = "right"
-    BOTTOM = "bottom"
-    LEFT = "left"
+from .PadDef import PadType, PadMapping, Orientation
 
 
 class Pad:
@@ -363,6 +357,7 @@ class Pad:
         pad_type,
         pad_mapping,
         index,
+        pad_layout_index,
         pad_active,
         pad_driven_manually,
         pad_skip_declaration,
@@ -381,6 +376,7 @@ class Pad:
         self.pad_type = pad_type
         self.pad_mapping = pad_mapping
         self.pad_mux_list = pad_mux_list
+        #print(f"____Creating Pad: {self.name} of type {self.pad_type} active {pad_active}")
 
         if pad_active == "low":
             name_active = "n"
@@ -390,7 +386,7 @@ class Pad:
         self.signal_name = self.name + "_" + name_active
 
         self.has_attribute = has_attribute
-        
+
         self.attribute_bits = (
             int(attribute_bits.split(":")[0]) - int(attribute_bits.split(":")[1]) + 1
         )
@@ -409,7 +405,7 @@ class Pad:
         self.is_driven_manually = pad_driven_manually
         self.do_skip_declaration = pad_skip_declaration
 
-        self.layout_index = pad_layout.index
+        self.layout_index = pad_layout_index
         self.layout_orient = orient
         self.layout_cell = pad_layout.cell_pad
         self.layout_bondpad = pad_layout.bond_pad

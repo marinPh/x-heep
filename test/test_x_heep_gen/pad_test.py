@@ -17,7 +17,12 @@ def compare_json(file_a, file_b):
     else:
         print("❌ JSONs differ")
         diff = DeepDiff(a, b, ignore_order=True, significant_digits=6)
-        print(diff)
+        print(diff.pretty())
+        diff_file = os.path.join(os.path.dirname(__file__), "diff_output.txt")
+        # write diff to file a file in nice format
+        with open(diff_file, "w") as df:
+            df.write(diff.pretty())
+        print(f"Diff written to {diff_file}")
         return False
 
 

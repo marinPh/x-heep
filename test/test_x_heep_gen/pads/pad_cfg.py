@@ -15,12 +15,11 @@ def config() -> PadRing:
     # Floorplan / global physical attributes (from "physical_attributes")
     # -------------------------------------------------------------------------
     # "floorplan_dimensions": { "width": 2000, "length": 1500 }
-    fp_dim = Dimension(width=2000, height=1500)
+    fp_dim = Dimension(width=2000, length=1500)
 
     # edge offsets and spacing
-    edge_to_bp = 20    # edge_offset.bondpad
-    edge_to_pad = 90   # edge_offset.pad
-    bp_spacing = 25    # spacing.bondpad
+
+    bp_spacing = 25  # spacing.bondpad
     # there is no explicit pad/cell spacing in the JSON; keep None or set if known
     cell_spacing = None
 
@@ -28,37 +27,38 @@ def config() -> PadRing:
     # Layouts & per-cell / per-bondpad dimensions (from "dimensions")
     # -------------------------------------------------------------------------
     # BONDPAD1: 50, PAD1: 40
-    bondpad1_dim = Dimension(width=50, height=None)
-    pad1_dim     = Dimension(width=40, height=None)
-    pad1_layout  = Layout(name="PAD1", bond_pad=bondpad1_dim, cell_pad=pad1_dim)
+    bondpad1_dim = Dimension(width=50, length=None)
+    pad1_dim = Dimension(width=40, length=None)
+    pad1_layout = Layout(name="PAD1", bond_pad=bondpad1_dim, cell_pad=pad1_dim)
 
     # BONDPAD2: 60, PAD2: 45
-    bondpad2_dim = Dimension(width=60, height=None)
-    pad2_dim     = Dimension(width=45, height=None)
-    pad2_layout  = Layout(name="PAD2", bond_pad=bondpad2_dim, cell_pad=pad2_dim)
+    bondpad2_dim = Dimension(width=60, length=None)
+    pad2_dim = Dimension(width=45, length=None)
+    pad2_layout = Layout(name="PAD2", bond_pad=bondpad2_dim, cell_pad=pad2_dim)
 
     # BONDPAD3: 70, PAD3: 50
-    bondpad3_dim = Dimension(width=70, height=None)
-    pad3_dim     = Dimension(width=50, height=None)
-    pad3_layout  = Layout(name="PAD3", bond_pad=bondpad3_dim, cell_pad=pad3_dim)
+    bondpad3_dim = Dimension(width=70, length=None)
+    pad3_dim = Dimension(width=50, length=None)
+    pad3_layout = Layout(name="PAD3", bond_pad=bondpad3_dim, cell_pad=pad3_dim)
 
     # BONDPAD4: 80, PAD4: 55
-    bondpad4_dim = Dimension(width=80, height=None)
-    pad4_dim     = Dimension(width=55, height=None)
-    pad4_layout  = Layout(name="PAD4", bond_pad=bondpad4_dim, cell_pad=pad4_dim)
+    bondpad4_dim = Dimension(width=80, length=None)
+    pad4_dim = Dimension(width=55, length=None)
+    pad4_layout = Layout(name="PAD4", bond_pad=bondpad4_dim, cell_pad=pad4_dim)
+    
+    offsets = Dimension(width=0, length=0)
 
     # -------------------------------------------------------------------------
     # PadGroup that will own all pads and physical attributes
     # -------------------------------------------------------------------------
     pad_group = PadGroup(
         name="x_heep_top",
-        edge_to_bp=edge_to_bp,
-        edge_to_pad=edge_to_pad,
+        pad_edge_offset = 90,
+        bondpad_edge_offset = 20,
         bp_spacing=bp_spacing,
         cell_spacing=cell_spacing,
         fp_dim=fp_dim,
     )
-
 
     # Helper for orientations (JSON uses "r90", "mx90", "mx", "r0", etc.)
     def orient(s: str) -> str:
@@ -86,7 +86,7 @@ def config() -> PadRing:
         layout=pad2_layout,
         orient=orient("r90"),
         driven_manually=True,
-        properties={"active": "low"},
+        active="low",
     )
     pad_group.add_pad(rst)
 
@@ -147,7 +147,7 @@ def config() -> PadRing:
         mapping=PadMapping("bottom"),
         layout=pad2_layout,
         orient=orient("mx"),
-        properties={"active": "low"},
+        active="low",
     )
     pad_group.add_pad(jtag_trst)
 
@@ -197,23 +197,23 @@ def config() -> PadRing:
 
     # "pdm2pcm_clk": mapping="right", cell=PAD3, orient="r90",
     # mux: { "pdm2pcm_clk": "inout", "gpio_19": "inout" }
-    
+
     alt_pdm2pcm_clk = SinglePad(
-        name = "pdm2pcm_clk",
-        type = "inout",
-        mapping = PadMapping("right"),
-        layout = pad3_layout,
-        orient = orient("r90"),
+        name="pdm2pcm_clk",
+        type="inout",
+        mapping=PadMapping("right"),
+        layout=pad3_layout,
+        orient=orient("r90"),
     )
-    
+
     alt_gpio_19 = SinglePad(
-        name = "gpio_19",
-        type = "inout",
-        mapping = PadMapping("right"),
-        layout = pad3_layout,
-        orient = orient("r90"),
+        name="gpio_19",
+        type="inout",
+        mapping=PadMapping("right"),
+        layout=pad3_layout,
+        orient=orient("r90"),
     )
-    
+
     pdm2pcm_clk = MultiplexedPad(
         name="pdm2pcm_clk",
         type="inout",
@@ -224,21 +224,21 @@ def config() -> PadRing:
     )
 
     pad_group.add_pad(pdm2pcm_clk)
-    
+
     alt_pdm2pcm = SinglePad(
-        name = "pdm2pcm_pdm",
-        type = "inout",
-        mapping = PadMapping("top"),
-        layout = pad3_layout,
-        orient = orient("r0"),
+        name="pdm2pcm_pdm",
+        type="inout",
+        mapping=PadMapping("top"),
+        layout=pad3_layout,
+        orient=orient("r0"),
     )
-    #TODO: create a nicer way create alts this not ideal
+    # TODO: create a nicer way create alts this not ideal
     alt_gpio_18 = SinglePad(
-        name = "gpio_18",
-        type = "inout",
-        mapping = PadMapping("top"),
-        layout = pad3_layout,
-        orient = orient("r0"),
+        name="gpio_18",
+        type="inout",
+        mapping=PadMapping("top"),
+        layout=pad3_layout,
+        orient=orient("r0"),
     )
 
     # "pdm2pcm_pdm": mapping="top", cell=PAD3, orient="r0",
@@ -249,7 +249,7 @@ def config() -> PadRing:
         mapping=PadMapping("top"),
         layout=pad3_layout,
         orient=orient("r0"),
-        alts= [("pdm2pcm_pdm", alt_pdm2pcm), ("gpio_18", alt_gpio_18)],
+        alts=[("pdm2pcm_pdm", alt_pdm2pcm), ("gpio_18", alt_gpio_18)],
     )
 
     pad_group.add_pad(pdm2pcm_pdm)
@@ -257,14 +257,14 @@ def config() -> PadRing:
     # -------------------------------------------------------------------------
     # Range pad for "gpio" (num: 14, num_offset: 0 -> gpio_0 .. gpio_13)
     # -------------------------------------------------------------------------
+    
+    #FIXME: something is wrong, either this is 14 pads or 1 pad linking 14 pads
     gpio_range = RangePad(
         name="gpio",
         type="inout",
         mapping=PadMapping("left"),
         layout=pad3_layout,
-        start_index=0,
-        end_index=13,   # 14 pads -> 0..13
-        step=1,
+        num=14,  # 14 pads -> 0..13
     )
     pad_group.add_pad(gpio_range)
     # RangePad.add_pad() will expand to gpio_0 ... gpio_13 and assign indices
