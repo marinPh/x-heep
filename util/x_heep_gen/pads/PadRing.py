@@ -66,6 +66,8 @@ class PadRing:
         pad_constant_driver_assign = ""
         pad_mux_process = ""
 
+        bondpad_offsets = prepare_pads_for_layout(self.pad_group)
+
         pad_muxed_list = self.pad_group.get_multiplexed_pads()
         (
             pad_objs,
@@ -82,6 +84,8 @@ class PadRing:
 
         # external pads (continue indexing, always emit ring)
         # merge, totals
+        
+        
 
         total_pad = len(pad_objs)
         total_pad_muxed = len(pad_muxed_list)
@@ -99,19 +103,12 @@ class PadRing:
             last_pad.remove_comma_io_interface()
             pad_objs.append(last_pad)
 
-        top_pad_list = None
-        bottom_pad_list = None
-        left_pad_list = None
-        right_pad_list = None
-        bondpad_offsets = None
-
-        (
-            top_pad_list,
-            bottom_pad_list,
-            left_pad_list,
-            right_pad_list,
-            bondpad_offsets,
-        ) = prepare_pads_for_layout(self.pad_group, pad_objs)
+        top_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.TOP]
+        bottom_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.BOTTOM]
+        left_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.LEFT]
+        right_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.RIGHT]
+        bondpad_offsets = bondpad_offsets 
+        
 
         self.pad_list = pad_objs
         self.total_pad_list = pad_objs
@@ -141,7 +138,7 @@ def pad_subset(pad_list: List[PadDef], all_pads: List[Pad]) -> List[Pad]:
     return subset
 
 
-def prepare_pads_for_layout(pad_group: PadGroup, pad_list: List[Pad] = None):
+def prepare_pads_for_layout(pad_group: PadGroup):
     """
     Separate pads into pad lists for the top, bottom, left, and right pads and order them according to their layout_index attribute, and set their positions on the floorplan.
     """
@@ -157,7 +154,7 @@ def prepare_pads_for_layout(pad_group: PadGroup, pad_list: List[Pad] = None):
         PadMapping.RIGHT: right_pad_list,
         PadMapping.LEFT: left_pad_list,
     }
-    for pad in pad_group.pads:
+    for pad in pad_group.get_pads():
         print("Processing pad:", pad.name, "with mapping:", pad.mapping)
         if pad.mapping in pad_lists.keys():
             pad_lists[pad.mapping].append(pad)
@@ -183,12 +180,10 @@ def prepare_pads_for_layout(pad_group: PadGroup, pad_list: List[Pad] = None):
     # Calculate pad offsets and check wheth
     ## Conver lists of PadDef to lists of Pad objects
 
-    top_pad_list, bondpad_offset_top = set_pad_positions(pad_group, top_pad_list)
-    bottom_pad_list, bondpad_offset_bottom = set_pad_positions(
-        pad_group, bottom_pad_list
-    )
-    left_pad_list, bondpad_offset_left = set_pad_positions(pad_group, left_pad_list)
-    right_pad_list, bondpad_offset_right = set_pad_positions(pad_group, right_pad_list)
+    bondpad_offset_top = set_pad_positions(pad_group, top_pad_list)
+    bondpad_offset_bottom = set_pad_positions(pad_group, bottom_pad_list)
+    bondpad_offset_left = set_pad_positions(pad_group, left_pad_list)
+    bondpad_offset_right = set_pad_positions(pad_group, right_pad_list)
 
     bondpad_offsets = {
         "top": bondpad_offset_top,
@@ -197,13 +192,7 @@ def prepare_pads_for_layout(pad_group: PadGroup, pad_list: List[Pad] = None):
         "right": bondpad_offset_right,
     }
 
-    return (
-        pad_subset(top_pad_list, pad_list),
-        pad_subset(bottom_pad_list, pad_list),
-        pad_subset(left_pad_list, pad_list),
-        pad_subset(right_pad_list, pad_list),
-        bondpad_offsets,
-    )
+    return bondpad_offsets
 
 
 def build_mux_list(
@@ -268,22 +257,33 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
     # Determine which dimension we are dealing with
     side = pad_list[0].mapping
 
+    print(
+        f"__Calculating pad positions for side: {side.name} width: {fp_width} length: {fp_length}__"
+    )
+
     if side in (PadMapping.TOP, PadMapping.BOTTOM):
-        side_length = fp_length
-    elif side in (PadMapping.LEFT, PadMapping.RIGHT):
         side_length = fp_width
+    elif side in (PadMapping.LEFT, PadMapping.RIGHT):
+        side_length = fp_length
     else:
         print("ERROR: Invalid pad mapping {0}".format(side))
         return
 
     # Calculate space occupied by bondpads on the designated side of the chip
-    print("___Calculating bondpad space for side:", side,pad_list)
     widths = np.array([pad.layout.bond_pad.width for pad in pad_list])
     bp_space = float(np.sum(widths))
-    print("___Total bondpad widths:", bp_space)
+    print("___Initial total bondpad widths:", widths, "side :", side, "___")
+    print("___Total bondpad widths:", bp_space, "side :", side, "___")
+    print("___Number of bondpads on side", side, ":", bp_spacing, "___")
     bp_space += bp_spacing * (len(pad_list) - 1)
+    print("___Total bondpad space with spacing:", bp_space, "side :", side, "___")
     # Check if the bondpads are able to fit on the side
     extra_space = side_length - bp_space - 2 * edge_to_bp
+
+    print(
+        f"__ extra_space calculation: {side_length} - {bp_space} - 2 * {edge_to_bp} = {extra_space} __"
+    )
+    print("___Extra space for bondpads on side", side, ":", extra_space)
     if extra_space < 0:
         print(
             "ERROR: Bondpads cannot fit on side {0}. Either reduce bondpad spacing or move some pads to another side".format(
@@ -313,7 +313,7 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
             except KeyError:
                 print(
                     "ERROR: Width not defined for pad cell {0} of pad {1}".format(
-                        pad_cell, pad.cell_name
+                        pad_cell, pad.layout.name
                     )
                 )
                 return
@@ -340,22 +340,33 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
                     )
                 )
                 return
-        if (i == 0) & (pad.layout.offset is None) & (pad.layout.skip is None):
+        if (i == 0) & (pad.layout.offset is None):
+            # First pad: set offset to align with bondpad
             pad.layout.offset = (
                 bp_offset
                 - (edge_to_pad - edge_to_bp)
                 + (bp_width / 2)
                 - (pad_width / 2)
             )
+            print(
+                f" Calculating first pad offset on {side.name}: {pad.layout.offset} = {bp_offset}- ({edge_to_pad} - {edge_to_bp})+ ({bp_width} / 2)- ({pad_width} / 2) "
+            )
+            print(
+                f"__Setting offset for first pad {pad.name} on side {side.name}, of {pad.layout.offset}__"
+            )
 
         # If the layout/skip of the pads is not predefined, calculate automatically
-        if (pad.layout.offset is None) & (pad.layout.skip is None):
+        if (i > 0) & (pad.layout.skip is None):
             pad.layout.skip = (
                 (last_bp_width + bp_width) / 2
                 + bp_spacing
                 - (last_pad_width + pad_width) / 2
             )
-    return pad_list, bp_offset
+            print(
+                f"__Setting skip for first pad {pad.name} on side {side.name}, of {pad.layout.skip}__"
+            )
+
+    return bp_offset
 
 
 def build_pads_from_block(
@@ -369,7 +380,7 @@ def build_pads_from_block(
     pad_muxed_list = []
     const_assign_parts = []
     mux_process_parts = []
-    for i, block in enumerate(pad_group.pads):
+    for i, block in enumerate(pad_group.get_pads()):
         print(f"print block: {block}")
         pad_type = block.type
 
@@ -400,7 +411,9 @@ def build_pads_from_block(
                 pad_constant_attribute,
                 pad_layout,
             )
-          
+        print(
+            f"____ Built mux list for pad {block.name} with has {block.layout.offset}."
+        )
         pad_obj = Pad(
             block.name,
             f"pad_{block.name}_i",
@@ -417,7 +430,6 @@ def build_pads_from_block(
             pad_constant_attribute,
             pad_layout,
             block.orient,
-            
         )
 
         # build sections (internal can skip ring; external always emits ring)

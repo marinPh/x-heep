@@ -65,6 +65,11 @@ def _assert_mapping(m: str, where: str) -> None:
         raise ValidationError(
             f"{where}: invalid mapping '{m}'. Valid: {list(PadMapping)}"
         )
+def _assert_orientation(o: str, where: str) -> None:
+    if o not in VALID_ORIENTATIONS:
+        raise ValidationError(
+            f"{where}: invalid orientation '{o}'. Valid: {sorted(VALID_ORIENTATIONS)}"
+        )
 
 
 @dataclass(frozen=True)
@@ -86,6 +91,15 @@ class Layout:
     cell_pad: Optional[Dimension] = None
     offset: Optional[float] = None
     skip: Optional[float] = None
+    
+    def copy(self) -> Layout:
+        return Layout(
+            name=self.name,
+            bond_pad=self.bond_pad,
+            cell_pad=self.cell_pad,
+            offset=self.offset,
+            skip=self.skip,
+        )
 
 
 @dataclass(frozen=False)
@@ -107,6 +121,7 @@ class PadDef:
     def __post_init__(self):
         _assert_type(self.type, f"PadDef '{self.name}'")
         _assert_mapping(self.mapping, f"PadDef '{self.name}'")
+        _assert_orientation(self.orient, f"PadDef '{self.name}'")
         if self.layout.bond_pad is not None and self.layout.cell_pad is None:
             raise ValidationError(
                 f"PadDef '{self.name}': bond_pad is defined but cell_pad is not."
@@ -139,9 +154,11 @@ class RangePad(PadDef):
                     name=pad_name,
                     type=self.type,
                     mapping=self.mapping,
-                    layout=self.layout,
+                    layout_index=self.layout_index,
+                    layout=self.layout.copy(),
                     layers=self.layers,
                     properties=self.properties.copy(),
+                    orient=self.orient,
                 )
             )
         self.pad_defs = pad_defs  # store generated pad defs
@@ -232,6 +249,10 @@ class PadGroup:
 
     def get_multiplexed_pads(self) -> List[MultiplexedPad]:
         return [pad for pad in self.pads if isinstance(pad, MultiplexedPad)]
+    
+    def get_pads(self) -> Dict[str, List[PadDef]]:
+        return sorted(self.pads, key=lambda pad: pad.layout_index)
+        
 
     def add_layout(self, padDef: PadDef) -> None:
         print(self.layouts)

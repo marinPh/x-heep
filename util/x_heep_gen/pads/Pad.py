@@ -399,18 +399,19 @@ class Pad:
         self.keep_internal = []
 
         self.is_muxed = False
-        print(
-            f"Creating Pad: {self.name} of type {self.pad_type} mapped to {self.pad_mapping} is driven manually: {pad_driven_manually} skip declaration: {pad_skip_declaration}"
-        )
+
         self.is_driven_manually = pad_driven_manually
         self.do_skip_declaration = pad_skip_declaration
 
         self.layout_index = pad_layout_index
-        self.layout_orient = orient
-        self.layout_cell = pad_layout.cell_pad
-        self.layout_bondpad = pad_layout.bond_pad
+        self.layout_orient = orient.lower() if orient else orient
+        self.layout_cell = pad_layout.name
+        self.layout_bondpad = f"BOND{pad_layout.name}"
         self.layout_offset = pad_layout.offset
         self.layout_skip = pad_layout.skip
+        print(
+            f"Creating Pad: {self.name} of offset {self.layout_offset}"
+        )
 
         if len(pad_mux_list) == 0:
             self.signal_name_drive.append(self.signal_name)
