@@ -405,10 +405,10 @@ class Pad:
 
         self.layout_index = pad_layout_index
         self.layout_orient = orient.lower() if orient else orient
-        self.layout_cell = pad_layout.name
-        self.layout_bondpad = f"BOND{pad_layout.name}"
-        self.layout_offset = pad_layout.offset
-        self.layout_skip = pad_layout.skip
+        self.layout_cell = pad_layout.name if pad_layout else ""
+        self.layout_bondpad = f"BOND{pad_layout.name}" if pad_layout else ""
+        self.layout_offset = pad_layout.offset if pad_layout else ""
+        self.layout_skip = pad_layout.skip if pad_layout else ""
         print(f"Creating Pad: {self.name} of offset {self.layout_offset}")
 
         if len(pad_mux_list) == 0:

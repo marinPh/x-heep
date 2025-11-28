@@ -210,9 +210,9 @@ def build_mux_list(
 ):
 
     mux_list = []
-
-    pad_layout.skip = None
-    pad_layout.offset = None
+    if pad_layout is not None:
+        pad_layout.skip = None
+        pad_layout.offset = None
 
     for mux_name, entry in block.alts:
         mux = Pad(
@@ -417,11 +417,8 @@ def build_pads_from_block(
                 pads_attributes_present,
                 pads_attributes_bits,
                 pad_constant_attribute,
-                pad_layout.copy(),
+                pad_layout.copy() if pad_layout is not None else None,
             )
-        print(
-            f"____ Built mux list for pad {block.name} with has {block.layout.offset}."
-        )
         pad_obj = Pad(
             block.name,
             f"pad_{block.name}_i",

@@ -124,8 +124,8 @@ class PadDef:
         _assert_mapping(self.mapping, f"PadDef '{self.name}'")
         _assert_orientation(self.orient, f"PadDef '{self.name}'")
         if self.layout is not None:
-            self.layout = self.layout.copy()
-        if self.layout.bond_pad is not None and self.layout.cell_pad is None:
+            self.layout = self.layout.copy() if isinstance(self.layout, Layout) else None
+        if self.layout is not None and  self.layout.bond_pad is not None and self.layout.cell_pad is None:
             raise ValidationError(
                 f"PadDef '{self.name}': bond_pad is defined but cell_pad is not."
             )
@@ -158,7 +158,7 @@ class RangePad(PadDef):
                     type=self.type,
                     mapping=self.mapping,
                     layout_index=self.layout_index,
-                    layout=self.layout.copy(),
+                    layout=self.layout.copy() if self.layout is not None else None,
                     layers=self.layers,
                     properties=self.properties.copy(),
                     orient=self.orient,
@@ -180,7 +180,6 @@ class MultiplexedPad(PadDef):
 @dataclass(frozen=False)
 class PadGroup:
     name: str = ""
-    pads: List[PadDef] = field(default_factory=list)
     physical_properties: Dict[str, Any] = field(default_factory=dict)
     pad_edge_offset: Optional[float] = None
     bondpad_edge_offset: Optional[float] = None
@@ -190,26 +189,12 @@ class PadGroup:
     pad_attribute: Optional[Dict[str, Any]] = None
     # could be a better type than str
     bits: Optional[str] = None
-    # Should not be assigned a default value here
-    layouts: Dict[str, Layout] = field(default_factory=dict)
+    
+    # internal state – user CANNOT pass these in __init__
+    pads: List[PadDef] = field(default_factory=list, init=False)
+    layouts: Dict[str, Layout] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
-        self.layouts: Optional[Dict[str, Layout]] = {}
-
-        def layout_is_incomplete(layout: Layout) -> bool:
-            """Check one Layout object recursively."""
-            # layout.name may be None → okay
-            # but both pads should be defined
-            if layout.cell_pad is None or layout.bond_pad is None:
-                return True
-
-            # Check nested dimensions
-            if layout.cell_pad.width is None:
-                return True
-            if layout.bond_pad.width is None:
-                return True
-
-            return False
 
         # --- check global physical fields ---
         global_missing = (
@@ -217,32 +202,22 @@ class PadGroup:
             or self.bondpad_edge_offset is None
             or self.fp_dim is None
         )
-        # --- check layout completeness ---
-        layout_missing = any(layout_is_incomplete(lay) for lay in self.layouts.values())
-        # --- IF ANY MISSING → wipe and warn ---
-        if global_missing or layout_missing:
+        if global_missing:
             # ANSI bright yellow warning
             warning = (
                 "\033[93m[PadGroup WARNING] One or more physical attributes or "
                 "layout dimensions are missing. All physical properties are "
                 "being set to None.\033[0m"
             )
-            
-            #print all that are missing
+
+            # print all that are missing
             if self.pad_edge_offset is None:
                 warning += "\n - pad_edge_offset is missing"
             if self.bondpad_edge_offset is None:
                 warning += "\n - bondpad_edge_offset is missing"
             if self.fp_dim is None:
                 warning += "\n - fp_dim is missing"
-            if self.bp_spacing is None:
-                warning += "\n - bp_spacing is missing"
-            if self.cell_spacing is None:
-                warning += "\n - cell_spacing is missing"
-            for lay_name, lay in self.layouts.items():
-                if layout_is_incomplete(lay):
-                    warning += f"\n - layout '{lay_name}' is incomplete"
-            
+
             print(warning)
             # wipe globals
             self.pad_edge_offset = None
@@ -250,8 +225,6 @@ class PadGroup:
             self.fp_dim = None
             self.bp_spacing = None
             self.cell_spacing = None
-            # wipe layouts
-            self.layouts = {}
             # (optional) also wipe physical_properties
             self.physical_properties = {}
 
@@ -260,7 +233,41 @@ class PadGroup:
             raise ValidationError(
                 f"PadGroup '{self.name}': pad with name '{pad.name}' already exists."
             )
-        self.add_layout(pad)
+
+        # Look at existing pads
+        if self.pads:
+            has_any_layout = any(p.layout is not None for p in self.pads)
+            has_any_no_layout = any(p.layout is None for p in self.pads)
+
+            # If we already have a mixture, that's an internal inconsistency
+            if has_any_layout and has_any_no_layout:
+                raise ValidationError(
+                    f"PadGroup '{self.name}': inconsistent state detected: "
+                    "some pads have layouts and some do not."
+                )
+
+            # Case A: existing pads all have a layout, new pad must also have a layout
+            if has_any_layout and pad.layout is None:
+                raise ValidationError(
+                    f"PadGroup '{self.name}': pad '{pad.name}' has no layout defined, "
+                    "while other pads do."
+                )
+
+            # Case B: existing pads all have no layout, new pad must also have no layout
+            if has_any_no_layout and pad.layout is not None:
+                raise ValidationError(
+                    f"PadGroup '{self.name}': pad '{pad.name}' has a layout defined, "
+                    "while previous pads had none."
+                )
+
+            # Case C: forbid layouts when physical attributes are missing:
+            if pad.layout is not None and self.fp_dim is None:
+                raise ValidationError(
+                    f"PadGroup '{self.name}': cannot add pad '{pad.name}' with layout "
+                    f"when PadGroup has no physical attributes. layout = {pad.layout}"
+                )
+        if pad.layout is not None:
+            self.add_layout(pad)
         if isinstance(pad, RangePad):
             pads = pad.pad_defs
             self.pads.extend(pads)
@@ -268,10 +275,10 @@ class PadGroup:
             self.pads.append(pad)
 
     def get_physical_attributes(self):
-        
+
         if self.fp_dim is None:
             return None
-        
+
         def get_dim_dict(dim: Dimension) -> Dict[str, Any]:
             return {
                 key: value
@@ -289,9 +296,9 @@ class PadGroup:
             d = get_dim_dict(dim)
             if d:
                 dimensions[key] = d
-        
+
         for name, layout in self.layouts.items():
-            
+
             add_dim_entry(dimensions, name, layout.cell_pad)
             add_dim_entry(dimensions, f"BOND{name}", layout.bond_pad)
 
@@ -318,7 +325,7 @@ class PadGroup:
     def get_multiplexed_pads(self) -> List[MultiplexedPad]:
         return [pad for pad in self.pads if isinstance(pad, MultiplexedPad)]
 
-    def get_pads(self) ->List[PadDef]:
+    def get_pads(self) -> List[PadDef]:
         return sorted(self.pads, key=lambda pad: pad.layout_index)
 
     def add_layout(self, padDef: PadDef) -> None:
@@ -394,6 +401,7 @@ class PadGroup:
 
         # ---- layouts from "dimensions" ----
         dims = pa.get("dimensions")
+        print(f"dims = {dims}")
         if dims is not None:
             layouts = PadGroup._build_layouts(dims)
         else:
@@ -439,7 +447,7 @@ class PadGroup:
             if cell_name in layouts:
                 pad_layout = layouts[cell_name]
             else:
-                pad_layout = Layout(name=cell_name)
+                pad_layout = None
 
             pad_orient = orient(la.get("orient"))
 
