@@ -3,6 +3,40 @@ from pathlib import Path
 import os
 from deepdiff import DeepDiff
 
+def _format_list_delta(prefix, old_list, new_list):
+    """
+    Produce a compact diff for two lists.
+    Shows:
+    - removed items
+    - added items
+    - changed items (same index but different content)
+    """
+    lines = [f"{prefix}: list changed:"]
+
+    max_len = max(len(old_list), len(new_list))
+
+    for i in range(max_len):
+        in_old = i < len(old_list)
+        in_new = i < len(new_list)
+
+        if in_old and not in_new:
+            lines.append(f"  - [{i}]: {old_list[i]!r}  (removed)")
+        elif not in_old and in_new:
+            lines.append(f"  + [{i}]: {new_list[i]!r}  (added)")
+        else:
+            old = old_list[i]
+            new = new_list[i]
+            if old != new:
+                # If both are dicts → reuse dict diff
+                if isinstance(old, dict) and isinstance(new, dict):
+                    nested = _format_dict_delta(f"{prefix}[{i}]", old, new)
+                    lines.append("  " + nested.replace("\n", "\n  "))
+                else:
+                    lines.append(f"  * [{i}]: {old!r} → {new!r}")
+
+    return "\n".join(lines)
+
+
 
 def _format_dict_delta(prefix, old, new):
     """
@@ -20,7 +54,10 @@ def _format_dict_delta(prefix, old, new):
             lines.append(f"  + {k}: {new[k]!r}  (added)")
         else:
             if old[k] != new[k]:
-                lines.append(f"  * {k}: {old[k]!r} → {new[k]!r}")
+                if type(old[k]) ==  type(new[k]):
+                    return _format_value_change(f"{prefix}['{k}']", old[k], new[k])
+                else:
+                    lines.append(f"  * {k}: {old[k]!r} → {new[k]!r}")
     return "\n".join(lines)
 
 
@@ -31,6 +68,8 @@ def _format_value_change(path, old, new):
     """
     if isinstance(old, dict) and isinstance(new, dict):
         return _format_dict_delta(path, old, new)
+    elif isinstance(old, list) and isinstance(new, list):
+        return _format_list_delta(path, old, new)
     return f"{path}: {old!r} → {new!r}"
 
 

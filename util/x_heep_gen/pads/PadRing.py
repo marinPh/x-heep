@@ -205,6 +205,10 @@ def build_mux_list(
 ):
 
     mux_list = []
+    
+   
+    pad_layout.skip = None
+    pad_layout.offset = None
 
     for mux_name, entry in block.alts:
         mux = Pad(
@@ -356,7 +360,7 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
             )
 
         # If the layout/skip of the pads is not predefined, calculate automatically
-        if (i > 0) & (pad.layout.skip is None):
+        if  (pad.layout.skip is None)  & (pad.layout.offset is None):
             pad.layout.skip = (
                 (last_bp_width + bp_width) / 2
                 + bp_spacing
@@ -409,7 +413,7 @@ def build_pads_from_block(
                 pads_attributes_present,
                 pads_attributes_bits,
                 pad_constant_attribute,
-                pad_layout,
+                pad_layout.copy(),
             )
         print(
             f"____ Built mux list for pad {block.name} with has {block.layout.offset}."

@@ -122,6 +122,8 @@ class PadDef:
         _assert_type(self.type, f"PadDef '{self.name}'")
         _assert_mapping(self.mapping, f"PadDef '{self.name}'")
         _assert_orientation(self.orient, f"PadDef '{self.name}'")
+        if self.layout is not None:
+            self.layout = self.layout.copy()
         if self.layout.bond_pad is not None and self.layout.cell_pad is None:
             raise ValidationError(
                 f"PadDef '{self.name}': bond_pad is defined but cell_pad is not."
