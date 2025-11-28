@@ -1,3 +1,4 @@
+from nbformat import ValidationError
 from .Pad import Pad, PadMapping
 from .PadDef import PadDef, RangePad, MultiplexedPad, PadGroup, Layout
 from typing import List, Tuple, Dict, Any, Optional
@@ -65,8 +66,9 @@ class PadRing:
 
         pad_constant_driver_assign = ""
         pad_mux_process = ""
-
-        bondpad_offsets = prepare_pads_for_layout(self.pad_group)
+        bondpad_offsets = None
+        if self.pad_group.fp_dim is not None:
+            bondpad_offsets = prepare_pads_for_layout(self.pad_group)
 
         pad_muxed_list = self.pad_group.get_multiplexed_pads()
         (
@@ -126,7 +128,7 @@ class PadRing:
         self.external_pad_list = external_pad_list
         self.pad_constant_driver_assign = pad_constant_driver_assign
         self.pad_mux_process = pad_mux_process
-        self.pads_attributes = self.pads_attributes
+        self.pads_attributes = self.pad_group.pad_attribute
 
 
 def pad_subset(pad_list: List[PadDef], all_pads: List[Pad]) -> List[Pad]:
@@ -160,11 +162,13 @@ def prepare_pads_for_layout(pad_group: PadGroup):
         if pad.mapping in pad_lists.keys():
             pad_lists[pad.mapping].append(pad)
         else:
+            pad_mapping = getattr(pad, "mapping", getattr(pad, "pad_mapping", None))
             print(
                 "ERROR: Pad {0} has an invalid mapping {1}. Please set mapping to top, bottom, left, or right.".format(
-                    pad.name, getattr(pad, "pad_mapping", map.mapping)
+                    pad.name, pad_mapping
                 )
             )
+
             raise ValueError("Invalid pad mapping")
 
     # Order pads according to layout index
@@ -236,27 +240,25 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
     """Calculate the `offset` and `skip` attributes of the pads such that the bondpads are centered on each side and the pads are aligned with their respective bondpads.
     Perform checks to make sure the pads can all fit on the requested side without violating design constraints or exceeding layout margins.
     """
-    # TODO: what do we give if no pad on this side
+    # FIXME: what do we give if no pad on this side
     if len(pad_list) == 0:
-        return list(), 0
+        return 0.0
 
     # Ensure the physical attributes were properly set in the pad config file
     try:
-
-        fp_length = (
-            float(pad_group.fp_dim.length)
-            if pad_group.fp_dim.length
-            else float(pad_group.fp_dim.width)
-        )
-        fp_width = float(pad_group.fp_dim.width)
+        fp = pad_group.fp_dim
+        if fp is None:
+            raise ValidationError("PadGroup.fp_dim is not set")
+    
+        fp_length = float(fp.length) if fp.length is not None else float(fp.width)
+        fp_width = float(fp.width)
         edge_to_bp = float(pad_group.bondpad_edge_offset)
         edge_to_pad = float(pad_group.pad_edge_offset)
         bp_spacing = float(pad_group.bp_spacing)
-    except KeyError:
-        print(
-            "ERROR: Please set all of the mandatory fields of the physical_attributes in the pad config file."
-        )
-        return
+    except (AttributeError, TypeError, ValueError) as e:
+        raise ValidationError(
+            "Please set all mandatory physical_attributes in PadGroup"
+        ) from e
 
     # Determine which dimension we are dealing with
     side = pad_list[0].mapping
@@ -271,7 +273,7 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
         side_length = fp_length
     else:
         print("ERROR: Invalid pad mapping {0}".format(side))
-        return
+        raise ValueError("Invalid pad mapping")
 
     # Calculate space occupied by bondpads on the designated side of the chip
     widths = np.array([pad.layout.bond_pad.width for pad in pad_list])
@@ -294,6 +296,7 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
                 side
             )
         )
+        raise ValueError("Bondpads cannot fit on side {0}".format(side))
 
     # Calculate distance from edge to first bondpad (i.e. bondpad offset) to center the pads
     bp_offset = extra_space / 2
@@ -320,10 +323,11 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
                         pad_cell, pad.layout.name
                     )
                 )
-                return
+                raise ValueError("Pad cell width not defined")
         else:
-            print("ERROR: A pad cell is not defined for pad {1}".format(pad.cell_name))
-            return
+            print("ERROR: A pad cell is not defined for pad {0}".format(pad.name))
+
+            raise ValueError("Pad cell not defined")
 
         if i > 0:
             last_pad_cell = pad_list[i - 1].layout.cell_pad
@@ -332,19 +336,19 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
                     last_pad_width = float(last_pad_cell.width)
                 except KeyError:
                     print(
-                        "ERROR: Width not defined for pad cell {0} of pad {1}".format(
-                            last_pad_cell, pad_list[i - 1].name
+                        "ERROR: A pad cell is not defined for pad {0}".format(
+                            pad_list[i - 1].name
                         )
                     )
-                    return
+                    raise ValueError("Pad cell width not defined")
             else:
                 print(
                     "ERROR: A pad cell is not defined for pad {1}".format(
                         pad_list[i - 1].name
                     )
                 )
-                return
-        if (i == 0) & (pad.layout.offset is None):
+                raise ValueError("Pad cell not defined")
+        if (i == 0) and (pad.layout.offset is None):
             # First pad: set offset to align with bondpad
             pad.layout.offset = (
                 bp_offset
@@ -360,7 +364,7 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
             )
 
         # If the layout/skip of the pads is not predefined, calculate automatically
-        if (pad.layout.skip is None) & (pad.layout.offset is None):
+        if (pad.layout.skip is None) and (pad.layout.offset is None):
             pad.layout.skip = (
                 (last_bp_width + bp_width) / 2
                 + bp_spacing

@@ -14,6 +14,7 @@ from .memory_ss.linker_section import LinkerSection
 from .xheep import BusType, XHeep
 from .peripherals.base_peripherals_domain import BasePeripheralDomain
 from .peripherals.user_peripherals_domain import UserPeripheralDomain
+from .pads.PadDef import PadGroup
 from .peripherals.base_peripherals import (
     SOC_ctrl,
     Bootrom,
@@ -518,7 +519,8 @@ def load_pad_cfg(f: PurePath) -> PadRing:
                 srcfull = file.read()
                 pad_cfg = hjson.loads(srcfull, use_decimal=True)
                 pad_cfg = JsonRef.replace_refs(pad_cfg)
-                pad_ring = PadRing(pad_cfg)
+                pad_group = PadGroup.build_pad_group(pad_cfg, "x_heep_top")
+                pad_ring = PadRing(pad_group)
                 return pad_ring
             except ValueError:
                 raise SystemExit(sys.exc_info()[1])

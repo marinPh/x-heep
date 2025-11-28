@@ -39,8 +39,7 @@ class PadActive(Enum):
 
 VALID_TYPES = {t.value for t in PadType}
 
-VALID_ORIENTATIONS = {o.value for o in Orientation}
-
+VALID_ORIENTATIONS = {o.value for o in Orientation}.union({None})
 VALID_MAPPINGS = {m.value for m in PadMapping}
 
 VALID_ACTIVES = {a.value for a in PadActive}
@@ -191,10 +190,70 @@ class PadGroup:
     pad_attribute: Optional[Dict[str, Any]] = None
     # could be a better type than str
     bits: Optional[str] = None
-    layouts: Dict[str, Layout] = field(default_factory=dict)  # <-- FIXED
+    # Should not be assigned a default value here
+    layouts: Dict[str, Layout] = field(default_factory=dict)
 
-    def _post_init__(self):
+    def __post_init__(self):
         self.layouts: Optional[Dict[str, Layout]] = {}
+
+        def layout_is_incomplete(layout: Layout) -> bool:
+            """Check one Layout object recursively."""
+            # layout.name may be None → okay
+            # but both pads should be defined
+            if layout.cell_pad is None or layout.bond_pad is None:
+                return True
+
+            # Check nested dimensions
+            if layout.cell_pad.width is None:
+                return True
+            if layout.bond_pad.width is None:
+                return True
+
+            return False
+
+        # --- check global physical fields ---
+        global_missing = (
+            self.pad_edge_offset is None
+            or self.bondpad_edge_offset is None
+            or self.fp_dim is None
+        )
+        # --- check layout completeness ---
+        layout_missing = any(layout_is_incomplete(lay) for lay in self.layouts.values())
+        # --- IF ANY MISSING → wipe and warn ---
+        if global_missing or layout_missing:
+            # ANSI bright yellow warning
+            warning = (
+                "\033[93m[PadGroup WARNING] One or more physical attributes or "
+                "layout dimensions are missing. All physical properties are "
+                "being set to None.\033[0m"
+            )
+            
+            #print all that are missing
+            if self.pad_edge_offset is None:
+                warning += "\n - pad_edge_offset is missing"
+            if self.bondpad_edge_offset is None:
+                warning += "\n - bondpad_edge_offset is missing"
+            if self.fp_dim is None:
+                warning += "\n - fp_dim is missing"
+            if self.bp_spacing is None:
+                warning += "\n - bp_spacing is missing"
+            if self.cell_spacing is None:
+                warning += "\n - cell_spacing is missing"
+            for lay_name, lay in self.layouts.items():
+                if layout_is_incomplete(lay):
+                    warning += f"\n - layout '{lay_name}' is incomplete"
+            
+            print(warning)
+            # wipe globals
+            self.pad_edge_offset = None
+            self.bondpad_edge_offset = None
+            self.fp_dim = None
+            self.bp_spacing = None
+            self.cell_spacing = None
+            # wipe layouts
+            self.layouts = {}
+            # (optional) also wipe physical_properties
+            self.physical_properties = {}
 
     def add_pad(self, pad: PadDef) -> None:
         if any(existing_pad.name == pad.name for existing_pad in self.pads):
@@ -209,6 +268,10 @@ class PadGroup:
             self.pads.append(pad)
 
     def get_physical_attributes(self):
+        
+        if self.fp_dim is None:
+            return None
+        
         def get_dim_dict(dim: Dimension) -> Dict[str, Any]:
             return {
                 key: value
@@ -226,8 +289,9 @@ class PadGroup:
             d = get_dim_dict(dim)
             if d:
                 dimensions[key] = d
-
+        
         for name, layout in self.layouts.items():
+            
             add_dim_entry(dimensions, name, layout.cell_pad)
             add_dim_entry(dimensions, f"BOND{name}", layout.bond_pad)
 
@@ -254,7 +318,7 @@ class PadGroup:
     def get_multiplexed_pads(self) -> List[MultiplexedPad]:
         return [pad for pad in self.pads if isinstance(pad, MultiplexedPad)]
 
-    def get_pads(self) -> Dict[str, List[PadDef]]:
+    def get_pads(self) ->List[PadDef]:
         return sorted(self.pads, key=lambda pad: pad.layout_index)
 
     def add_layout(self, padDef: PadDef) -> None:
@@ -268,3 +332,162 @@ class PadGroup:
                 else:
                     return
         self.layouts[padDef.layout.name] = padDef.layout
+
+    def _to_bool(v: Any) -> bool:
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            return v.strip().lower() == "true"
+        return bool(v)
+
+    def _build_layouts(
+        dimensions: Mapping[str, Mapping[str, Any]],
+    ) -> Dict[str, Layout]:
+        """
+        Build Layout objects from the 'dimensions' subsection.
+
+        Expects things like:
+          BONDPAD1, BONDPAD2, ..., PAD1, PAD2, ...
+        """
+        layouts: Dict[str, Layout] = {}
+
+        for name, dim in dimensions.items():
+            # Only start from PAD* entries; use matching BONDPAD*
+            if not name.startswith("PAD"):
+                continue
+
+            suffix = name[len("PAD") :]  # "1", "2", ...
+            pad_dim = Dimension(width=dim["width"], length=dim.get("length"))
+
+            bond_key = f"BONDPAD{suffix}"
+            bond_dim = None
+            if bond_key in dimensions:
+                bdim = dimensions[bond_key]
+                bond_dim = Dimension(width=bdim["width"], length=bdim.get("length"))
+
+            layouts[name] = Layout(name=name, bond_pad=bond_dim, cell_pad=pad_dim)
+
+        return layouts
+
+    def build_pad_group(cfg: Mapping[str, Any], name: str = "x_heep_top") -> PadGroup:
+        # -------------------------------------------------------------------------
+        # Physical attributes (SAFE)
+        # -------------------------------------------------------------------------
+        pa = cfg.get("physical_attributes", {})
+
+        # ---- floorplan dimensions ----
+        fp = pa.get("floorplan_dimensions")
+        if fp is not None:
+            fp_dim = Dimension(width=fp.get("width", 0), length=fp.get("length"))
+        else:
+            fp_dim = None  # <-- safe default
+
+        # ---- edge offsets ----
+        edge_offset = pa.get("edge_offset", {})
+        pad_edge_offset = edge_offset.get("pad")
+        bondpad_edge_offset = edge_offset.get("bondpad")
+
+        # ---- spacing ----
+        spacing = pa.get("spacing", {})
+        bp_spacing = spacing.get("bondpad")
+        cell_spacing = spacing.get("cell")
+
+        # ---- layouts from "dimensions" ----
+        dims = pa.get("dimensions")
+        if dims is not None:
+            layouts = PadGroup._build_layouts(dims)
+        else:
+            layouts = {}  # no layouts defined
+
+        # -------------------------------------------------------------------------
+        # Build the PadGroup with safe defaults
+        # -------------------------------------------------------------------------
+        pad_group = PadGroup(
+            name=name,
+            pad_edge_offset=pad_edge_offset,
+            bondpad_edge_offset=bondpad_edge_offset,
+            bp_spacing=bp_spacing,
+            cell_spacing=cell_spacing,
+            fp_dim=fp_dim,
+        )
+
+        # pre-register layouts only if present
+        if layouts:
+            pad_group.layouts.update(layouts)
+
+        # helper: orientation "r90" → "R90"
+        def orient(s: str | None) -> str | None:
+            if s is None:
+                return None
+            return s.upper()
+
+        # -------------------------------------------------------------------------
+        # Pads section (SAFE)
+        # -------------------------------------------------------------------------
+        pads_cfg = cfg.get("pads", {})
+
+        for pad_name, pad_info in pads_cfg.items():
+            pad_type = pad_info.get("type", "input")
+            mapping_str = pad_info.get("mapping", "top")
+            mapping = PadMapping(mapping_str)
+
+            la = pad_info.get("layout_attributes", {})
+            layout_index = la.get("index", 0)
+            cell_name = la.get("cell")
+
+            # Get layout from name → fallback: empty layout
+            if cell_name in layouts:
+                pad_layout = layouts[cell_name]
+            else:
+                pad_layout = Layout(name=cell_name)
+
+            pad_orient = orient(la.get("orient"))
+
+            active = pad_info.get("active", "high")
+            driven_manually = PadGroup._to_bool(pad_info.get("driven_manually", False))
+
+            base_kwargs = dict(
+                name=pad_name,
+                layout_index=layout_index,
+                type=pad_type,
+                mapping=mapping,
+                layout=pad_layout,
+                orient=pad_orient,
+                active=active,
+                driven_manually=driven_manually,
+            )
+
+            # ----------------- multiplexer case -----------------
+            if "mux" in pad_info:
+                alts_cfg = pad_info["mux"]
+                alts = []
+                for alt_name, alt_spec in alts_cfg.items():
+                    alt_type = alt_spec.get("type", pad_type)
+                    alts.append(
+                        (
+                            alt_name,
+                            SinglePad(
+                                name=alt_name,
+                                layout_index=layout_index,
+                                type=alt_type,
+                                mapping=mapping,
+                                layout=pad_layout,
+                                orient=pad_orient,
+                            ),
+                        )
+                    )
+
+                pad_group.add_pad(MultiplexedPad(alts=alts, **base_kwargs))
+                continue
+
+            # ----------------- range pad case -----------------
+            num = pad_info.get("num")
+            if isinstance(num, int) and num > 1:
+                offset = pad_info.get("num_offset", 0)
+                pad_group.add_pad(RangePad(num=num, offset=offset, **base_kwargs))
+                continue
+
+            # ----------------- simple pad case -----------------
+            pad_group.add_pad(SinglePad(**base_kwargs))
+
+        return pad_group
