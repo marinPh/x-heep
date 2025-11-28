@@ -2,7 +2,6 @@ from x_heep_gen.pads.PadDef import (
     SinglePad,
     MultiplexedPad,
     RangePad,
-
     PadGroup,
     Dimension,
     Layout,

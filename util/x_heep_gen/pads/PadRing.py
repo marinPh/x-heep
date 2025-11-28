@@ -84,8 +84,6 @@ class PadRing:
 
         # external pads (continue indexing, always emit ring)
         # merge, totals
-        
-        
 
         total_pad = len(pad_objs)
         total_pad_muxed = len(pad_muxed_list)
@@ -104,11 +102,14 @@ class PadRing:
             pad_objs.append(last_pad)
 
         top_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.TOP]
-        bottom_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.BOTTOM]
+        bottom_pad_list = [
+            pad for pad in pad_objs if pad.pad_mapping == PadMapping.BOTTOM
+        ]
         left_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.LEFT]
-        right_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.RIGHT]
-        bondpad_offsets = bondpad_offsets 
-        
+        right_pad_list = [
+            pad for pad in pad_objs if pad.pad_mapping == PadMapping.RIGHT
+        ]
+        bondpad_offsets = bondpad_offsets
 
         self.pad_list = pad_objs
         self.total_pad_list = pad_objs
@@ -205,8 +206,7 @@ def build_mux_list(
 ):
 
     mux_list = []
-    
-   
+
     pad_layout.skip = None
     pad_layout.offset = None
 
@@ -360,7 +360,7 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
             )
 
         # If the layout/skip of the pads is not predefined, calculate automatically
-        if  (pad.layout.skip is None)  & (pad.layout.offset is None):
+        if (pad.layout.skip is None) & (pad.layout.offset is None):
             pad.layout.skip = (
                 (last_bp_width + bp_width) / 2
                 + bp_spacing

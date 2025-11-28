@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 from deepdiff import DeepDiff
 
+
 def _format_list_delta(prefix, old_list, new_list):
     """
     Produce a compact diff for two lists.
@@ -37,7 +38,6 @@ def _format_list_delta(prefix, old_list, new_list):
     return "\n".join(lines)
 
 
-
 def _format_dict_delta(prefix, old, new):
     """
     Produce a compact, per-key diff for two dicts.
@@ -54,7 +54,7 @@ def _format_dict_delta(prefix, old, new):
             lines.append(f"  + {k}: {new[k]!r}  (added)")
         else:
             if old[k] != new[k]:
-                if type(old[k]) ==  type(new[k]):
+                if type(old[k]) == type(new[k]):
                     return _format_value_change(f"{prefix}['{k}']", old[k], new[k])
                 else:
                     lines.append(f"  * {k}: {old[k]!r} → {new[k]!r}")

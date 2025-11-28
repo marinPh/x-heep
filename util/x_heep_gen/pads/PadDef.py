@@ -65,6 +65,8 @@ def _assert_mapping(m: str, where: str) -> None:
         raise ValidationError(
             f"{where}: invalid mapping '{m}'. Valid: {list(PadMapping)}"
         )
+
+
 def _assert_orientation(o: str, where: str) -> None:
     if o not in VALID_ORIENTATIONS:
         raise ValidationError(
@@ -91,7 +93,7 @@ class Layout:
     cell_pad: Optional[Dimension] = None
     offset: Optional[float] = None
     skip: Optional[float] = None
-    
+
     def copy(self) -> Layout:
         return Layout(
             name=self.name,
@@ -251,10 +253,9 @@ class PadGroup:
 
     def get_multiplexed_pads(self) -> List[MultiplexedPad]:
         return [pad for pad in self.pads if isinstance(pad, MultiplexedPad)]
-    
+
     def get_pads(self) -> Dict[str, List[PadDef]]:
         return sorted(self.pads, key=lambda pad: pad.layout_index)
-        
 
     def add_layout(self, padDef: PadDef) -> None:
         print(self.layouts)
