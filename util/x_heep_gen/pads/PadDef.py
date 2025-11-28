@@ -124,8 +124,14 @@ class PadDef:
         _assert_mapping(self.mapping, f"PadDef '{self.name}'")
         _assert_orientation(self.orient, f"PadDef '{self.name}'")
         if self.layout is not None:
-            self.layout = self.layout.copy() if isinstance(self.layout, Layout) else None
-        if self.layout is not None and  self.layout.bond_pad is not None and self.layout.cell_pad is None:
+            self.layout = (
+                self.layout.copy() if isinstance(self.layout, Layout) else None
+            )
+        if (
+            self.layout is not None
+            and self.layout.bond_pad is not None
+            and self.layout.cell_pad is None
+        ):
             raise ValidationError(
                 f"PadDef '{self.name}': bond_pad is defined but cell_pad is not."
             )
@@ -189,7 +195,7 @@ class PadGroup:
     pad_attribute: Optional[Dict[str, Any]] = None
     # could be a better type than str
     bits: Optional[str] = None
-    
+
     # internal state – user CANNOT pass these in __init__
     pads: List[PadDef] = field(default_factory=list, init=False)
     layouts: Dict[str, Layout] = field(default_factory=dict, init=False)

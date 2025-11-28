@@ -249,7 +249,7 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
         fp = pad_group.fp_dim
         if fp is None:
             raise ValidationError("PadGroup.fp_dim is not set")
-    
+
         fp_length = float(fp.length) if fp.length is not None else float(fp.width)
         fp_width = float(fp.width)
         edge_to_bp = float(pad_group.bondpad_edge_offset)
