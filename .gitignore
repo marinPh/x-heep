@@ -99,3 +99,4 @@ test/test_x_heep_gen/pads/output/kwargs_output.json
 private/
 
 
+test/test_x_heep_gen/diff_output.txt

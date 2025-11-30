@@ -231,6 +231,7 @@ class XHeep:
             self._base_peripheral_domain.build()
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.build()
+        self._padring.build()
 
     def validate(self) -> bool:
         """

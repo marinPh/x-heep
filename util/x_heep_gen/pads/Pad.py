@@ -1,11 +1,7 @@
 from enum import Enum
-
-
-class PadMapping(Enum):
-    TOP = "top"
-    RIGHT = "right"
-    BOTTOM = "bottom"
-    LEFT = "left"
+from dataclasses import dataclass
+from typing import Optional
+from .PadDef import PadType, PadMapping, Orientation
 
 
 class Pad:
@@ -361,6 +357,7 @@ class Pad:
         pad_type,
         pad_mapping,
         index,
+        pad_layout_index,
         pad_active,
         pad_driven_manually,
         pad_skip_declaration,
@@ -368,12 +365,8 @@ class Pad:
         has_attribute,
         attribute_bits,
         constant_attribute,
-        pad_layout_index,
-        pad_layout_orient,
-        pad_layout_cell,
-        pad_layout_bondpad,
-        pad_layout_offset,
-        pad_layout_skip,
+        pad_layout,
+        orient,
     ):
 
         self.name = name
@@ -383,6 +376,7 @@ class Pad:
         self.pad_type = pad_type
         self.pad_mapping = pad_mapping
         self.pad_mux_list = pad_mux_list
+        # print(f"____Creating Pad: {self.name} of type {self.pad_type} active {pad_active}")
 
         if pad_active == "low":
             name_active = "n"
@@ -392,6 +386,7 @@ class Pad:
         self.signal_name = self.name + "_" + name_active
 
         self.has_attribute = has_attribute
+
         self.attribute_bits = (
             int(attribute_bits.split(":")[0]) - int(attribute_bits.split(":")[1]) + 1
         )
@@ -404,15 +399,17 @@ class Pad:
         self.keep_internal = []
 
         self.is_muxed = False
+
         self.is_driven_manually = pad_driven_manually
         self.do_skip_declaration = pad_skip_declaration
 
         self.layout_index = pad_layout_index
-        self.layout_orient = pad_layout_orient
-        self.layout_cell = pad_layout_cell
-        self.layout_bondpad = pad_layout_bondpad
-        self.layout_offset = pad_layout_offset
-        self.layout_skip = pad_layout_skip
+        self.layout_orient = orient.lower() if orient else orient
+        self.layout_cell = pad_layout.name if pad_layout else ""
+        self.layout_bondpad = f"BOND{pad_layout.name}" if pad_layout else ""
+        self.layout_offset = pad_layout.offset if pad_layout else ""
+        self.layout_skip = pad_layout.skip if pad_layout else ""
+        print(f"Creating Pad: {self.name} of offset {self.layout_offset}")
 
         if len(pad_mux_list) == 0:
             self.signal_name_drive.append(self.signal_name)
