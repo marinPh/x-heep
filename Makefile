@@ -337,9 +337,6 @@ test:
 	python3 test/test_x_heep_gen/test_peripherals.py
 	@echo "You can also find the peripheral test outputs in test/test_x_heep_gen/outputs"
 
-## to be able to use the local util/x_heep_gen modules
-PROJECT_ROOT := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
-export PYTHONPATH := $(PROJECT_ROOT)
 .PHONY: test_kwargs
 test_kwargs:
 	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.py
