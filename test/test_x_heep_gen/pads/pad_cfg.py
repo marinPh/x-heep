@@ -72,7 +72,7 @@ def config() -> PadRing:
         name="clk",
         layout_index=0,
         type="input",
-        mapping=PadMapping("right"),
+        mapping=PadMapping.RIGHT,
         layout=pad1_layout,
         orient=orient("r90"),
     )
@@ -83,7 +83,7 @@ def config() -> PadRing:
         name="rst",
         layout_index=1,
         type="input",
-        mapping=PadMapping("right"),
+        mapping=PadMapping.RIGHT,
         layout=pad2_layout,
         orient=orient("r90"),
         driven_manually=True,
@@ -96,7 +96,7 @@ def config() -> PadRing:
         name="boot_select",
         layout_index=3,
         type="input",
-        mapping=PadMapping("right"),
+        mapping=PadMapping.RIGHT,
         layout=pad4_layout,
         orient=orient("mx90"),
     )
@@ -107,7 +107,7 @@ def config() -> PadRing:
         name="jtag_tms",
         layout_index=4,
         type="input",
-        mapping=PadMapping("right"),
+        mapping=PadMapping.RIGHT,
         layout=pad1_layout,
         orient=orient("mx90"),
     )
@@ -118,7 +118,7 @@ def config() -> PadRing:
         name="jtag_tdo",
         layout_index=5,
         type="output",
-        mapping=PadMapping("right"),
+        mapping=PadMapping.RIGHT,
         layout=pad2_layout,
         orient=orient("mx90"),
     )
@@ -129,7 +129,7 @@ def config() -> PadRing:
         name="execute_from_flash",
         layout_index=7,
         type="input",
-        mapping=PadMapping("bottom"),
+        mapping=PadMapping.BOTTOM,
         layout=pad4_layout,
         orient=orient("mx"),
     )
@@ -140,7 +140,7 @@ def config() -> PadRing:
         name="jtag_tck",
         layout_index=8,
         type="input",
-        mapping=PadMapping("bottom"),
+        mapping=PadMapping.BOTTOM,
         layout=pad1_layout,
         orient=orient("mx"),
     )
@@ -151,7 +151,7 @@ def config() -> PadRing:
         name="jtag_trst",
         layout_index=9,
         type="input",
-        mapping=PadMapping("bottom"),
+        mapping=PadMapping.BOTTOM,
         layout=pad2_layout,
         orient=orient("mx"),
         active="low",
@@ -163,7 +163,7 @@ def config() -> PadRing:
         name="jtag_tdi",
         layout_index=10,
         type="input",
-        mapping=PadMapping("top"),
+        mapping=PadMapping.TOP,
         layout=pad3_layout,
         orient=orient("r0"),
     )
@@ -174,7 +174,7 @@ def config() -> PadRing:
         name="uart_rx",
         layout_index=11,
         type="input",
-        mapping=PadMapping("top"),
+        mapping=PadMapping.TOP,
         layout=pad1_layout,
         orient=orient("r0"),
     )
@@ -185,7 +185,7 @@ def config() -> PadRing:
         name="uart_tx",
         layout_index=12,
         type="output",
-        mapping=PadMapping("top"),
+        mapping=PadMapping.TOP,
         layout=pad2_layout,
         orient=orient("r0"),
     )
@@ -196,7 +196,7 @@ def config() -> PadRing:
         name="exit_valid",
         layout_index=13,
         type="output",
-        mapping=PadMapping("top"),
+        mapping=PadMapping.TOP,
         layout=pad4_layout,
         orient=orient("r0"),
     )
@@ -211,7 +211,7 @@ def config() -> PadRing:
     alt_pdm2pcm_clk = SinglePad(
         name="pdm2pcm_clk",
         type="inout",
-        mapping=PadMapping("right"),
+        mapping=PadMapping.RIGHT,
         layout=pad3_layout,
         orient=orient("r90"),
     )
@@ -219,7 +219,7 @@ def config() -> PadRing:
     alt_gpio_19 = SinglePad(
         name="gpio_19",
         type="inout",
-        mapping=PadMapping("right"),
+        mapping=PadMapping.RIGHT,
         layout=pad3_layout,
         orient=orient("r90"),
     )
@@ -228,7 +228,7 @@ def config() -> PadRing:
         name="pdm2pcm_clk",
         layout_index=2,
         type="inout",
-        mapping=PadMapping("right"),
+        mapping=PadMapping.RIGHT,
         layout=pad3_layout,
         orient=orient("r90"),
         alts=[("pdm2pcm_clk", alt_pdm2pcm_clk), ("gpio_19", alt_gpio_19)],
@@ -242,7 +242,7 @@ def config() -> PadRing:
         name="pdm2pcm_pdm",
         layout_index=14,
         type="inout",
-        mapping=PadMapping("top"),
+        mapping=PadMapping.RIGHT,
         layout=pad3_layout,
         orient=orient("r0"),
     )
@@ -252,7 +252,7 @@ def config() -> PadRing:
         name="gpio_18",
         layout_index=14,
         type="inout",
-        mapping=PadMapping("top"),
+        mapping=PadMapping.TOP,
         layout=pad3_layout,
         orient=orient("r0"),
     )
@@ -261,7 +261,7 @@ def config() -> PadRing:
         name="pdm2pcm_pdm",
         layout_index=14,
         type="inout",
-        mapping=PadMapping("top"),
+        mapping=PadMapping.TOP,
         layout=pad3_layout,
         orient=orient("r0"),
         alts=[("pdm2pcm_pdm", alt_pdm2pcm), ("gpio_18", alt_gpio_18)],
@@ -277,7 +277,7 @@ def config() -> PadRing:
         name="gpio",
         layout_index=6,
         type="inout",
-        mapping=PadMapping("left"),
+        mapping=PadMapping.LEFT,
         layout=pad3_layout,
         num=14,  # 14 pads -> 0..13
         orient=orient("mx90"),
