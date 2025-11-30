@@ -343,6 +343,10 @@ test_kwargs:
 	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
 	python3 test/test_x_heep_gen/pad_test.py
 
+	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.hjson
+	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
+	python3 test/test_x_heep_gen/pad_test.py
+
 
 ## Builds the specified app, loads it into the programmer's flash and then opens picocom to see the output
 ## @param PROJECT=<folder_name_of_the_project_to_be_built>
