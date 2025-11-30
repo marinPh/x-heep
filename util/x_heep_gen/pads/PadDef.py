@@ -335,7 +335,6 @@ class PadGroup:
         return sorted(self.pads, key=lambda pad: pad.layout_index)
 
     def add_layout(self, padDef: PadDef) -> None:
-        print(self.layouts)
         for k, v in self.layouts.items():
             if k == padDef.layout.name:
                 if v != padDef.layout:
@@ -407,7 +406,6 @@ class PadGroup:
 
         # ---- layouts from "dimensions" ----
         dims = pa.get("dimensions")
-        print(f"dims = {dims}")
         if dims is not None:
             layouts = PadGroup._build_layouts(dims)
         else:
@@ -447,6 +445,7 @@ class PadGroup:
 
             la = pad_info.get("layout_attributes", {})
             layout_index = la.get("index", 0)
+            print(f"pad_name = {pad_name}, la = {la}")
             cell_name = la.get("cell")
 
             # Get layout from name → fallback: empty layout

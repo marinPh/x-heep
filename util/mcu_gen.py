@@ -153,7 +153,6 @@ def generate_xheep(args):
 
     xheep.set_padring(pad_ring)
     xheep.build()
-
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")
 

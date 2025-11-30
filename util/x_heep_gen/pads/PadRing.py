@@ -388,7 +388,9 @@ def build_pads_from_block(
     pad_muxed_list = []
     const_assign_parts = []
     mux_process_parts = []
+
     for i, block in enumerate(pad_group.get_pads()):
+
         print(f"print block: {block}")
         pad_type = block.type
 

@@ -43,75 +43,75 @@
       "num": 1,
       "type": "input",
       "mapping": "right",
-      "layout_attributes": { "index": 0, "cell": "PAD4", "orient": "mx90", "bondpad": "BONDPAD4" }
+      "layout_attributes": { "index": 3, "cell": "PAD4", "orient": "mx90", "bondpad": "BONDPAD4" }
     },
     "jtag_tms": {
       "num": 1,
       "type": "input",
       "mapping": "right",
-      "layout_attributes": { "index": 1, "cell": "PAD1", "orient": "mx90", "bondpad": "BONDPAD1" }
+      "layout_attributes": { "index": 4, "cell": "PAD1", "orient": "mx90", "bondpad": "BONDPAD1" }
     },
     "jtag_tdo": {
       "num": 1,
       "type": "output",
       "mapping": "right",
-      "layout_attributes": { "index": 2, "cell": "PAD2", "orient": "mx90", "bondpad": "BONDPAD2" }
+      "layout_attributes": { "index": 5, "cell": "PAD2", "orient": "mx90", "bondpad": "BONDPAD2" }
     },
     "gpio": {
       "num": 14,
       "num_offset": 0,
       "type": "inout",
       "mapping": "left",
-      "layout_attributes": { "index": 3, "cell": "PAD3", "orient": "mx90", "bondpad": "BONDPAD3" }
+      "layout_attributes": { "index": 6, "cell": "PAD3", "orient": "mx90", "bondpad": "BONDPAD3" }
     },
     "execute_from_flash": {
       "num": 1,
       "type": "input",
       "mapping": "bottom",
-      "layout_attributes": { "index": 0, "cell": "PAD4", "orient": "mx", "bondpad": "BONDPAD4" }
+      "layout_attributes": { "index": 7, "cell": "PAD4", "orient": "mx", "bondpad": "BONDPAD4" }
     },
     "jtag_tck": {
       "num": 1,
       "type": "input",
       "mapping": "bottom",
-      "layout_attributes": { "index": 1, "cell": "PAD1", "orient": "mx", "bondpad": "BONDPAD1" }
+      "layout_attributes": { "index": 8, "cell": "PAD1", "orient": "mx", "bondpad": "BONDPAD1" }
     },
     "jtag_trst": {
       "num": 1,
       "active": "low",
       "type": "input",
       "mapping": "bottom",
-      "layout_attributes": { "index": 2, "cell": "PAD2", "orient": "mx", "bondpad": "BONDPAD2" }
+      "layout_attributes": { "index": 9, "cell": "PAD2", "orient": "mx", "bondpad": "BONDPAD2" }
     },
     "jtag_tdi": {
       "num": 1,
       "type": "input",
       "mapping": "top",
-      "layout_attributes": { "index": 0, "cell": "PAD3", "orient": "r0", "bondpad": "BONDPAD3" }
+      "layout_attributes": { "index": 10, "cell": "PAD3", "orient": "r0", "bondpad": "BONDPAD3" }
     },
     "uart_rx": {
       "num": 1,
       "type": "input",
       "mapping": "top",
-      "layout_attributes": { "index": 1, "cell": "PAD1", "orient": "r0", "bondpad": "BONDPAD1" }
+      "layout_attributes": { "index": 11, "cell": "PAD1", "orient": "r0", "bondpad": "BONDPAD1" }
     },
     "uart_tx": {
       "num": 1,
       "type": "output",
       "mapping": "top",
-      "layout_attributes": { "index": 2, "cell": "PAD2", "orient": "r0", "bondpad": "BONDPAD2" }
+      "layout_attributes": { "index": 12, "cell": "PAD2", "orient": "r0", "bondpad": "BONDPAD2" }
     },
     "exit_valid": {
       "num": 1,
       "type": "output",
       "mapping": "top",
-      "layout_attributes": { "index": 3, "cell": "PAD4", "orient": "r0", "bondpad": "BONDPAD4" }
+      "layout_attributes": { "index": 13, "cell": "PAD4", "orient": "r0", "bondpad": "BONDPAD4" }
     },
     "pdm2pcm_pdm": {
       "num": 1,
       "type": "inout",
       "mapping": "top",
-      "layout_attributes": { "index": 4, "cell": "PAD3", "orient": "r0", "bondpad": "BONDPAD3" },
+      "layout_attributes": { "index": 14, "cell": "PAD3", "orient": "r0", "bondpad": "BONDPAD3" },
       "mux": {
         "pdm2pcm_pdm": { "type": "inout" },
         "gpio_18": { "type": "inout" }
