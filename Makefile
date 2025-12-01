@@ -7,6 +7,7 @@ MAKE	= make
 # Get the absolute path
 mkfile_path := $(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")
 $(info $$You are executing from: $(mkfile_path))
+pip install nbformat
 
 # Include the self-documenting tool
 export FILE_FOR_HELP=$(mkfile_path)/Makefile
@@ -348,7 +349,7 @@ test_kwargs:
 	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.hjson
 	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
 	python3 test/test_x_heep_gen/pad_test.py
-	
+
 	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.py
 	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
 	python3 test/test_x_heep_gen/pad_test.py
