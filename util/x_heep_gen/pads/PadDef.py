@@ -504,6 +504,5 @@ class PadGroup:
 
             # ----------------- simple pad case -----------------
             pad_group.add_pad(SinglePad(**base_kwargs))
-            
 
         return pad_group

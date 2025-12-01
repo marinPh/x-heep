@@ -253,7 +253,6 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
     # Determine which dimension we are dealing with
     side = pad_list[0].mapping
 
-
     if side in (PadMapping.TOP, PadMapping.BOTTOM):
         side_length = fp_width
     elif side in (PadMapping.LEFT, PadMapping.RIGHT):

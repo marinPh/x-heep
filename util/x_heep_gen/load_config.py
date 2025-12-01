@@ -519,9 +519,11 @@ def load_pad_cfg(f: PurePath) -> PadRing:
                 pad_cfg = hjson.loads(srcfull, use_decimal=True)
                 pad_cfg = JsonRef.replace_refs(pad_cfg)
                 pad_group = PadGroup.build_pad_group(pad_cfg, "x_heep_top")
-                
+
                 if pad_group is None:
-                    raise ValueError("PadGroup could not be created from configuration.")
+                    raise ValueError(
+                        "PadGroup could not be created from configuration."
+                    )
                 pad_ring = PadRing(pad_group)
                 if pad_ring is None:
                     raise ValueError("PadRing could not be created from configuration.")

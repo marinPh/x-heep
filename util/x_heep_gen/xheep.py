@@ -184,8 +184,8 @@ class XHeep:
         :param PadRing pad_ring: The pad ring to set.
         :raise TypeError: when pad_ring is of incorrect type.
         """
-        
-        if  pad_ring is None or not isinstance(pad_ring, PadRing) :
+
+        if pad_ring is None or not isinstance(pad_ring, PadRing):
             raise TypeError(
                 f"xheep.get_padring() should be of type PadRing not {type(self._padring)}"
             )
@@ -234,7 +234,6 @@ class XHeep:
             self._user_peripheral_domain.build()
         if self.get_padring() is not None:
             self.get_padring().build()
-
 
     def validate(self) -> bool:
         """
