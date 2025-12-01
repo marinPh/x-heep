@@ -422,6 +422,8 @@ class PadGroup:
             cell_spacing=cell_spacing,
             fp_dim=fp_dim,
         )
+        if pad_group is None:
+            raise ValueError("PadGroup could not be created.")
 
         # pre-register layouts only if present
         if layouts:
@@ -502,5 +504,6 @@ class PadGroup:
 
             # ----------------- simple pad case -----------------
             pad_group.add_pad(SinglePad(**base_kwargs))
+            
 
         return pad_group

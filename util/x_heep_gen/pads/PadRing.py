@@ -46,13 +46,9 @@ def coerce_enum(enum_cls, raw, default=None):
 
 class PadRing:
     def __init__(self, pad_group: PadGroup):
-        print("type of pad_group in PadRing:", type(pad_group))
         self.pad_group: PadGroup = pad_group
 
     def build(self):
-        print("Building Pad Ring...")
-        print("type of pad_group:", type(self.pad_group))
-
         pads_attributes_bits = self.pad_group.bits
 
         if not pads_attributes_bits:
@@ -158,7 +154,6 @@ def prepare_pads_for_layout(pad_group: PadGroup):
         PadMapping.LEFT: left_pad_list,
     }
     for pad in pad_group.get_pads():
-        print("Processing pad:", pad.name, "with mapping:", pad.mapping)
         if pad.mapping in pad_lists.keys():
             pad_lists[pad.mapping].append(pad)
         else:
@@ -176,11 +171,6 @@ def prepare_pads_for_layout(pad_group: PadGroup):
     bottom_pad_list.sort(key=lambda x: x.layout_index)
     left_pad_list.sort(key=lambda x: x.layout_index)
     right_pad_list.sort(key=lambda x: x.layout_index)
-
-    print(" Top pads:", len(top_pad_list))
-    print(" Bottom pads:", len(bottom_pad_list))
-    print(" Left pads:", len(left_pad_list))
-    print(" Right pads:", len(right_pad_list))
 
     # Calculate pad offsets and check wheth
     ## Conver lists of PadDef to lists of Pad objects
@@ -263,9 +253,6 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
     # Determine which dimension we are dealing with
     side = pad_list[0].mapping
 
-    print(
-        f"__Calculating pad positions for side: {side.name} width: {fp_width} length: {fp_length}__"
-    )
 
     if side in (PadMapping.TOP, PadMapping.BOTTOM):
         side_length = fp_width
@@ -278,18 +265,10 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
     # Calculate space occupied by bondpads on the designated side of the chip
     widths = np.array([pad.layout.bond_pad.width for pad in pad_list])
     bp_space = float(np.sum(widths))
-    print("___Initial total bondpad widths:", widths, "side :", side, "___")
-    print("___Total bondpad widths:", bp_space, "side :", side, "___")
-    print("___Number of bondpads on side", side, ":", bp_spacing, "___")
     bp_space += bp_spacing * (len(pad_list) - 1)
-    print("___Total bondpad space with spacing:", bp_space, "side :", side, "___")
     # Check if the bondpads are able to fit on the side
     extra_space = side_length - bp_space - 2 * edge_to_bp
 
-    print(
-        f"__ extra_space calculation: {side_length} - {bp_space} - 2 * {edge_to_bp} = {extra_space} __"
-    )
-    print("___Extra space for bondpads on side", side, ":", extra_space)
     if extra_space < 0:
         print(
             "ERROR: Bondpads cannot fit on side {0}. Either reduce bondpad spacing or move some pads to another side".format(
@@ -356,12 +335,6 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
                 + (bp_width / 2)
                 - (pad_width / 2)
             )
-            print(
-                f" Calculating first pad offset on {side.name}: {pad.layout.offset} = {bp_offset}- ({edge_to_pad} - {edge_to_bp})+ ({bp_width} / 2)- ({pad_width} / 2) "
-            )
-            print(
-                f"__Setting offset for first pad {pad.name} on side {side.name}, of {pad.layout.offset}__"
-            )
 
         # If the layout/skip of the pads is not predefined, calculate automatically
         if (pad.layout.skip is None) and (pad.layout.offset is None):
@@ -370,10 +343,6 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
                 + bp_spacing
                 - (last_pad_width + pad_width) / 2
             )
-            print(
-                f"__Setting skip for first pad {pad.name} on side {side.name}, of {pad.layout.skip}__"
-            )
-
     return bp_offset
 
 
@@ -391,7 +360,6 @@ def build_pads_from_block(
 
     for i, block in enumerate(pad_group.get_pads()):
 
-        print(f"print block: {block}")
         pad_type = block.type
 
         pad_active = block.active

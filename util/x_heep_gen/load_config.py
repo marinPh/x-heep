@@ -509,7 +509,6 @@ def load_pad_cfg(f: PurePath) -> PadRing:
     :rtype: XHeep
     :raise RuntimeError: when and invalid configuration is passed or when the sanity checks failed
     """
-    print("Loading pad configuration from file:", f)
     if not isinstance(f, PurePath):
         raise TypeError("parameter should be of type PurePath")
 
@@ -520,7 +519,12 @@ def load_pad_cfg(f: PurePath) -> PadRing:
                 pad_cfg = hjson.loads(srcfull, use_decimal=True)
                 pad_cfg = JsonRef.replace_refs(pad_cfg)
                 pad_group = PadGroup.build_pad_group(pad_cfg, "x_heep_top")
+                
+                if pad_group is None:
+                    raise ValueError("PadGroup could not be created from configuration.")
                 pad_ring = PadRing(pad_group)
+                if pad_ring is None:
+                    raise ValueError("PadRing could not be created from configuration.")
                 return pad_ring
             except ValueError:
                 raise SystemExit(sys.exc_info()[1])

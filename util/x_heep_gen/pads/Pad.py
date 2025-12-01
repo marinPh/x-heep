@@ -376,8 +376,6 @@ class Pad:
         self.pad_type = pad_type
         self.pad_mapping = pad_mapping
         self.pad_mux_list = pad_mux_list
-        # print(f"____Creating Pad: {self.name} of type {self.pad_type} active {pad_active}")
-
         if pad_active == "low":
             name_active = "n"
         else:
@@ -409,7 +407,6 @@ class Pad:
         self.layout_bondpad = f"BOND{pad_layout.name}" if pad_layout else ""
         self.layout_offset = pad_layout.offset if pad_layout else ""
         self.layout_skip = pad_layout.skip if pad_layout else ""
-        print(f"Creating Pad: {self.name} of offset {self.layout_offset}")
 
         if len(pad_mux_list) == 0:
             self.signal_name_drive.append(self.signal_name)
