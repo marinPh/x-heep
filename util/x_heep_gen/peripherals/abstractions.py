@@ -1,5 +1,6 @@
 # Peripheral abstract classes
 
+from dataclasses import dataclass
 import os.path as path
 from abc import (
     ABC,
@@ -7,7 +8,25 @@ from abc import (
 )  # Used to define abstract classes that cannot be instantiated, only well defined subclasses can be instantiated.
 from enum import Enum
 from copy import deepcopy
-from typing import List
+from typing import List, Dict, Optional
+
+MAX_INTERRUPTS = 64
+
+
+@dataclass
+class Interrupt:
+    id: int
+    num: Optional[int] = 1
+
+    def __post_init__(self):
+        if self.num < 1:
+            raise ValueError("num should be above 1 cannot be less")
+        if self.id < 0:
+            raise ValueError("ID cannot be negative")
+        if self.num + self.id > MAX_INTERRUPTS:
+            raise ValueError(
+                f"Can have ids above {MAX_INTERRUPTS} current ids = {list(range(self.id,self.id + self.num))}"
+            )
 
 
 class Peripheral(ABC):
@@ -21,6 +40,8 @@ class Peripheral(ABC):
     _length: int = int("0x00010000", 16)  # default length of 64KB
     _name: str
     _address: int = None
+
+    _interrupts: Dict[str, Interrupt] = {}
 
     def __init__(self, offset=None, length=None):
         """
@@ -43,6 +64,13 @@ class Peripheral(ABC):
         :rtype: int
         """
         return self._address
+
+    def get_interrupts(self):
+        """
+        :return: The interrupts of the peripheral.
+        :rtype: Dict[str,int]
+        """
+        return self._interrupts.copy()
 
     def set_address(self, address):
         """
@@ -93,9 +121,23 @@ class PeripheralDomain(ABC):
     _peripherals: List[
         Peripheral
     ]  # type has to be precised for filtering in validation
+    _interrupts: Dict[str, Interrupt] = {}
+
+    def get_interrupts(self):
+        """
+        :return: The interrupts of the peripheral domain.
+        :rtype: Dict[str,int]
+        """
+        return self._interrupts.copy()
 
     @abstractmethod
-    def __init__(self, name: str, start_address: int, length: int):
+    def __init__(
+        self,
+        name: str,
+        start_address: int,
+        length: int,
+        interrupts: Dict[str, int] = {},
+    ):
         """
         Initialize the peripheral domain. Is abstract because each peripheral domain has its own way of initializing without letting the user define start address and length.
 
@@ -107,6 +149,7 @@ class PeripheralDomain(ABC):
         self._start_address = start_address
         self._length = length
         self._peripherals = []
+        self._interrupts = interrupts.copy()
 
     @abstractmethod
     def add_peripheral(self, peripheral: Peripheral):

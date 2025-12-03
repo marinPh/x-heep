@@ -66,5 +66,7 @@ def config():
     # Add the peripheral domains to the system
     system.add_peripheral_domain(base_peripheral_domain)
     system.add_peripheral_domain(user_peripheral_domain)
+    
+    system.add_interrupts_from_peripheral_domains()
 
     return system

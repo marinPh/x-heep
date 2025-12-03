@@ -1,11 +1,13 @@
 from copy import deepcopy
+from typing import Dict
 from .bus_type import BusType
 from .memory_ss.memory_ss import MemorySS
 from .cpu.cpu import CPU
-from .peripherals.abstractions import PeripheralDomain
+from .peripherals.abstractions import PeripheralDomain, Interrupt
 from .peripherals.base_peripherals_domain import BasePeripheralDomain
 from .peripherals.user_peripherals_domain import UserPeripheralDomain
 from .pads.PadRing import PadRing
+import re
 
 
 class XHeep:
@@ -39,6 +41,7 @@ class XHeep:
         self._base_peripheral_domain = None
         self._user_peripheral_domain = None
         self._padring: PadRing = None
+        self._interrupts: Dict[str, Interrupt] = {}
 
         self._extensions = {}
 
@@ -193,6 +196,151 @@ class XHeep:
 
     def get_padring(self):
         return self._padring
+
+    # ------------------------------------------------------------
+    # Interrupts
+    # ------------------------------------------------------------
+
+    def add_interrupts_from_peripheral_domains(self):
+        """
+        Adds the interrupts from the peripheral domains to the system interrupts.
+        """
+        # check no 2 peripherals have the same interrupt id
+
+        all_ids = [
+            irq.id
+            for irq in self._base_peripheral_domain.get_interrupts().values()
+            if irq is not None and irq.id is not None
+        ] + [
+            irq.id
+            for irq in self._user_peripheral_domain.get_interrupts().values()
+            if irq is not None and irq.id is not None
+        ]
+
+        set_ids = set(all_ids)
+        if len(all_ids) != len(set_ids):
+            raise ValueError("Two peripherals have the same interrupt id")
+
+        possible_ids = list(set(range(0, 64)).difference(set_ids))
+
+        for name, irq in self._base_peripheral_domain.get_interrupts().items():
+            if irq is None:
+                assigned_id = possible_ids.pop(0)
+                self.add_interrupt(name, assigned_id)
+            else:
+
+                required = set(range(irq.id, irq.id + irq.num))
+                can_go = required.issubset(set(possible_ids))
+
+                if not can_go:
+                    missing = required - set(possible_ids)
+
+                    all_predefined = {
+                        irq.id: name
+                        for name, irq in self._base_peripheral_domain.get_interrupts().items()
+                        if irq is not None and irq.id is not None
+                    } + {
+                        irq.id: name
+                        for name, irq in self._user_peripheral_domain.get_interrupts().items()
+                        if irq is not None and irq.id is not None
+                    }
+                    missing_names = [all_predefined[miss] for miss in missing]
+
+                    raise ValueError(
+                        f"You have elements the way {missing} used by {missing_names} "
+                    )
+
+                self.add_interrupt(name, irq)
+
+        for name, irq in self._user_peripheral_domain.get_interrupts().items():
+            if irq is None:
+                assigned_id = possible_ids.pop(0)
+                self.add_interrupt(name, assigned_id)
+            else:
+                self.add_interrupt(name, irq)
+
+        self._interrupts = dict(
+            sorted(self._interrupts.items(), key=lambda item: item[1].id)
+        )
+
+    def get_interrupts(self) -> Dict[str, Interrupt]:
+        """
+        :return: The interrupts of the system.
+        :rtype: Dict[str,int]
+        """
+        print(type(list(self._interrupts.values())[0]))
+        return deepcopy(self._interrupts)
+
+    def set_interrupts(self, interrupts: Dict[str, int]):
+        """
+        Sets the interrupts of the system.
+
+        :param Dict[str,int] interrupts: The interrupts to set.
+        :raise TypeError: when interrupts is of incorrect type.
+        """
+
+        if not isinstance(interrupts, dict):
+            raise TypeError(
+                f"xheep.get_interrupts() should be of type Dict[str,int] not {type(self._interrupts)}"
+            )
+        self._interrupts = interrupts.copy()
+
+    def add_interrupt(self, name: str, irq: int):
+        """
+        Add an interrupt to the system.
+
+        :param str name: The name of the interrupt.
+        :param int irq: The IRQ number of the interrupt.
+        :raise TypeError: when name is of incorrect type.
+        """
+
+        if not isinstance(name, str):
+            raise TypeError(
+                f"xheep.add_interrupt() name should be of type str not {type(name)}"
+            )
+
+        if irq is not None and not isinstance(irq, Interrupt):
+            raise TypeError(
+                f"xheep.add_interrupt() irq should be of type int not {type(irq)}"
+            )
+
+        if name in self._interrupts:
+            raise ValueError(f"Interrupt {name} already exists in the system")
+
+        if irq is not None and irq in self._interrupts.values():
+            raise ValueError(f"Interrupt IRQ {irq} already exists in the system")
+
+        self._interrupts[name] = irq
+
+    def add_interrupts_from_config_dict(self, interrupts: Dict[str, int]):
+        """
+        Adds interrupts from a configuration dictionary.
+
+        :param Dict[str,int] interrupts: The interrupts to add.
+        """
+        suffix_re = re.compile(r"^(.*)_(\d+)$")
+        names = [
+            (re.match(r"^(.*)_(\d+)$", name).group(1), id)
+            for name, id in interrupts.items()
+            if re.match(r"^(.*)_(\d+)$", name)
+        ]
+        set_names = set([name for name, _, in names])
+        for name in list(set_names):
+            filtered = [x for x in names if x[0] == name]
+            filtered.sort(key=lambda x: x[1])
+            print(filtered)
+            irq = Interrupt(filtered[0][1], len(filtered))
+            self.add_interrupt(name, irq)
+        names = [
+            (name, id) for name, id in interrupts.items() if not suffix_re.match(name)
+        ]
+        for name, id in names:
+            irq = Interrupt(id)
+            self.add_interrupt(name, irq)
+
+        self._interrupts = dict(
+            sorted(self._interrupts.items(), key=lambda item: item[1].id)
+        )
 
     # ------------------------------------------------------------
     # Extensions
