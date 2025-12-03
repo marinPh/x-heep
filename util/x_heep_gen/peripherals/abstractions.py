@@ -17,7 +17,7 @@ MAX_INTERRUPTS = 64
 class Interrupt:
     id: int
     num: Optional[int] = 1
-    start_seq: Optional[int]=id
+    start_seq: Optional[int] = id
 
     def __post_init__(self):
         if self.num < 1:

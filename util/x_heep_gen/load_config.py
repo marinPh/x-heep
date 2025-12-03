@@ -445,19 +445,26 @@ def load_cfg_hjson(src: str) -> XHeep:
             cve2_rv32e_config = value
         elif key == "cve2_rv32m":
             cve2_rv32m_config = value
-        elif key == "interrupts":
-            interrupts_config = value
+
+    plic_used_n_interrupts = len(config["interrupts"]["list"])
+    plit_n_interrupts = config["interrupts"]["number"]
+    ext_int_list = {
+        f"EXT_INTR_{k}": v
+        for k, v in enumerate(range(plic_used_n_interrupts, plit_n_interrupts))
+    }
+
+    interrupts = {**config["interrupts"]["list"], **ext_int_list}
 
     if mem_config is None:
         raise RuntimeError("No memory configuration found")
     if bus_config is None:
         raise RuntimeError("No bus type configuration found")
-    if interrupts_config is None:
+    if interrupts is None:
         raise RuntimeError("No interrupts configuration found")
 
     system = XHeep(BusType(bus_config))
     memory_ss = MemorySS()
-    system.add_interrupts_from_config_dict(dict(interrupts_config)["list"])
+    system.add_interrupts_from_config_dict(dict(interrupts))
 
     load_ram_configuration(memory_ss, mem_config)
 
