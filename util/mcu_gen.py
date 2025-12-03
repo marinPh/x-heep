@@ -154,8 +154,6 @@ def generate_xheep(args):
         for k, v in enumerate(range(plic_used_n_interrupts, plit_n_interrupts))
     }
 
-    interrupts = {**config["interrupts"]["list"], **ext_int_list}
-
     # Here the xheep system is built,
     # The missing gaps are filled, like the missing end address of the data section.
     xheep.build()
@@ -189,7 +187,6 @@ def generate_xheep(args):
         "heap_size": heap_size,
         "plic_used_n_interrupts": plic_used_n_interrupts,
         "plit_n_interrupts": plit_n_interrupts,
-        "interrupts": interrupts,
     }
 
     return kwargs

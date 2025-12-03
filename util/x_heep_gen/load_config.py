@@ -430,6 +430,7 @@ def load_cfg_hjson(src: str) -> XHeep:
     cpu_config = None
     cve2_rv32e_config = None
     cve2_rv32m_config = None
+    interrupts_config = None
 
     for key, value in config.items():
         if key == "ram_banks":
@@ -444,14 +445,19 @@ def load_cfg_hjson(src: str) -> XHeep:
             cve2_rv32e_config = value
         elif key == "cve2_rv32m":
             cve2_rv32m_config = value
+        elif key == "interrupts":
+            interrupts_config = value
 
     if mem_config is None:
         raise RuntimeError("No memory configuration found")
     if bus_config is None:
         raise RuntimeError("No bus type configuration found")
+    if interrupts_config is None:
+        raise RuntimeError("No interrupts configuration found")
 
     system = XHeep(BusType(bus_config))
     memory_ss = MemorySS()
+    system.add_interrupts_from_config_dict(dict(interrupts_config)["list"])
 
     load_ram_configuration(memory_ss, mem_config)
 
