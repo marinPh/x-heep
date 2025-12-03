@@ -126,7 +126,7 @@ extern "C" {
 % for key, value in xheep.get_interrupts().items():
 % if value.num >1:
 % for i in range(value.id,value.id + value.num):
-#define ${f"{key.upper()}_{i-1}"} ${i}
+#define ${f"{key.upper()}_{i-value.id+value.start_seq -2}"} ${i}
 % endfor
 % else:
 #define ${key.upper()} ${value.id}
