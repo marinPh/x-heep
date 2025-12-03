@@ -319,17 +319,21 @@ class XHeep:
         """
         suffix_re = re.compile(r"^(.*)_(\d+)$")
         names = [
-            (re.match(r"^(.*)_(\d+)$", name).group(1), id,re.match(r"^(.*)_(\d+)$", name).group(2))
+            (
+                re.match(r"^(.*)_(\d+)$", name).group(1),
+                id,
+                re.match(r"^(.*)_(\d+)$", name).group(2),
+            )
             for name, id in interrupts.items()
             if re.match(r"^(.*)_(\d+)$", name)
         ]
-        set_names = set([name for name, _,_ in names])
+        set_names = set([name for name, _, _ in names])
         for name in list(set_names):
             filtered = [x for x in names if x[0] == name]
             filtered.sort(key=lambda x: x[1])
-            start:int = int(min([f[2] for f in filtered]))
+            start: int = int(min([f[2] for f in filtered]))
             print(filtered)
-            irq = Interrupt(filtered[0][1], len(filtered),start)
+            irq = Interrupt(filtered[0][1], len(filtered), start)
             self.add_interrupt(name, irq)
         names = [
             (name, id) for name, id in interrupts.items() if not suffix_re.match(name)
