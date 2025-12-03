@@ -109,7 +109,6 @@ jobs:
       - name: Configure the job container and simulate all apps
         shell: bash -l {0}
         run: |
-          pip install nbformat
           make clean-all
           # Run the test script
           python3 test/test_x_heep_gen/test_peripherals.py
