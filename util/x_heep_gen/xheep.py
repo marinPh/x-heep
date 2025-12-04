@@ -347,19 +347,18 @@ class XHeep:
             sorted(self._interrupts.items(), key=lambda item: item[1].id)
         )
 
-    def get_simple_interrupts(self)->Dict[str,int]:
+    def get_simple_interrupts(self) -> Dict[str, int]:
         temp = dict()
         for name, irq in self._interrupts.items():
-            if irq.num>1:
-                cnt =irq.id
-                for i in range(irq.start_seq,irq.start_seq+irq.num):
-                    temp[f"{name}_{i}"] = cnt
-                    cnt +=1
+            if irq.num > 1:
+                cnt = irq.id
+                for i in range(irq.start_seq, irq.start_seq + irq.num):
+                    temp[f"{name}_{i-2}"] = cnt
+                    cnt += 1
             else:
-                temp[name]= irq.id
+                temp[name] = irq.id
         print(temp)
         return temp
-
 
     # ------------------------------------------------------------
     # Extensions
