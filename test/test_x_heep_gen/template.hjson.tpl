@@ -92,7 +92,7 @@
     interrupts: {
         used: ${plic_used_n_interrupts}
         total: ${plit_n_interrupts}
-        list: ${interrupts}
+        list: ${xheep.get_simple_interrupts()}
     }
 
     // Pad Configuration

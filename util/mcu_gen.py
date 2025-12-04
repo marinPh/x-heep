@@ -143,10 +143,6 @@ def generate_xheep(args):
 
     plic_used_n_interrupts = len(config["interrupts"]["list"])
     plit_n_interrupts = config["interrupts"]["number"]
-    ext_int_list = {
-        f"EXT_INTR_{k}": v
-        for k, v in enumerate(range(plic_used_n_interrupts, plit_n_interrupts))
-    }
 
     # Here the xheep system is built,
     # The missing gaps are filled, like the missing end address of the data section.
