@@ -122,15 +122,9 @@ extern "C" {
 #define FLASH_MEM_SIZE 0x${flash_mem_size_address}
 #define FLASH_MEM_END_ADDRESS (FLASH_MEM_START_ADDRESS + FLASH_MEM_SIZE)
 
-#define QTY_INTR ${len(xheep.get_interrupts())}
-% for key, value in xheep.get_interrupts().items():
-% if value.num >1:
-% for i in range(value.id,value.id + value.num):
-#define ${f"{key.upper()}_{i-value.id+value.start_seq -2}"} ${i}
-% endfor
-% else:
-#define ${key.upper()} ${value.id}
-% endif
+#define QTY_INTR ${len(xheep.get_simple_interrupts())}
+% for key, value in xheep.get_simple_interrupts().items():
+#define ${key.upper()} ${value}
 % endfor
 
 % if xheep.get_padring().pads_attributes != None:
