@@ -128,7 +128,7 @@ intrs = [
 %>
 % for name, irq in intrs:
   % if irq.num > 1:
-  logic [${irq.start_seq + irq.num - 2}:${irq.start_seq}] ${name};
+  logic [${irq.start_seq + irq.num - 1}:${irq.start_seq}] ${name};
   % else:
   logic ${name};
   % endif
@@ -377,22 +377,22 @@ assign intr_vector[${irq.id}] = ${name};
       .cio_sda_i,
       .cio_sda_o,
       .cio_sda_en_o,
-      .intr_fmt_watermark_o(i2c_intr_fmt_watermark),
-      .intr_rx_watermark_o(i2c_intr_rx_watermark),
-      .intr_fmt_overflow_o(i2c_intr_fmt_overflow),
-      .intr_rx_overflow_o(i2c_intr_rx_overflow),
-      .intr_nak_o(i2c_intr_nak),
-      .intr_scl_interference_o(i2c_intr_scl_interference),
-      .intr_sda_interference_o(i2c_intr_sda_interference),
-      .intr_stretch_timeout_o(i2c_intr_stretch_timeout),
-      .intr_sda_unstable_o(i2c_intr_sda_unstable),
-      .intr_trans_complete_o(i2c_intr_trans_complete),
-      .intr_tx_empty_o(i2c_intr_tx_empty),
-      .intr_tx_nonempty_o(i2c_intr_tx_nonempty),
-      .intr_tx_overflow_o(i2c_intr_tx_overflow),
-      .intr_acq_overflow_o(i2c_intr_acq_overflow),
-      .intr_ack_stop_o(i2c_intr_ack_stop),
-      .intr_host_timeout_o(i2c_intr_host_timeout)
+      .intr_fmt_watermark_o(intr_fmt_watermark),
+      .intr_rx_watermark_o(intr_rx_watermark),
+      .intr_fmt_overflow_o(intr_fmt_overflow),
+      .intr_rx_overflow_o(intr_rx_overflow),
+      .intr_nak_o(intr_nak),
+      .intr_scl_interference_o(intr_scl_interference),
+      .intr_sda_interference_o(intr_sda_interference),
+      .intr_stretch_timeout_o(intr_stretch_timeout),
+      .intr_sda_unstable_o(intr_sda_unstable),
+      .intr_trans_complete_o(intr_trans_complete),
+      .intr_tx_empty_o(intr_tx_empty),
+      .intr_tx_nonempty_o(intr_tx_nonempty),
+      .intr_tx_overflow_o(intr_tx_overflow),
+      .intr_acq_overflow_o(intr_acq_overflow),
+      .intr_ack_stop_o(intr_ack_stop),
+      .intr_host_timeout_o(intr_host_timeout)
   );
 % else:
   assign i2c_tl_d2h = '0;
@@ -400,22 +400,22 @@ assign intr_vector[${irq.id}] = ${name};
   assign cio_scl_en_o = '0;
   assign cio_sda_o = '0;
   assign cio_sda_en_o = '0;
-  assign i2c_intr_fmt_watermark = '0;
-  assign i2c_intr_rx_watermark = '0;
-  assign i2c_intr_fmt_overflow = '0;
-  assign i2c_intr_rx_overflow = '0;
-  assign i2c_intr_nak = '0;
-  assign i2c_intr_scl_interference = '0;
-  assign i2c_intr_sda_interference = '0;
-  assign i2c_intr_stretch_timeout = '0;
-  assign i2c_intr_sda_unstable = '0;
-  assign i2c_intr_trans_complete = '0;
-  assign i2c_intr_tx_empty = '0;
-  assign i2c_intr_tx_nonempty = '0;
-  assign i2c_intr_tx_overflow = '0;
-  assign i2c_intr_acq_overflow = '0;
-  assign i2c_intr_ack_stop = '0;
-  assign i2c_intr_host_timeout = '0;
+  assign intr_fmt_watermark = '0;
+  assign intr_rx_watermark = '0;
+  assign intr_fmt_overflow = '0;
+  assign intr_rx_overflow = '0;
+  assign intr_nak = '0;
+  assign intr_scl_interference = '0;
+  assign intr_sda_interference = '0;
+  assign intr_stretch_timeout = '0;
+  assign intr_sda_unstable = '0;
+  assign intr_trans_complete = '0;
+  assign intr_tx_empty = '0;
+  assign intr_tx_nonempty = '0;
+  assign intr_tx_overflow = '0;
+  assign intr_acq_overflow = '0;
+  assign intr_ack_stop = '0;
+  assign intr_host_timeout = '0;
 % endif
 
 % if user_peripheral_domain.contains_peripheral('rv_timer'):

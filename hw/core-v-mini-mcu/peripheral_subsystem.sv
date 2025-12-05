@@ -9,7 +9,7 @@ module peripheral_subsystem
   import reg_pkg::*;
 #(
     //do not touch these parameters
-    parameter NEXT_INT_RND = core_v_mini_mcu_pkg::NEXT_INT == 0 ? 1 : core_v_mini_mcu_pkg::NEXT_INT
+    parameter NEXT_INT_RND         = core_v_mini_mcu_pkg::NEXT_INT == 0 ? 1 : core_v_mini_mcu_pkg::NEXT_INT
 ) (
     input logic clk_i,
     input logic rst_ni,
@@ -22,8 +22,8 @@ module peripheral_subsystem
 
     //PLIC
     input  logic [NEXT_INT_RND-1:0] intr_vector_ext_i,
-    output logic                    irq_plic_o,
-    output logic                    msip_o,
+    output logic                irq_plic_o,
+    output logic                msip_o,
 
     // UART
     input  logic uart_rx_i,
@@ -113,29 +113,12 @@ module peripheral_subsystem
   logic [$clog2(rv_plic_reg_pkg::NumSrc)-1:0] irq_id[rv_plic_reg_pkg::NumTarget];
   logic [$clog2(rv_plic_reg_pkg::NumSrc)-1:0] unused_irq_id[rv_plic_reg_pkg::NumTarget];
 
-  logic [31:8] gpio_intr;
+
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [7:0] gpio_int_unused;
+  logic [8:0] gpio_int_unused
 
-  logic i2c_intr_fmt_watermark;
-  logic i2c_intr_rx_watermark;
-  logic i2c_intr_fmt_overflow;
-  logic i2c_intr_rx_overflow;
-  logic i2c_intr_nak;
-  logic i2c_intr_scl_interference;
-  logic i2c_intr_sda_interference;
-  logic i2c_intr_stretch_timeout;
-  logic i2c_intr_sda_unstable;
-  logic i2c_intr_trans_complete;
-  logic i2c_intr_tx_empty;
-  logic i2c_intr_tx_nonempty;
-  logic i2c_intr_tx_overflow;
-  logic i2c_intr_acq_overflow;
-  logic i2c_intr_ack_stop;
-  logic i2c_intr_host_timeout;
-  logic spi2_intr_event;
-  logic i2s_intr_event;
+  logic null_intr;
   logic uart_intr_tx_watermark;
   logic uart_intr_rx_watermark;
   logic uart_intr_tx_empty;
@@ -144,39 +127,59 @@ module peripheral_subsystem
   logic uart_intr_rx_break_err;
   logic uart_intr_rx_timeout;
   logic uart_intr_rx_parity_err;
+  logic [31:8] gpio_intr;
+  logic intr_fmt_watermark;
+  logic intr_rx_watermark;
+  logic intr_fmt_overflow;
+  logic intr_rx_overflow;
+  logic intr_nak;
+  logic intr_scl_interference;
+  logic intr_sda_interference;
+  logic intr_stretch_timeout;
+  logic intr_sda_unstable;
+  logic intr_trans_complete;
+  logic intr_tx_empty;
+  logic intr_tx_nonempty;
+  logic intr_tx_overflow;
+  logic intr_acq_overflow;
+  logic intr_ack_stop;
+  logic intr_host_timeout;
+  logic spi2_intr_event;
+  logic i2s_intr_event;
 
   // this avoids lint errors
   assign unused_irq_id = irq_id;
 
   // Assign internal interrupts
-  assign intr_vector[0] = 1'b0;  // ID [0] is a special case and must be tied to zero.
-  assign intr_vector[1] = uart_intr_tx_watermark;
-  assign intr_vector[2] = uart_intr_rx_watermark;
-  assign intr_vector[3] = uart_intr_tx_empty;
-  assign intr_vector[4] = uart_intr_rx_overflow;
-  assign intr_vector[5] = uart_intr_rx_frame_err;
-  assign intr_vector[6] = uart_intr_rx_break_err;
-  assign intr_vector[7] = uart_intr_rx_timeout;
-  assign intr_vector[8] = uart_intr_rx_parity_err;
-  assign intr_vector[32:9] = gpio_intr;
-  assign intr_vector[33] = i2c_intr_fmt_watermark;
-  assign intr_vector[34] = i2c_intr_rx_watermark;
-  assign intr_vector[35] = i2c_intr_fmt_overflow;
-  assign intr_vector[36] = i2c_intr_rx_overflow;
-  assign intr_vector[37] = i2c_intr_nak;
-  assign intr_vector[38] = i2c_intr_scl_interference;
-  assign intr_vector[39] = i2c_intr_sda_interference;
-  assign intr_vector[40] = i2c_intr_stretch_timeout;
-  assign intr_vector[41] = i2c_intr_sda_unstable;
-  assign intr_vector[42] = i2c_intr_trans_complete;
-  assign intr_vector[43] = i2c_intr_tx_empty;
-  assign intr_vector[44] = i2c_intr_tx_nonempty;
-  assign intr_vector[45] = i2c_intr_tx_overflow;
-  assign intr_vector[46] = i2c_intr_acq_overflow;
-  assign intr_vector[47] = i2c_intr_ack_stop;
-  assign intr_vector[48] = i2c_intr_host_timeout;
-  assign intr_vector[49] = spi2_intr_event;
-  assign intr_vector[50] = i2s_intr_event;
+assign intr_vector[0] = 1'b0;  // ID [0] is a special case and must be tied to zero. ;
+assign intr_vector[1] = uart_intr_tx_watermark;
+assign intr_vector[2] = uart_intr_rx_watermark;
+assign intr_vector[3] = uart_intr_tx_empty;
+assign intr_vector[4] = uart_intr_rx_overflow;
+assign intr_vector[5] = uart_intr_rx_frame_err;
+assign intr_vector[6] = uart_intr_rx_break_err;
+assign intr_vector[7] = uart_intr_rx_timeout;
+assign intr_vector[8] = uart_intr_rx_parity_err;
+assign intr_vector[32:9] = gpio_intr;
+assign intr_vector[33] = intr_fmt_watermark;
+assign intr_vector[34] = intr_rx_watermark;
+assign intr_vector[35] = intr_fmt_overflow;
+assign intr_vector[36] = intr_rx_overflow;
+assign intr_vector[37] = intr_nak;
+assign intr_vector[38] = intr_scl_interference;
+assign intr_vector[39] = intr_sda_interference;
+assign intr_vector[40] = intr_stretch_timeout;
+assign intr_vector[41] = intr_sda_unstable;
+assign intr_vector[42] = intr_trans_complete;
+assign intr_vector[43] = intr_tx_empty;
+assign intr_vector[44] = intr_tx_nonempty;
+assign intr_vector[45] = intr_tx_overflow;
+assign intr_vector[46] = intr_acq_overflow;
+assign intr_vector[47] = intr_ack_stop;
+assign intr_vector[48] = intr_host_timeout;
+assign intr_vector[49] = spi2_intr_event;
+assign intr_vector[50] = i2s_intr_event;
+
 
   // External interrupts assignement
   for (genvar i = 0; i < NEXT_INT; i++) begin : gen_external_intr_vect
@@ -206,18 +209,18 @@ module peripheral_subsystem
 
 `else
 
-  obi_pkg::obi_req_t  slave_fifoin_req;
+  obi_pkg::obi_req_t slave_fifoin_req;
   obi_pkg::obi_resp_t slave_fifoin_resp;
 
-  obi_pkg::obi_req_t  slave_fifoout_req;
+  obi_pkg::obi_req_t slave_fifoout_req;
   obi_pkg::obi_resp_t slave_fifoout_resp;
 
   obi_fifo obi_fifo_i (
       .clk_i(clk_cg),
       .rst_ni,
-      .producer_req_i(slave_fifoin_req),
+      .producer_req_i (slave_fifoin_req),
       .producer_resp_o(slave_fifoin_resp),
-      .consumer_req_o(slave_fifoout_req),
+      .consumer_req_o (slave_fifoout_req),
       .consumer_resp_i(slave_fifoout_resp)
   );
 
@@ -376,22 +379,22 @@ module peripheral_subsystem
       .cio_sda_i,
       .cio_sda_o,
       .cio_sda_en_o,
-      .intr_fmt_watermark_o(i2c_intr_fmt_watermark),
-      .intr_rx_watermark_o(i2c_intr_rx_watermark),
-      .intr_fmt_overflow_o(i2c_intr_fmt_overflow),
-      .intr_rx_overflow_o(i2c_intr_rx_overflow),
-      .intr_nak_o(i2c_intr_nak),
-      .intr_scl_interference_o(i2c_intr_scl_interference),
-      .intr_sda_interference_o(i2c_intr_sda_interference),
-      .intr_stretch_timeout_o(i2c_intr_stretch_timeout),
-      .intr_sda_unstable_o(i2c_intr_sda_unstable),
-      .intr_trans_complete_o(i2c_intr_trans_complete),
-      .intr_tx_empty_o(i2c_intr_tx_empty),
-      .intr_tx_nonempty_o(i2c_intr_tx_nonempty),
-      .intr_tx_overflow_o(i2c_intr_tx_overflow),
-      .intr_acq_overflow_o(i2c_intr_acq_overflow),
-      .intr_ack_stop_o(i2c_intr_ack_stop),
-      .intr_host_timeout_o(i2c_intr_host_timeout)
+      .intr_fmt_watermark_o(intr_fmt_watermark),
+      .intr_rx_watermark_o(intr_rx_watermark),
+      .intr_fmt_overflow_o(intr_fmt_overflow),
+      .intr_rx_overflow_o(intr_rx_overflow),
+      .intr_nak_o(intr_nak),
+      .intr_scl_interference_o(intr_scl_interference),
+      .intr_sda_interference_o(intr_sda_interference),
+      .intr_stretch_timeout_o(intr_stretch_timeout),
+      .intr_sda_unstable_o(intr_sda_unstable),
+      .intr_trans_complete_o(intr_trans_complete),
+      .intr_tx_empty_o(intr_tx_empty),
+      .intr_tx_nonempty_o(intr_tx_nonempty),
+      .intr_tx_overflow_o(intr_tx_overflow),
+      .intr_acq_overflow_o(intr_acq_overflow),
+      .intr_ack_stop_o(intr_ack_stop),
+      .intr_host_timeout_o(intr_host_timeout)
   );
 
   reg_to_tlul #(
@@ -445,7 +448,17 @@ module peripheral_subsystem
       .intr_spi_event_o(spi2_intr_event)
   );
 
-  assign pdm2pcm_clk_o = '0;
+  pdm2pcm #(
+      .reg_req_t(reg_pkg::reg_req_t),
+      .reg_rsp_t(reg_pkg::reg_rsp_t)
+  ) pdm2pcm_i (
+      .clk_i(clk_cg),
+      .rst_ni,
+      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::PDM2PCM_IDX]),
+      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::PDM2PCM_IDX]),
+      .pdm_i(pdm2pcm_pdm_i),
+      .pdm_clk_o(pdm2pcm_clk_o)
+  );
 
   assign pdm2pcm_clk_en_o = 1;
 
