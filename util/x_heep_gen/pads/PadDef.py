@@ -52,10 +52,8 @@ class ValidationError(ValueError):
 
 
 def _assert_type(t: str, where: str) -> None:
-    if t not in VALID_TYPES:
-        raise ValidationError(
-            f"{where}: invalid type '{t}'. Valid: {sorted(VALID_TYPES)}"
-        )
+    if not isinstance(t, PadType):
+        raise ValidationError(f"{where}: invalid orientation is of type '{type(t)}'")
 
 
 def _assert_mapping(m: str, where: str) -> None:
@@ -66,11 +64,9 @@ def _assert_mapping(m: str, where: str) -> None:
         )
 
 
-def _assert_orientation(o: str, where: str) -> None:
-    if o not in VALID_ORIENTATIONS:
-        raise ValidationError(
-            f"{where}: invalid orientation '{o}'. Valid: {sorted(VALID_ORIENTATIONS)}"
-        )
+def _assert_orientation(o: Any, where: str) -> None:
+    if o is not None and not isinstance(o, Orientation):
+        raise ValidationError(f"{where}: invalid orientation is of type '{type(o)}'")
 
 
 @dataclass(frozen=True)
@@ -106,14 +102,14 @@ class Layout:
 @dataclass(frozen=False)
 class PadDef:
     name: str
-    type: str
+    type: PadType
     mapping: PadMapping
     layout_index: int = 0
     layout: Layout = field(default_factory=Layout)
     layers: Optional[List[str]] = None
     properties: Dict[str, Any] = field(default_factory=dict)
     active: str = "high"
-    orient: Optional[str] = None
+    orient: Optional[Orientation] = None
     driven_manually: bool = False
     keep_internal: Optional[bool] = None
     skip: Optional[bool] = None
@@ -429,19 +425,13 @@ class PadGroup:
         if layouts:
             pad_group.layouts.update(layouts)
 
-        # helper: orientation "r90" → "R90"
-        def orient(s: str | None) -> str | None:
-            if s is None:
-                return None
-            return s.upper()
-
         # -------------------------------------------------------------------------
         # Pads section (SAFE)
         # -------------------------------------------------------------------------
         pads_cfg = cfg.get("pads", {})
 
         for pad_name, pad_info in pads_cfg.items():
-            pad_type = pad_info.get("type", "input")
+            pad_type = PadType(pad_info.get("type", "input"))
             mapping_str = pad_info.get("mapping", "top")
             mapping = PadMapping(mapping_str)
 
@@ -456,7 +446,11 @@ class PadGroup:
             else:
                 pad_layout = None
 
-            pad_orient = orient(la.get("orient"))
+            pad_orient = (
+                Orientation(la.get("orient").upper())
+                if la.get("orient") is not None
+                else None
+            )
 
             active = pad_info.get("active", "high")
             driven_manually = PadGroup._to_bool(pad_info.get("driven_manually", False))
@@ -467,7 +461,9 @@ class PadGroup:
                 type=pad_type,
                 mapping=mapping,
                 layout=pad_layout,
-                orient=pad_orient,
+                orient=(
+                    Orientation(pad_orient) if pad_orient is not None else pad_orient
+                ),
                 active=active,
                 driven_manually=driven_manually,
             )
@@ -477,7 +473,7 @@ class PadGroup:
                 alts_cfg = pad_info["mux"]
                 alts = []
                 for alt_name, alt_spec in alts_cfg.items():
-                    alt_type = alt_spec.get("type", pad_type)
+                    alt_type = PadType(alt_spec.get("type", pad_type.value))
                     alts.append(
                         (
                             alt_name,

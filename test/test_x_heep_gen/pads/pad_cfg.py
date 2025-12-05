@@ -5,9 +5,10 @@ from x_heep_gen.pads.PadDef import (
     PadGroup,
     Dimension,
     Layout,
+    PadType,
 )
 from x_heep_gen.pads.PadRing import PadRing
-from x_heep_gen.pads.Pad import PadMapping
+from x_heep_gen.pads.Pad import PadMapping, Orientation
 
 
 def config() -> PadRing:
@@ -59,10 +60,6 @@ def config() -> PadRing:
         fp_dim=fp_dim,
     )
 
-    # Helper for orientations (JSON uses "r90", "mx90", "mx", "r0", etc.)
-    def orient(s: str) -> str:
-        return s.upper()
-
     # -------------------------------------------------------------------------
     # Single pads (no mux)
     # -------------------------------------------------------------------------
@@ -71,10 +68,10 @@ def config() -> PadRing:
     clk = SinglePad(
         name="clk",
         layout_index=0,
-        type="input",
+        type=PadType.INPUT,
         mapping=PadMapping.RIGHT,
         layout=pad1_layout,
-        orient=orient("r90"),
+        orient=Orientation.R90,
     )
     pad_group.add_pad(clk)
 
@@ -82,10 +79,10 @@ def config() -> PadRing:
     rst = SinglePad(
         name="rst",
         layout_index=1,
-        type="input",
+        type=PadType.INPUT,
         mapping=PadMapping.RIGHT,
         layout=pad2_layout,
-        orient=orient("r90"),
+        orient=Orientation.R90,
         driven_manually=True,
         active="low",
     )
@@ -95,10 +92,10 @@ def config() -> PadRing:
     boot_select = SinglePad(
         name="boot_select",
         layout_index=3,
-        type="input",
+        type=PadType.INPUT,
         mapping=PadMapping.RIGHT,
         layout=pad4_layout,
-        orient=orient("mx90"),
+        orient=Orientation.MX90,
     )
     pad_group.add_pad(boot_select)
 
@@ -106,10 +103,10 @@ def config() -> PadRing:
     jtag_tms = SinglePad(
         name="jtag_tms",
         layout_index=4,
-        type="input",
+        type=PadType.INPUT,
         mapping=PadMapping.RIGHT,
         layout=pad1_layout,
-        orient=orient("mx90"),
+        orient=Orientation.MX90,
     )
     pad_group.add_pad(jtag_tms)
 
@@ -117,10 +114,10 @@ def config() -> PadRing:
     jtag_tdo = SinglePad(
         name="jtag_tdo",
         layout_index=5,
-        type="output",
+        type=PadType.OUTPUT,
         mapping=PadMapping.RIGHT,
         layout=pad2_layout,
-        orient=orient("mx90"),
+        orient=Orientation.MX90,
     )
     pad_group.add_pad(jtag_tdo)
 
@@ -128,10 +125,10 @@ def config() -> PadRing:
     execute_from_flash = SinglePad(
         name="execute_from_flash",
         layout_index=7,
-        type="input",
+        type=PadType.INPUT,
         mapping=PadMapping.BOTTOM,
         layout=pad4_layout,
-        orient=orient("mx"),
+        orient=Orientation.MX,
     )
     pad_group.add_pad(execute_from_flash)
 
@@ -139,10 +136,10 @@ def config() -> PadRing:
     jtag_tck = SinglePad(
         name="jtag_tck",
         layout_index=8,
-        type="input",
+        type=PadType.INPUT,
         mapping=PadMapping.BOTTOM,
         layout=pad1_layout,
-        orient=orient("mx"),
+        orient=Orientation.MX,
     )
     pad_group.add_pad(jtag_tck)
 
@@ -150,10 +147,10 @@ def config() -> PadRing:
     jtag_trst = SinglePad(
         name="jtag_trst",
         layout_index=9,
-        type="input",
+        type=PadType.INPUT,
         mapping=PadMapping.BOTTOM,
         layout=pad2_layout,
-        orient=orient("mx"),
+        orient=Orientation.MX,
         active="low",
     )
     pad_group.add_pad(jtag_trst)
@@ -162,10 +159,10 @@ def config() -> PadRing:
     jtag_tdi = SinglePad(
         name="jtag_tdi",
         layout_index=10,
-        type="input",
+        type=PadType.INPUT,
         mapping=PadMapping.TOP,
         layout=pad3_layout,
-        orient=orient("r0"),
+        orient=Orientation.R0,
     )
     pad_group.add_pad(jtag_tdi)
 
@@ -173,10 +170,10 @@ def config() -> PadRing:
     uart_rx = SinglePad(
         name="uart_rx",
         layout_index=11,
-        type="input",
+        type=PadType.INPUT,
         mapping=PadMapping.TOP,
         layout=pad1_layout,
-        orient=orient("r0"),
+        orient=Orientation.R0,
     )
     pad_group.add_pad(uart_rx)
 
@@ -184,10 +181,10 @@ def config() -> PadRing:
     uart_tx = SinglePad(
         name="uart_tx",
         layout_index=12,
-        type="output",
+        type=PadType.OUTPUT,
         mapping=PadMapping.TOP,
         layout=pad2_layout,
-        orient=orient("r0"),
+        orient=Orientation.R0,
     )
     pad_group.add_pad(uart_tx)
 
@@ -195,10 +192,10 @@ def config() -> PadRing:
     exit_valid = SinglePad(
         name="exit_valid",
         layout_index=13,
-        type="output",
+        type=PadType.OUTPUT,
         mapping=PadMapping.TOP,
         layout=pad4_layout,
-        orient=orient("r0"),
+        orient=Orientation.R0,
     )
     pad_group.add_pad(exit_valid)
 
@@ -210,27 +207,27 @@ def config() -> PadRing:
     # mux: { "pdm2pcm_clk": "inout", "gpio_19": "inout" }
     alt_pdm2pcm_clk = SinglePad(
         name="pdm2pcm_clk",
-        type="inout",
+        type=PadType.INOUT,
         mapping=PadMapping.RIGHT,
         layout=pad3_layout,
-        orient=orient("r90"),
+        orient=Orientation.R90,
     )
 
     alt_gpio_19 = SinglePad(
         name="gpio_19",
-        type="inout",
+        type=PadType.INOUT,
         mapping=PadMapping.RIGHT,
         layout=pad3_layout,
-        orient=orient("r90"),
+        orient=Orientation.R90,
     )
 
     pdm2pcm_clk = MultiplexedPad(
         name="pdm2pcm_clk",
         layout_index=2,
-        type="inout",
+        type=PadType.INOUT,
         mapping=PadMapping.RIGHT,
         layout=pad3_layout,
-        orient=orient("r90"),
+        orient=Orientation.R90,
         alts=[("pdm2pcm_clk", alt_pdm2pcm_clk), ("gpio_19", alt_gpio_19)],
     )
 
@@ -241,29 +238,29 @@ def config() -> PadRing:
     alt_pdm2pcm = SinglePad(
         name="pdm2pcm_pdm",
         layout_index=14,
-        type="inout",
+        type=PadType.INOUT,
         mapping=PadMapping.RIGHT,
         layout=pad3_layout,
-        orient=orient("r0"),
+        orient=Orientation.R0,
     )
 
     # TODO: create a nicer way create alts this not ideal
     alt_gpio_18 = SinglePad(
         name="gpio_18",
         layout_index=14,
-        type="inout",
+        type=PadType.INOUT,
         mapping=PadMapping.TOP,
         layout=pad3_layout,
-        orient=orient("r0"),
+        orient=Orientation.R0,
     )
 
     pdm2pcm_pdm = MultiplexedPad(
         name="pdm2pcm_pdm",
         layout_index=14,
-        type="inout",
+        type=PadType.INOUT,
         mapping=PadMapping.TOP,
         layout=pad3_layout,
-        orient=orient("r0"),
+        orient=Orientation.R0,
         alts=[("pdm2pcm_pdm", alt_pdm2pcm), ("gpio_18", alt_gpio_18)],
     )
 
@@ -276,11 +273,11 @@ def config() -> PadRing:
     gpio_range = RangePad(
         name="gpio",
         layout_index=6,
-        type="inout",
+        type=PadType.INOUT,
         mapping=PadMapping.LEFT,
         layout=pad3_layout,
         num=14,  # 14 pads -> 0..13
-        orient=orient("mx90"),
+        orient=Orientation.MX90,
     )
     pad_group.add_pad(gpio_range)
     # RangePad.add_pad() will expand to gpio_0 ... gpio_13 and assign indices

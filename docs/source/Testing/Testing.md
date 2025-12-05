@@ -141,7 +141,7 @@ The project includes a robust, automated process for creating and publishing rel
 
 #### Create X-HEEP Release Workflow (`create-release.yml`)
 
-This workflow prepares a new release. It is a comprehensive process that builds the toolchain, packages it, creates a draft release, builds a Docker container, and opens a version bump pull request. It`s designed to be triggered manually when a new release is needed.
+This workflow prepares a new release. It is a comprehensive process that builds the toolchain, packages it, creates a draft release, builds a Docker container, and opens a version bump pull request. It's designed to be triggered manually when a new release is needed.
 
 **Trigger:**
 
