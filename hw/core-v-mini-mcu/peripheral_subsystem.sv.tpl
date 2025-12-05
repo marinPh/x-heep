@@ -118,7 +118,7 @@ module peripheral_subsystem
 
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [${xheep.get_interrupts()["gpio_intr"].start_seq}:0] gpio_int_unused;
+  logic [${xheep.get_interrupts()["gpio_intr"].start_seq}-1:0] gpio_int_unused;
   <%
 intrs = [
   (name, irq)
@@ -128,7 +128,7 @@ intrs = [
 %>
 % for name, irq in intrs:
   % if irq.num > 1:
-  logic [${irq.start_seq + irq.num - 1}:${irq.start_seq}] ${name};
+  logic [${irq.start_seq + irq.num }:${irq.start_seq+1}] ${name};
   % else:
   logic ${name};
   % endif

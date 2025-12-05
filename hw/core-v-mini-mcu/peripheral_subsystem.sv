@@ -116,7 +116,7 @@ module peripheral_subsystem
 
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [8:0] gpio_int_unused;
+  logic [8-1:0] gpio_int_unused;
 
   logic null_intr;
   logic uart_intr_tx_watermark;
@@ -127,7 +127,7 @@ module peripheral_subsystem
   logic uart_intr_rx_break_err;
   logic uart_intr_rx_timeout;
   logic uart_intr_rx_parity_err;
-  logic [31:8] gpio_intr;
+  logic [32:9] gpio_intr;
   logic intr_fmt_watermark;
   logic intr_rx_watermark;
   logic intr_fmt_overflow;
