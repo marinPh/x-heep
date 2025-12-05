@@ -18,6 +18,8 @@ class Interrupt:
     id: int
     num: Optional[int] = 1
     start_seq: Optional[int] = id
+    peripheral: Optional[str] = None  # Name of peripheral this interrupt belongs to
+    port_names: Optional[List[str]] = None  # Port names for the peripheral instance
 
     def __post_init__(self):
         if self.num < 1:

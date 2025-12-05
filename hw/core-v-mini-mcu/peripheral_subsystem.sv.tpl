@@ -115,45 +115,32 @@ module peripheral_subsystem
   logic [$clog2(rv_plic_reg_pkg::NumSrc)-1:0] irq_id[rv_plic_reg_pkg::NumTarget];
   logic [$clog2(rv_plic_reg_pkg::NumSrc)-1:0] unused_irq_id[rv_plic_reg_pkg::NumTarget];
 
-  logic [31:8] gpio_intr;
+
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [7:0] gpio_int_unused;
-
-  logic i2c_intr_fmt_watermark;
-  logic i2c_intr_rx_watermark;
-  logic i2c_intr_fmt_overflow;
-  logic i2c_intr_rx_overflow;
-  logic i2c_intr_nak;
-  logic i2c_intr_scl_interference;
-  logic i2c_intr_sda_interference;
-  logic i2c_intr_stretch_timeout;
-  logic i2c_intr_sda_unstable;
-  logic i2c_intr_trans_complete;
-  logic i2c_intr_tx_empty;
-  logic i2c_intr_tx_nonempty;
-  logic i2c_intr_tx_overflow;
-  logic i2c_intr_acq_overflow;
-  logic i2c_intr_ack_stop;
-  logic i2c_intr_host_timeout;
-  logic spi2_intr_event;
-  logic i2s_intr_event;
-  logic uart_intr_tx_watermark;
-  logic uart_intr_rx_watermark;
-  logic uart_intr_tx_empty;
-  logic uart_intr_rx_overflow;
-  logic uart_intr_rx_frame_err;
-  logic uart_intr_rx_break_err;
-  logic uart_intr_rx_timeout;
-  logic uart_intr_rx_parity_err;
+  logic [${xheep.get_interrupts()["gpio_intr"].start_seq}:0] gpio_int_unused
+  <%
+intrs = [
+  (name, irq)
+  for name, irq in xheep.get_interrupts().items()
+  if name != "EXT_INTR"
+]
+%>
+% for name, irq in intrs:
+  % if irq.num > 1:
+  logic [${irq.start_seq + irq.num - 2}:${irq.start_seq}] ${name};
+  % else:
+  logic ${name};
+  % endif
+% endfor
 
   // this avoids lint errors
   assign unused_irq_id = irq_id;
 
   // Assign internal interrupts
-% for name, irq in xheep.get_interrupts().items():
+% for name, irq in intrs:
 %if irq.id ==0:
-assign intr_vector[${irq.id}] = ;
+assign intr_vector[${irq.id}] = 1'b0;  // ID [0] is a special case and must be tied to zero. ;
 % elif irq.num>1:
 assign intr_vector[${irq.id+irq.num-1}:${irq.id}] = ${name};
 %else: 

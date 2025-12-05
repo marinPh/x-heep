@@ -332,7 +332,7 @@ class XHeep:
         for name in list(set_names):
             filtered = [x for x in names if x[0] == name]
             filtered.sort(key=lambda x: x[1])
-            start: int = int(min([f[2] for f in filtered]))
+            start: int = (min([int(f[2]) for f in filtered]))
             print(filtered)
             irq = Interrupt(filtered[0][1], len(filtered), start)
             self.add_interrupt(name, irq)
@@ -359,6 +359,71 @@ class XHeep:
                 temp[name] = irq.id
         print(temp)
         return temp
+
+    def get_interrupts_for_peripheral(self, peripheral_name: str) -> Dict[str, Interrupt]:
+        """
+        Get all interrupts belonging to a specific peripheral.
+
+        :param str peripheral_name: Name of the peripheral (e.g., 'i2c', 'uart', 'gpio')
+        :return: Dictionary of interrupt_name -> Interrupt for this peripheral
+        """
+        result = {}
+
+        # I2C interrupt names in hjson (special case - no peripheral prefix)
+        i2c_interrupt_names = [
+            'fmt_watermark', 'rx_watermark', 'fmt_overflow',
+            'rx_overflow', 'nak', 'scl_interference',
+            'sda_interference', 'stretch_timeout', 'sda_unstable',
+            'trans_complete', 'tx_empty', 'tx_nonempty',
+            'tx_overflow', 'acq_overflow', 'ack_stop', 'host_timeout'
+        ]
+
+        for name, irq in self._interrupts.items():
+            # Standard case: peripheral_intr_* pattern
+            if name.startswith(f"{peripheral_name}_intr_"):
+                result[name] = irq
+            # Handle I2C special case (interrupts start with 'intr_' but belong to i2c)
+            elif peripheral_name == 'i2c' and name.startswith('intr_'):
+                # Check if it's one of the known I2C interrupts
+                if any(pattern in name for pattern in i2c_interrupt_names):
+                    result[name] = irq
+
+        return result
+
+    def get_peripheral_interrupt_connections(self, peripheral_name: str) -> list:
+        """
+        Generate port connection strings for a peripheral's interrupts.
+        Returns list of (port_name, signal_name) tuples.
+
+        Example for i2c: [('intr_fmt_watermark_o', 'i2c_intr_fmt_watermark'), ...]
+        Example for uart: [('intr_tx_watermark_o', 'uart_intr_tx_watermark'), ...]
+
+        :param str peripheral_name: Name of the peripheral
+        :return: List of (port_name, signal_name) tuples
+        """
+        interrupts = self.get_interrupts_for_peripheral(peripheral_name)
+        connections = []
+
+        for intr_name, irq in interrupts.items():
+            # Extract the interrupt-specific part (after peripheral prefix)
+            if intr_name.startswith(f"{peripheral_name}_intr_"):
+                # Standard case: uart_intr_tx_watermark -> intr_tx_watermark_o
+                intr_suffix = intr_name.replace(f"{peripheral_name}_intr_", "")
+                port_name = f"intr_{intr_suffix}_o"
+                signal_name = intr_name
+            # Handle I2C special case: intr_fmt_watermark -> intr_fmt_watermark_o, i2c_intr_fmt_watermark
+            elif peripheral_name == 'i2c' and intr_name.startswith('intr_'):
+                port_name = f"{intr_name}_o"
+                signal_name = f"i2c_{intr_name}"
+            else:
+                continue
+
+            connections.append((port_name, signal_name))
+
+        # Sort by port name for consistent output
+        connections.sort(key=lambda x: x[0])
+
+        return connections
 
     # ------------------------------------------------------------
     # Extensions
