@@ -373,7 +373,7 @@ class Pad:
         self.cell_name = cell_name
         self.index = index
         self.localparam = "PAD_" + name.upper()
-        self.pad_type = pad_type
+        self.pad_type = pad_type.value
         self.pad_mapping = pad_mapping
         self.pad_mux_list = pad_mux_list
         if pad_active == "low":
@@ -402,7 +402,7 @@ class Pad:
         self.do_skip_declaration = pad_skip_declaration
 
         self.layout_index = pad_layout_index
-        self.layout_orient = orient.lower() if orient else orient
+        self.layout_orient = orient.value.lower() if orient else orient
         self.layout_cell = pad_layout.name if pad_layout else ""
         self.layout_bondpad = f"BOND{pad_layout.name}" if pad_layout else ""
         self.layout_offset = pad_layout.offset if pad_layout else ""
@@ -410,7 +410,7 @@ class Pad:
 
         if len(pad_mux_list) == 0:
             self.signal_name_drive.append(self.signal_name)
-            self.pad_type_drive.append(pad_type)
+            self.pad_type_drive.append(pad_type.value)
             self.driven_manually.append(pad_driven_manually)
             self.skip_declaration.append(pad_skip_declaration)
         else:
