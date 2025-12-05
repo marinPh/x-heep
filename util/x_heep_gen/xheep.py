@@ -352,7 +352,7 @@ class XHeep:
             if irq.num > 1:
                 cnt = irq.id
                 for i in range(irq.start_seq, irq.start_seq + irq.num):
-                    temp[f"{name}_{i-2}"] = cnt
+                    temp[f"{name}_{i}"] = cnt
                     cnt += 1
             else:
                 temp[name] = irq.id
