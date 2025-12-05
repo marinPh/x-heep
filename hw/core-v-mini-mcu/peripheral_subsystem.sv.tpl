@@ -118,7 +118,7 @@ module peripheral_subsystem
 
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [${xheep.get_interrupts()["gpio_intr"].start_seq}:0] gpio_int_unused
+  logic [${xheep.get_interrupts()["gpio_intr"].start_seq}:0] gpio_int_unused;
   <%
 intrs = [
   (name, irq)

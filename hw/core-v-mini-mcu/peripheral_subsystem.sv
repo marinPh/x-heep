@@ -9,7 +9,7 @@ module peripheral_subsystem
   import reg_pkg::*;
 #(
     //do not touch these parameters
-    parameter NEXT_INT_RND         = core_v_mini_mcu_pkg::NEXT_INT == 0 ? 1 : core_v_mini_mcu_pkg::NEXT_INT
+    parameter NEXT_INT_RND = core_v_mini_mcu_pkg::NEXT_INT == 0 ? 1 : core_v_mini_mcu_pkg::NEXT_INT
 ) (
     input logic clk_i,
     input logic rst_ni,
@@ -22,8 +22,8 @@ module peripheral_subsystem
 
     //PLIC
     input  logic [NEXT_INT_RND-1:0] intr_vector_ext_i,
-    output logic                irq_plic_o,
-    output logic                msip_o,
+    output logic                    irq_plic_o,
+    output logic                    msip_o,
 
     // UART
     input  logic uart_rx_i,
@@ -116,7 +116,7 @@ module peripheral_subsystem
 
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [8:0] gpio_int_unused
+  logic [8:0] gpio_int_unused;
 
   logic null_intr;
   logic uart_intr_tx_watermark;
@@ -151,34 +151,34 @@ module peripheral_subsystem
   assign unused_irq_id = irq_id;
 
   // Assign internal interrupts
-assign intr_vector[0] = 1'b0;  // ID [0] is a special case and must be tied to zero. ;
-assign intr_vector[1] = uart_intr_tx_watermark;
-assign intr_vector[2] = uart_intr_rx_watermark;
-assign intr_vector[3] = uart_intr_tx_empty;
-assign intr_vector[4] = uart_intr_rx_overflow;
-assign intr_vector[5] = uart_intr_rx_frame_err;
-assign intr_vector[6] = uart_intr_rx_break_err;
-assign intr_vector[7] = uart_intr_rx_timeout;
-assign intr_vector[8] = uart_intr_rx_parity_err;
-assign intr_vector[32:9] = gpio_intr;
-assign intr_vector[33] = intr_fmt_watermark;
-assign intr_vector[34] = intr_rx_watermark;
-assign intr_vector[35] = intr_fmt_overflow;
-assign intr_vector[36] = intr_rx_overflow;
-assign intr_vector[37] = intr_nak;
-assign intr_vector[38] = intr_scl_interference;
-assign intr_vector[39] = intr_sda_interference;
-assign intr_vector[40] = intr_stretch_timeout;
-assign intr_vector[41] = intr_sda_unstable;
-assign intr_vector[42] = intr_trans_complete;
-assign intr_vector[43] = intr_tx_empty;
-assign intr_vector[44] = intr_tx_nonempty;
-assign intr_vector[45] = intr_tx_overflow;
-assign intr_vector[46] = intr_acq_overflow;
-assign intr_vector[47] = intr_ack_stop;
-assign intr_vector[48] = intr_host_timeout;
-assign intr_vector[49] = spi2_intr_event;
-assign intr_vector[50] = i2s_intr_event;
+  assign intr_vector[0] = 1'b0;  // ID [0] is a special case and must be tied to zero. ;
+  assign intr_vector[1] = uart_intr_tx_watermark;
+  assign intr_vector[2] = uart_intr_rx_watermark;
+  assign intr_vector[3] = uart_intr_tx_empty;
+  assign intr_vector[4] = uart_intr_rx_overflow;
+  assign intr_vector[5] = uart_intr_rx_frame_err;
+  assign intr_vector[6] = uart_intr_rx_break_err;
+  assign intr_vector[7] = uart_intr_rx_timeout;
+  assign intr_vector[8] = uart_intr_rx_parity_err;
+  assign intr_vector[32:9] = gpio_intr;
+  assign intr_vector[33] = intr_fmt_watermark;
+  assign intr_vector[34] = intr_rx_watermark;
+  assign intr_vector[35] = intr_fmt_overflow;
+  assign intr_vector[36] = intr_rx_overflow;
+  assign intr_vector[37] = intr_nak;
+  assign intr_vector[38] = intr_scl_interference;
+  assign intr_vector[39] = intr_sda_interference;
+  assign intr_vector[40] = intr_stretch_timeout;
+  assign intr_vector[41] = intr_sda_unstable;
+  assign intr_vector[42] = intr_trans_complete;
+  assign intr_vector[43] = intr_tx_empty;
+  assign intr_vector[44] = intr_tx_nonempty;
+  assign intr_vector[45] = intr_tx_overflow;
+  assign intr_vector[46] = intr_acq_overflow;
+  assign intr_vector[47] = intr_ack_stop;
+  assign intr_vector[48] = intr_host_timeout;
+  assign intr_vector[49] = spi2_intr_event;
+  assign intr_vector[50] = i2s_intr_event;
 
 
   // External interrupts assignement
@@ -209,18 +209,18 @@ assign intr_vector[50] = i2s_intr_event;
 
 `else
 
-  obi_pkg::obi_req_t slave_fifoin_req;
+  obi_pkg::obi_req_t  slave_fifoin_req;
   obi_pkg::obi_resp_t slave_fifoin_resp;
 
-  obi_pkg::obi_req_t slave_fifoout_req;
+  obi_pkg::obi_req_t  slave_fifoout_req;
   obi_pkg::obi_resp_t slave_fifoout_resp;
 
   obi_fifo obi_fifo_i (
       .clk_i(clk_cg),
       .rst_ni,
-      .producer_req_i (slave_fifoin_req),
+      .producer_req_i(slave_fifoin_req),
       .producer_resp_o(slave_fifoin_resp),
-      .consumer_req_o (slave_fifoout_req),
+      .consumer_req_o(slave_fifoout_req),
       .consumer_resp_i(slave_fifoout_resp)
   );
 
