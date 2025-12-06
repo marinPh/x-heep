@@ -14,7 +14,7 @@ PAD_TYPE_CONFIG = {
             ("pad_out_o", f"{sig}o"),
             ("pad_io", f"{sig}io"),
         ],
-        "cell": "pad_cell_input"
+        "cell": "pad_cell_input",
     },
     "output": {
         "ctrl_interface": lambda sig: f"    input logic {sig}i,",
@@ -24,7 +24,7 @@ PAD_TYPE_CONFIG = {
             ("pad_out_o", ""),  # Empty signal (no connection)
             ("pad_io", f"{sig}io"),
         ],
-        "cell": "pad_cell_output"
+        "cell": "pad_cell_output",
     },
     "inout": {
         "ctrl_interface": lambda sig: (
@@ -38,8 +38,8 @@ PAD_TYPE_CONFIG = {
             ("pad_out_o", f"{sig}o"),
             ("pad_io", f"{sig}io"),
         ],
-        "cell": "pad_cell_inout"
-    }
+        "cell": "pad_cell_inout",
+    },
 }
 
 

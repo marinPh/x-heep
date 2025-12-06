@@ -146,10 +146,10 @@ def _get_pad_cell_width(pad, pad_name=None):
     :raises ValueError: If pad cell is not defined or width is missing
     """
     if pad_name is None:
-        pad_name = getattr(pad, 'name', 'unknown')
+        pad_name = getattr(pad, "name", "unknown")
 
     # Get pad cell from layout
-    pad_cell = getattr(pad.layout, 'cell_pad', None) if hasattr(pad, 'layout') else None
+    pad_cell = getattr(pad.layout, "cell_pad", None) if hasattr(pad, "layout") else None
 
     if pad_cell is None:
         raise ValueError(f"Pad cell not defined for pad '{pad_name}'")
@@ -158,9 +158,7 @@ def _get_pad_cell_width(pad, pad_name=None):
     try:
         return float(pad_cell.width)
     except (AttributeError, KeyError) as e:
-        raise ValueError(
-            f"Width not defined for pad cell of pad '{pad_name}'"
-        ) from e
+        raise ValueError(f"Width not defined for pad cell of pad '{pad_name}'") from e
 
 
 def separate_and_sort_pads(pads, sort_by_layout_index=False):

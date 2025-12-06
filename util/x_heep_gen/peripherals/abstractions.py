@@ -172,7 +172,9 @@ class PeripheralDomain(ABC):
         :param Peripheral peripheral: The peripheral to add.
         """
         if not isinstance(peripheral, self._get_peripheral_type()):
-            raise ValueError(f"Peripheral is not a {self._get_peripheral_type().__name__}")
+            raise ValueError(
+                f"Peripheral is not a {self._get_peripheral_type().__name__}"
+            )
         self._peripherals.append(peripheral)
 
     def remove_peripheral(self, peripheral: Peripheral):

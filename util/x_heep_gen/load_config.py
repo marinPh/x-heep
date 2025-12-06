@@ -227,7 +227,9 @@ def _create_dma_peripheral(peripheral_config, offset, length):
     :return: DMA peripheral instance
     """
     try:
-        dma_is_included = "yes" if peripheral_config.get("is_included", "yes") == "yes" else "no"
+        dma_is_included = (
+            "yes" if peripheral_config.get("is_included", "yes") == "yes" else "no"
+        )
     except (KeyError, AttributeError):
         dma_is_included = "yes"
 
@@ -250,7 +252,9 @@ def _create_dma_peripheral(peripheral_config, offset, length):
         ch_length = int(peripheral_config["ch_length"], 16)
         num_channels = int(peripheral_config["num_channels"], 16)
         num_master_ports = int(peripheral_config["num_master_ports"], 16)
-        num_channels_per_master_port = int(peripheral_config["num_channels_per_master_port"], 16)
+        num_channels_per_master_port = int(
+            peripheral_config["num_channels_per_master_port"], 16
+        )
         fifo_depth = int(peripheral_config["fifo_depth"], 16)
     else:
         addr_mode_en = "no"
@@ -279,7 +283,9 @@ def _create_dma_peripheral(peripheral_config, offset, length):
     )
 
 
-def _create_peripheral_from_config(peripheral_name, peripheral_config, peripheral_factory_map):
+def _create_peripheral_from_config(
+    peripheral_name, peripheral_config, peripheral_factory_map
+):
     """
     Create a peripheral instance from configuration.
 
@@ -305,8 +311,13 @@ def _create_peripheral_from_config(peripheral_name, peripheral_config, periphera
 
 
 def _load_domain_peripherals(
-    system, fields, domain_type, peripheral_factory_map,
-    domain_constructor, are_configured_check, get_domain_attr
+    system,
+    fields,
+    domain_type,
+    peripheral_factory_map,
+    domain_constructor,
+    are_configured_check,
+    get_domain_attr,
 ):
     """
     Generic function to load peripherals into a domain from configuration.
@@ -335,14 +346,20 @@ def _load_domain_peripherals(
             continue
 
         # Skip if peripheral was already added by python configuration
-        if are_configured_check() and get_domain_attr().contains_peripheral(peripheral_name):
+        if are_configured_check() and get_domain_attr().contains_peripheral(
+            peripheral_name
+        ):
             continue
 
         # Check if peripheral should be included
         try:
             is_included = peripheral_config.get("is_included", "yes")
             # Special case for base peripherals: DMA is always included
-            if domain_type == "base" and peripheral_name != "dma" and is_included == "no":
+            if (
+                domain_type == "base"
+                and peripheral_name != "dma"
+                and is_included == "no"
+            ):
                 continue
             # For user peripherals, skip if not included
             if domain_type == "user" and is_included == "no":
@@ -421,7 +438,7 @@ def load_peripherals_config(system: XHeep, config_path: str):
                 peripheral_factory_map=base_peripheral_factories,
                 domain_constructor=BasePeripheralDomain,
                 are_configured_check=system.are_base_peripherals_configured,
-                get_domain_attr=lambda: system._base_peripheral_domain
+                get_domain_attr=lambda: system._base_peripheral_domain,
             )
 
         # User Peripherals
@@ -433,7 +450,7 @@ def load_peripherals_config(system: XHeep, config_path: str):
                 peripheral_factory_map=user_peripheral_factories,
                 domain_constructor=UserPeripheralDomain,
                 are_configured_check=system.are_user_peripherals_configured,
-                get_domain_attr=lambda: system._user_peripheral_domain
+                get_domain_attr=lambda: system._user_peripheral_domain,
             )
 
 
