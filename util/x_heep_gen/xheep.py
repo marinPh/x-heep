@@ -210,11 +210,13 @@ class XHeep:
         """
         all_ids = []
         for domain in domains:
-            all_ids.extend([
-                irq.id
-                for irq in domain.get_interrupts().values()
-                if irq is not None and irq.id is not None
-            ])
+            all_ids.extend(
+                [
+                    irq.id
+                    for irq in domain.get_interrupts().values()
+                    if irq is not None and irq.id is not None
+                ]
+            )
         return all_ids
 
     def _collect_predefined_interrupts_map(self, *domains):
@@ -232,7 +234,9 @@ class XHeep:
                     result[irq.id] = name
         return result
 
-    def _assign_interrupts_from_domain(self, domain, possible_ids, validate=False, predefined_map=None):
+    def _assign_interrupts_from_domain(
+        self, domain, possible_ids, validate=False, predefined_map=None
+    ):
         """
         Assign interrupts from a peripheral domain.
 
@@ -265,8 +269,7 @@ class XHeep:
         """
         # Collect all interrupt IDs from both domains
         all_ids = self._collect_interrupt_ids_from_domains(
-            self._base_peripheral_domain,
-            self._user_peripheral_domain
+            self._base_peripheral_domain, self._user_peripheral_domain
         )
 
         # Check no 2 peripherals have the same interrupt ID
@@ -278,8 +281,7 @@ class XHeep:
 
         # Get predefined interrupts map for validation
         predefined_map = self._collect_predefined_interrupts_map(
-            self._base_peripheral_domain,
-            self._user_peripheral_domain
+            self._base_peripheral_domain, self._user_peripheral_domain
         )
 
         # Assign interrupts from base peripheral domain (with validation)
@@ -287,14 +289,12 @@ class XHeep:
             self._base_peripheral_domain,
             possible_ids,
             validate=True,
-            predefined_map=predefined_map
+            predefined_map=predefined_map,
         )
 
         # Assign interrupts from user peripheral domain (without validation)
         self._assign_interrupts_from_domain(
-            self._user_peripheral_domain,
-            possible_ids,
-            validate=False
+            self._user_peripheral_domain, possible_ids, validate=False
         )
 
         # Sort interrupts by ID
@@ -528,8 +528,11 @@ class XHeep:
         :rtype: bool
         """
         # Check if domain1 comes before domain2 and overflows into it
-        if (domain1.get_start_address() < domain2.get_start_address() and
-            domain1.get_start_address() + domain1.get_length() > domain2.get_start_address()):
+        if (
+            domain1.get_start_address() < domain2.get_start_address()
+            and domain1.get_start_address() + domain1.get_length()
+            > domain2.get_start_address()
+        ):
             print(
                 f"The {name1} peripheral domain (ends at "
                 f"{domain1.get_start_address() + domain1.get_length():#08X}) "
@@ -583,13 +586,16 @@ class XHeep:
 
         # Check that peripheral domains do not overlap
         ret = True
-        if self.are_base_peripherals_configured() and self.are_user_peripherals_configured():
+        if (
+            self.are_base_peripherals_configured()
+            and self.are_user_peripherals_configured()
+        ):
             # Check base -> user overlap
             if not self._check_domain_overlap(
                 self._base_peripheral_domain,
                 self._user_peripheral_domain,
                 "base",
-                "user"
+                "user",
             ):
                 ret = False
             # Check user -> base overlap
@@ -597,7 +603,7 @@ class XHeep:
                 self._user_peripheral_domain,
                 self._base_peripheral_domain,
                 "user",
-                "base"
+                "base",
             ):
                 ret = False
 
