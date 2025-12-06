@@ -4,6 +4,7 @@
 
 
 
+
 module peripheral_subsystem
   import obi_pkg::*;
   import reg_pkg::*;
@@ -282,6 +283,7 @@ module peripheral_subsystem
       .out_rsp_i(peripheral_slv_rsp)
   );
 
+
   reg_to_tlul #(
       .req_t(reg_pkg::reg_req_t),
       .rsp_t(reg_pkg::reg_rsp_t),
@@ -298,6 +300,7 @@ module peripheral_subsystem
       .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::RV_PLIC_IDX]),
       .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::RV_PLIC_IDX])
   );
+
 
   rv_plic rv_plic_i (
       .clk_i(clk_cg),
@@ -351,6 +354,7 @@ module peripheral_subsystem
       .global_interrupt_o()
   );
 
+
   reg_to_tlul #(
       .req_t(reg_pkg::reg_req_t),
       .rsp_t(reg_pkg::reg_rsp_t),
@@ -367,6 +371,7 @@ module peripheral_subsystem
       .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::I2C_IDX]),
       .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::I2C_IDX])
   );
+
 
   i2c i2c_i (
       .clk_i(clk_cg),
@@ -397,6 +402,7 @@ module peripheral_subsystem
       .intr_host_timeout_o(intr_host_timeout)
   );
 
+
   reg_to_tlul #(
       .req_t(reg_pkg::reg_req_t),
       .rsp_t(reg_pkg::reg_rsp_t),
@@ -413,6 +419,7 @@ module peripheral_subsystem
       .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::RV_TIMER_IDX]),
       .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::RV_TIMER_IDX])
   );
+
 
   rv_timer rv_timer_2_3_i (
       .clk_i(clk_cg),
@@ -491,6 +498,7 @@ module peripheral_subsystem
       .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::UART_IDX]),
       .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::UART_IDX])
   );
+
 
   uart uart_i (
       .clk_i(clk_cg),

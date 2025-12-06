@@ -5,6 +5,24 @@
 <%
   user_peripheral_domain = xheep.get_user_peripheral_domain()
 %>
+<%def name="reg_to_tlul_inst(instance_name, tl_h2d, tl_d2h, idx_name)">
+  reg_to_tlul #(
+      .req_t(reg_pkg::reg_req_t),
+      .rsp_t(reg_pkg::reg_rsp_t),
+      .tl_h2d_t(tlul_pkg::tl_h2d_t),
+      .tl_d2h_t(tlul_pkg::tl_d2h_t),
+      .tl_a_user_t(tlul_pkg::tl_a_user_t),
+      .tl_a_op_e(tlul_pkg::tl_a_op_e),
+      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
+      .PutFullData(tlul_pkg::PutFullData),
+      .Get(tlul_pkg::Get)
+  ) ${instance_name} (
+      .tl_o(${tl_h2d}),
+      .tl_i(${tl_d2h}),
+      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::${idx_name}]),
+      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::${idx_name}])
+  );
+</%def>
 
 module peripheral_subsystem
   import obi_pkg::*;
@@ -251,22 +269,7 @@ assign intr_vector[${irq.id}] = ${name};
   );
 
 % if user_peripheral_domain.contains_peripheral('rv_plic'):
-  reg_to_tlul #(
-      .req_t(reg_pkg::reg_req_t),
-      .rsp_t(reg_pkg::reg_rsp_t),
-      .tl_h2d_t(tlul_pkg::tl_h2d_t),
-      .tl_d2h_t(tlul_pkg::tl_d2h_t),
-      .tl_a_user_t(tlul_pkg::tl_a_user_t),
-      .tl_a_op_e(tlul_pkg::tl_a_op_e),
-      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
-      .PutFullData(tlul_pkg::PutFullData),
-      .Get(tlul_pkg::Get)
-  ) reg_to_tlul_plic_i (
-      .tl_o(plic_tl_h2d),
-      .tl_i(plic_tl_d2h),
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::RV_PLIC_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::RV_PLIC_IDX])
-  );
+${reg_to_tlul_inst('reg_to_tlul_plic_i', 'plic_tl_h2d', 'plic_tl_d2h', 'RV_PLIC_IDX')}
 
   rv_plic rv_plic_i (
       .clk_i(clk_cg),
@@ -349,22 +352,7 @@ assign intr_vector[${irq.id}] = ${name};
 % endif
 
 % if user_peripheral_domain.contains_peripheral('i2c'):
-  reg_to_tlul #(
-      .req_t(reg_pkg::reg_req_t),
-      .rsp_t(reg_pkg::reg_rsp_t),
-      .tl_h2d_t(tlul_pkg::tl_h2d_t),
-      .tl_d2h_t(tlul_pkg::tl_d2h_t),
-      .tl_a_user_t(tlul_pkg::tl_a_user_t),
-      .tl_a_op_e(tlul_pkg::tl_a_op_e),
-      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
-      .PutFullData(tlul_pkg::PutFullData),
-      .Get(tlul_pkg::Get)
-  ) reg_to_tlul_i2c_i (
-      .tl_o(i2c_tl_h2d),
-      .tl_i(i2c_tl_d2h),
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::I2C_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::I2C_IDX])
-  );
+${reg_to_tlul_inst('reg_to_tlul_i2c_i', 'i2c_tl_h2d', 'i2c_tl_d2h', 'I2C_IDX')}
 
   i2c i2c_i (
       .clk_i(clk_cg),
@@ -419,22 +407,7 @@ assign intr_vector[${irq.id}] = ${name};
 % endif
 
 % if user_peripheral_domain.contains_peripheral('rv_timer'):
-  reg_to_tlul #(
-      .req_t(reg_pkg::reg_req_t),
-      .rsp_t(reg_pkg::reg_rsp_t),
-      .tl_h2d_t(tlul_pkg::tl_h2d_t),
-      .tl_d2h_t(tlul_pkg::tl_d2h_t),
-      .tl_a_user_t(tlul_pkg::tl_a_user_t),
-      .tl_a_op_e(tlul_pkg::tl_a_op_e),
-      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
-      .PutFullData(tlul_pkg::PutFullData),
-      .Get(tlul_pkg::Get)
-  ) rv_timer_reg_to_tlul_i (
-      .tl_o(rv_timer_tl_h2d),
-      .tl_i(rv_timer_tl_d2h),
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::RV_TIMER_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::RV_TIMER_IDX])
-  );
+${reg_to_tlul_inst('rv_timer_reg_to_tlul_i', 'rv_timer_tl_h2d', 'rv_timer_tl_d2h', 'RV_TIMER_IDX')}
 
   rv_timer rv_timer_2_3_i (
       .clk_i(clk_cg),
@@ -538,23 +511,7 @@ assign intr_vector[${irq.id}] = ${name};
 % endif
 
 % if user_peripheral_domain.contains_peripheral('uart'):
-
-  reg_to_tlul #(
-      .req_t(reg_pkg::reg_req_t),
-      .rsp_t(reg_pkg::reg_rsp_t),
-      .tl_h2d_t(tlul_pkg::tl_h2d_t),
-      .tl_d2h_t(tlul_pkg::tl_d2h_t),
-      .tl_a_user_t(tlul_pkg::tl_a_user_t),
-      .tl_a_op_e(tlul_pkg::tl_a_op_e),
-      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
-      .PutFullData(tlul_pkg::PutFullData),
-      .Get(tlul_pkg::Get)
-  ) reg_to_tlul_uart_i (
-      .tl_o(uart_tl_h2d),
-      .tl_i(uart_tl_d2h),
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::UART_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::UART_IDX])
-  );
+${reg_to_tlul_inst('reg_to_tlul_uart_i', 'uart_tl_h2d', 'uart_tl_d2h', 'UART_IDX')}
 
   uart uart_i (
       .clk_i(clk_cg),
