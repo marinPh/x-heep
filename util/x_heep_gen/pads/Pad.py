@@ -1,7 +1,63 @@
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Dict, List, Tuple, Callable
 from .PadDef import PadType, PadMapping, Orientation
+
+
+# Pad type configuration for signal generation
+PAD_TYPE_CONFIG = {
+    "input": {
+        "ctrl_interface": lambda sig: f"    output logic {sig}o,",
+        "connections": lambda sig: [
+            ("pad_in_i", "1'b0"),
+            ("pad_oe_i", "1'b0"),
+            ("pad_out_o", f"{sig}o"),
+            ("pad_io", f"{sig}io"),
+        ],
+        "cell": "pad_cell_input"
+    },
+    "output": {
+        "ctrl_interface": lambda sig: f"    input logic {sig}i,",
+        "connections": lambda sig: [
+            ("pad_in_i", f"{sig}i"),
+            ("pad_oe_i", "1'b1"),
+            ("pad_out_o", ""),  # Empty signal (no connection)
+            ("pad_io", f"{sig}io"),
+        ],
+        "cell": "pad_cell_output"
+    },
+    "inout": {
+        "ctrl_interface": lambda sig: (
+            f"    input logic {sig}i,\n"
+            f"    output logic {sig}o,\n"
+            f"    input logic {sig}oe_i,"
+        ),
+        "connections": lambda sig: [
+            ("pad_in_i", f"{sig}i"),
+            ("pad_oe_i", f"{sig}oe_i"),
+            ("pad_out_o", f"{sig}o"),
+            ("pad_io", f"{sig}io"),
+        ],
+        "cell": "pad_cell_inout"
+    }
+}
+
+
+def _build_pad_connections(connections: List[Tuple[str, str]]) -> str:
+    """
+    Build connection string from list of (port, signal) tuples.
+
+    :param connections: List of (port_name, signal_name) tuples
+    :return: Formatted connection string
+    :rtype: str
+    """
+    conn_lines = []
+    for port, signal in connections:
+        if signal:  # Only add non-empty signals
+            conn_lines.append(f"   .{port}({signal}),")
+        else:  # Empty signal gets empty parentheses
+            conn_lines.append(f"   .{port}(),")
+    return "\n".join(conn_lines) + "\n"
 
 
 class Pad:
@@ -34,61 +90,23 @@ class Pad:
         param_str = f"#(.PADATTR({self.attribute_bits}){mapping})"
         sig = self.signal_name
 
-        # --- Pad type logic ---
-        if self.pad_type == "input":
-            self.pad_ring_io_interface = f"    inout wire {self.io_interface},"
-            self.pad_ring_ctrl_interface += f"    output logic {sig}o,"
-            conns = (
-                "\n".join(
-                    [
-                        "   .pad_in_i(1'b0),",
-                        "   .pad_oe_i(1'b0),",
-                        f"   .pad_out_o({sig}o),",
-                        f"   .pad_io({sig}io),",
-                    ]
-                )
-                + "\n"
-            )
-            cell = "pad_cell_input"
+        # --- Pad type logic (configuration-driven) ---
+        if self.pad_type in PAD_TYPE_CONFIG:
+            config = PAD_TYPE_CONFIG[self.pad_type]
 
-        elif self.pad_type == "output":
+            # Set IO interface (same for all types)
             self.pad_ring_io_interface = f"    inout wire {self.io_interface},"
-            self.pad_ring_ctrl_interface += f"    input logic {sig}i,"
-            conns = (
-                "\n".join(
-                    [
-                        f"   .pad_in_i({sig}i),",
-                        "   .pad_oe_i(1'b1),",
-                        "   .pad_out_o(),",
-                        f"   .pad_io({sig}io),",
-                    ]
-                )
-                + "\n"
-            )
-            cell = "pad_cell_output"
 
-        elif self.pad_type == "inout":
-            self.pad_ring_io_interface = f"    inout wire {self.io_interface},"
-            self.pad_ring_ctrl_interface += (
-                f"    input logic {sig}i,\n"
-                f"    output logic {sig}o,\n"
-                f"    input logic {sig}oe_i,"
-            )
-            conns = (
-                "\n".join(
-                    [
-                        f"   .pad_in_i({sig}i),",
-                        f"   .pad_oe_i({sig}oe_i),",
-                        f"   .pad_out_o({sig}o),",
-                        f"   .pad_io({sig}io),",
-                    ]
-                )
-                + "\n"
-            )
-            cell = "pad_cell_inout"
+            # Set control interface from configuration
+            self.pad_ring_ctrl_interface += config["ctrl_interface"](sig)
 
-        # --- Instance construction (identical layout) ---
-        if self.pad_type in ("input", "output", "inout"):
+            # Build connections from configuration
+            conns = _build_pad_connections(config["connections"](sig))
+
+            # Get cell type from configuration
+            cell = config["cell"]
+
+            # --- Instance construction ---
             header = f"{cell} {param_str} {self.cell_name} ( \n{conns}"
             if self.has_attribute:
                 attr_line = (

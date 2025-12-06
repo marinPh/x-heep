@@ -222,14 +222,14 @@ ${pad.core_v_mini_mcu_interface}
   assign peripheral_subsystem_rst_n           = peripheral_subsystem_pwr_ctrl_out.rst_n;
   assign peripheral_subsystem_clkgate_en_n    = peripheral_subsystem_pwr_ctrl_out.clkgate_en_n;
 
-% for bank in memory_ss.iter_ram_banks():
-  assign memory_subsystem_banks_powergate_switch_n[${bank.name()}] = memory_subsystem_pwr_ctrl_out[${bank.name()}].pwrgate_en_n;
-  assign memory_subsystem_pwr_ctrl_in[${bank.name()}].pwrgate_ack_n = memory_subsystem_banks_powergate_switch_ack_n[${bank.name()}];
-  //isogate exposed outside for UPF sim flow and switch cells
-  assign memory_subsystem_banks_powergate_iso_n[${bank.name()}] = memory_subsystem_pwr_ctrl_out[${bank.name()}].isogate_en_n;
-  assign memory_subsystem_banks_set_retentive_n[${bank.name()}] = memory_subsystem_pwr_ctrl_out[${bank.name()}].retentive_en_n;
-  assign memory_subsystem_clkgate_en_n[${bank.name()}] = memory_subsystem_pwr_ctrl_out[${bank.name()}].clkgate_en_n;
-% endfor
+  for (genvar i = 0; i < core_v_mini_mcu_pkg::NUM_BANKS; i = i + 1) begin : gen_memory_subsystem_pwr_gating
+    assign memory_subsystem_banks_powergate_switch_n[i] = memory_subsystem_pwr_ctrl_out[i].pwrgate_en_n;
+    assign memory_subsystem_pwr_ctrl_in[i].pwrgate_ack_n = memory_subsystem_banks_powergate_switch_ack_n[i];
+    //isogate exposed outside for UPF sim flow and switch cells
+    assign memory_subsystem_banks_powergate_iso_n[i] = memory_subsystem_pwr_ctrl_out[i].isogate_en_n;
+    assign memory_subsystem_banks_set_retentive_n[i] = memory_subsystem_pwr_ctrl_out[i].retentive_en_n;
+    assign memory_subsystem_clkgate_en_n[i] = memory_subsystem_pwr_ctrl_out[i].clkgate_en_n;
+  end
 
   for (genvar i = 0; i < EXT_DOMAINS_RND; i = i + 1) begin : gen_external_subsystem_pwr_gating
     assign external_subsystem_powergate_switch_no[i]        = external_subsystem_pwr_ctrl_out[i].pwrgate_en_n;

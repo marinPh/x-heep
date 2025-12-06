@@ -29,6 +29,15 @@ class UserPeripheralDomain(PeripheralDomain):
             length=length,
         )
 
+    def _get_peripheral_type(self):
+        """
+        Return the expected peripheral type for validation.
+
+        :return: UserPeripheral type
+        :rtype: type
+        """
+        return UserPeripheral
+
     def get_pdm2pcm(self):
         """
         Get the PDM2PCM peripheral. Assumes only one PDM2PCM peripheral is added. If multiple PDM2PCM peripherals are added, only the first added one will be returned.
@@ -39,25 +48,3 @@ class UserPeripheralDomain(PeripheralDomain):
             if isinstance(peripheral, PDM2PCM):
                 return peripheral
         return None
-
-    def add_peripheral(self, peripheral: UserPeripheral):
-        """
-        Add a peripheral to the domain if it is a UserPeripheral. If not, raise an error.
-
-        :param UserPeripheral peripheral: The peripheral to add.
-        """
-        if not isinstance(peripheral, UserPeripheral):
-            raise ValueError("Peripheral is not a UserPeripheral")
-        self._peripherals.append(peripheral)
-
-    def remove_peripheral(self, peripheral: UserPeripheral):
-        """
-        Remove a peripheral from the domain if it is a UserPeripheral.
-
-        :param UserPeripheral peripheral: The peripheral to remove.
-        """
-        if peripheral not in self._peripherals:
-            print(
-                f"Warning : Peripheral {peripheral.get_name()} is not in the domain {self._name}"
-            )
-        self._peripherals.remove(peripheral)

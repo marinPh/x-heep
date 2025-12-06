@@ -155,22 +155,37 @@ class PeripheralDomain(ABC):
         self._interrupts = interrupts.copy()
 
     @abstractmethod
+    def _get_peripheral_type(self):
+        """
+        Get the expected peripheral type for this domain (used for validation).
+        Must be implemented by subclasses to return the appropriate type (e.g., BasePeripheral, UserPeripheral).
+
+        :return: The peripheral type class for validation.
+        :rtype: type
+        """
+        ...
+
     def add_peripheral(self, peripheral: Peripheral):
         """
-        Add a peripheral to the domain. The peripheral should be fully configured when added. If the peripheral has no offset, it will be automatically computed during build. Must be defined by the subclass.
+        Add a peripheral to the domain. The peripheral should be fully configured when added. If the peripheral has no offset, it will be automatically computed during build.
 
         :param Peripheral peripheral: The peripheral to add.
         """
-        ...
+        if not isinstance(peripheral, self._get_peripheral_type()):
+            raise ValueError(f"Peripheral is not a {self._get_peripheral_type().__name__}")
+        self._peripherals.append(peripheral)
 
-    @abstractmethod
     def remove_peripheral(self, peripheral: Peripheral):
         """
-        Remove a peripheral from the domain. Must be defined by the subclass.
+        Remove a peripheral from the domain.
 
         :param Peripheral peripheral: The peripheral to remove.
         """
-        ...
+        if peripheral not in self._peripherals:
+            print(
+                f"Warning : Peripheral {peripheral.get_name()} is not in the domain {self._name}"
+            )
+        self._peripherals.remove(peripheral)
 
     def get_start_address(self):
         """

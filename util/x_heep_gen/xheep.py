@@ -201,64 +201,104 @@ class XHeep:
     # Interrupts
     # ------------------------------------------------------------
 
+    def _collect_interrupt_ids_from_domains(self, *domains):
+        """
+        Collect all interrupt IDs from multiple peripheral domains.
+
+        :param domains: Variable number of peripheral domains
+        :return: List of all interrupt IDs
+        :rtype: list[int]
+        """
+        all_ids = []
+        for domain in domains:
+            all_ids.extend([
+                irq.id
+                for irq in domain.get_interrupts().values()
+                if irq is not None and irq.id is not None
+            ])
+        return all_ids
+
+    def _collect_predefined_interrupts_map(self, *domains):
+        """
+        Create a mapping of interrupt ID to peripheral name for all predefined interrupts.
+
+        :param domains: Variable number of peripheral domains
+        :return: Dictionary mapping interrupt ID to peripheral name
+        :rtype: dict[int, str]
+        """
+        result = {}
+        for domain in domains:
+            for name, irq in domain.get_interrupts().items():
+                if irq is not None and irq.id is not None:
+                    result[irq.id] = name
+        return result
+
+    def _assign_interrupts_from_domain(self, domain, possible_ids, validate=False, predefined_map=None):
+        """
+        Assign interrupts from a peripheral domain.
+
+        :param domain: The peripheral domain to process
+        :param list possible_ids: List of available interrupt IDs (will be modified)
+        :param bool validate: Whether to validate interrupt ID conflicts
+        :param dict predefined_map: Mapping of predefined interrupt IDs to names (for error messages)
+        """
+        for name, irq in domain.get_interrupts().items():
+            if irq is None:
+                assigned_id = possible_ids.pop(0)
+                self.add_interrupt(name, assigned_id)
+            else:
+                if validate:
+                    required = set(range(irq.id, irq.id + irq.num))
+                    can_go = required.issubset(set(possible_ids))
+
+                    if not can_go:
+                        missing = required - set(possible_ids)
+                        missing_names = [predefined_map[miss] for miss in missing]
+                        raise ValueError(
+                            f"You have elements the way {missing} used by {missing_names} "
+                        )
+
+                self.add_interrupt(name, irq)
+
     def add_interrupts_from_peripheral_domains(self):
         """
         Adds the interrupts from the peripheral domains to the system interrupts.
         """
-        # check no 2 peripherals have the same interrupt id
+        # Collect all interrupt IDs from both domains
+        all_ids = self._collect_interrupt_ids_from_domains(
+            self._base_peripheral_domain,
+            self._user_peripheral_domain
+        )
 
-        all_ids = [
-            irq.id
-            for irq in self._base_peripheral_domain.get_interrupts().values()
-            if irq is not None and irq.id is not None
-        ] + [
-            irq.id
-            for irq in self._user_peripheral_domain.get_interrupts().values()
-            if irq is not None and irq.id is not None
-        ]
-
+        # Check no 2 peripherals have the same interrupt ID
         set_ids = set(all_ids)
         if len(all_ids) != len(set_ids):
             raise ValueError("Two peripherals have the same interrupt id")
 
         possible_ids = list(set(range(0, 64)).difference(set_ids))
 
-        for name, irq in self._base_peripheral_domain.get_interrupts().items():
-            if irq is None:
-                assigned_id = possible_ids.pop(0)
-                self.add_interrupt(name, assigned_id)
-            else:
+        # Get predefined interrupts map for validation
+        predefined_map = self._collect_predefined_interrupts_map(
+            self._base_peripheral_domain,
+            self._user_peripheral_domain
+        )
 
-                required = set(range(irq.id, irq.id + irq.num))
-                can_go = required.issubset(set(possible_ids))
+        # Assign interrupts from base peripheral domain (with validation)
+        self._assign_interrupts_from_domain(
+            self._base_peripheral_domain,
+            possible_ids,
+            validate=True,
+            predefined_map=predefined_map
+        )
 
-                if not can_go:
-                    missing = required - set(possible_ids)
+        # Assign interrupts from user peripheral domain (without validation)
+        self._assign_interrupts_from_domain(
+            self._user_peripheral_domain,
+            possible_ids,
+            validate=False
+        )
 
-                    all_predefined = {
-                        irq.id: name
-                        for name, irq in self._base_peripheral_domain.get_interrupts().items()
-                        if irq is not None and irq.id is not None
-                    } + {
-                        irq.id: name
-                        for name, irq in self._user_peripheral_domain.get_interrupts().items()
-                        if irq is not None and irq.id is not None
-                    }
-                    missing_names = [all_predefined[miss] for miss in missing]
-
-                    raise ValueError(
-                        f"You have elements the way {missing} used by {missing_names} "
-                    )
-
-                self.add_interrupt(name, irq)
-
-        for name, irq in self._user_peripheral_domain.get_interrupts().items():
-            if irq is None:
-                assigned_id = possible_ids.pop(0)
-                self.add_interrupt(name, assigned_id)
-            else:
-                self.add_interrupt(name, irq)
-
+        # Sort interrupts by ID
         self._interrupts = dict(
             sorted(self._interrupts.items(), key=lambda item: item[1].id)
         )
@@ -479,6 +519,39 @@ class XHeep:
         if self.get_padring() is not None:
             self.get_padring().build()
 
+    def _check_domain_overlap(self, domain1, domain2, name1, name2):
+        """
+        Check if two peripheral domains overlap.
+
+        :param domain1: First domain to check
+        :param domain2: Second domain to check
+        :param str name1: Name of first domain (for error messages)
+        :param str name2: Name of second domain (for error messages)
+        :return: True if domains do not overlap, False if they overlap
+        :rtype: bool
+        """
+        # Check if domain1 comes before domain2 and overflows into it
+        if (domain1.get_start_address() < domain2.get_start_address() and
+            domain1.get_start_address() + domain1.get_length() > domain2.get_start_address()):
+            print(
+                f"The {name1} peripheral domain (ends at "
+                f"{domain1.get_start_address() + domain1.get_length():#08X}) "
+                f"overflows over {name2} peripheral domain (starts at "
+                f"{domain2.get_start_address():#08X})."
+            )
+            return False
+
+        # Check if domains start at the same address
+        if domain1.get_start_address() == domain2.get_start_address():
+            print(
+                f"The {name1} peripheral domain and the {name2} peripheral domain "
+                f"should not start at the same address (current address is "
+                f"{domain1.get_start_address():#08X})."
+            )
+            return False
+
+        return True
+
     def validate(self) -> bool:
         """
         Does some basics checks on the configuration
@@ -511,48 +584,35 @@ class XHeep:
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.validate()
 
-        # Check that peripherals domains do not overlap
+        # Check that peripheral domains do not overlap
         ret = True
-        if (
-            self.are_base_peripherals_configured()
-            and self._base_peripheral_domain.get_start_address()
-            < self._user_peripheral_domain.get_start_address()
-            and self._base_peripheral_domain.get_start_address()
-            + self._base_peripheral_domain.get_length()
-            > self._user_peripheral_domain.get_start_address()
-        ):  # base peripheral domain comes before user peripheral domain
-            print(
-                f"The base peripheral domain (ends at {self._base_peripheral_domain.get_start_address() + self._base_peripheral_domain.get_length():#08X}) overflows over user peripheral domain (starts at {self._user_peripheral_domain.get_start_address():#08X})."
-            )
-            ret = False
-        if (
-            self.are_user_peripherals_configured()
-            and self._user_peripheral_domain.get_start_address()
-            < self._base_peripheral_domain.get_start_address()
-            and self._user_peripheral_domain.get_start_address()
-            + self._user_peripheral_domain.get_length()
-            > self._base_peripheral_domain.get_start_address()
-        ):  # user peripheral domain comes before base peripheral domain
-            print(
-                f"The user peripheral domain (ends at {self._user_peripheral_domain.get_start_address() + self._user_peripheral_domain.get_length():#08X}) overflows over base peripheral domain (starts at {self._base_peripheral_domain.get_start_address():#08X})."
-            )
-            ret = False
-        if (
-            self.are_user_peripherals_configured()
-            and self.are_base_peripherals_configured()
-            and self._user_peripheral_domain.get_start_address()
-            == self._base_peripheral_domain.get_start_address()
-        ):  # both domains start at the same address
-            print(
-                f"The base peripheral domain and the user peripheral domain should not start at the same address (current addresses are {self._base_peripheral_domain.get_start_address():#08X} and {self._user_peripheral_domain.get_start_address():#08X})."
-            )
-            ret = False
+        if self.are_base_peripherals_configured() and self.are_user_peripherals_configured():
+            # Check base -> user overlap
+            if not self._check_domain_overlap(
+                self._base_peripheral_domain,
+                self._user_peripheral_domain,
+                "base",
+                "user"
+            ):
+                ret = False
+            # Check user -> base overlap
+            if not self._check_domain_overlap(
+                self._user_peripheral_domain,
+                self._base_peripheral_domain,
+                "user",
+                "base"
+            ):
+                ret = False
+
+        # Check base peripheral domain start address
         if (
             self.are_base_peripherals_configured()
             and self._base_peripheral_domain.get_start_address() < 0x10000
-        ):  # from mcu_gen.py
+        ):
             print(
-                f"Always on peripheral start address must be greater than 0x10000, current address is {self._base_peripheral_domain.get_start_address():#08X}."
+                f"Always on peripheral start address must be greater than 0x10000, "
+                f"current address is {self._base_peripheral_domain.get_start_address():#08X}."
             )
             ret = False
+
         return ret
