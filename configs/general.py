@@ -3,6 +3,7 @@ from x_heep_gen.cpu.cpu import CPU
 from x_heep_gen.bus_type import BusType
 from x_heep_gen.memory_ss.memory_ss import MemorySS
 from x_heep_gen.memory_ss.linker_section import LinkerSection
+from x_heep_gen.peripherals.abstractions import Interrupt
 from x_heep_gen.peripherals.base_peripherals import (
     SOC_ctrl,
     Bootrom,
@@ -31,10 +32,10 @@ from x_heep_gen.peripherals.user_peripherals import (
     I2S,
     UART,
 )
-
+MAX_INTERRUPTS = 64
 
 def config():
-    system = XHeep(BusType.NtoM)
+    system = XHeep(BusType.NtoM,max_intrs=MAX_INTERRUPTS )
     system.set_cpu(CPU("cv32e20"))
 
     memory_ss = MemorySS()
@@ -44,6 +45,9 @@ def config():
     system.set_memory_ss(memory_ss)
 
     # Peripheral domains initialization
+    base_intr = {
+        "null_intr": Interrupt(0)
+    }
     base_peripheral_domain = BasePeripheralDomain()
     user_peripheral_domain = UserPeripheralDomain()
 
@@ -76,5 +80,6 @@ def config():
     system.add_peripheral_domain(user_peripheral_domain)
     
     system.add_interrupts_from_peripheral_domains()
+    system.extend_interrupt(base_intr)
 
     return system

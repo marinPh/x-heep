@@ -1,4 +1,4 @@
-from ..abstractions import UserPeripheral,Interrupt
+from ..abstractions import UserPeripheral, Interrupt
 
 
 class GPIO(UserPeripheral):
@@ -8,5 +8,5 @@ class GPIO(UserPeripheral):
     """
 
     _name = "gpio"
-    
-    _interrupts = {"gpio_intr": Interrupt(9,24,8,"GPIO")}
+
+    _interrupts = {"gpio_intr": Interrupt(9, 24, 8, "GPIO")}
