@@ -1,4 +1,4 @@
-from ..abstractions import UserPeripheral
+from ..abstractions import UserPeripheral, Interrupt
 
 
 class I2S(UserPeripheral):
@@ -8,3 +8,7 @@ class I2S(UserPeripheral):
     """
 
     _name = "i2s"
+
+    _interrupts = {
+        "i2s_intr_event": Interrupt(50, "I2S"),
+    }
