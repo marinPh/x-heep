@@ -10,8 +10,6 @@ from enum import Enum
 from copy import deepcopy
 from typing import List, Dict, Optional
 
-MAX_INTERRUPTS = 64
-
 
 @dataclass
 class Interrupt:
@@ -26,10 +24,6 @@ class Interrupt:
             raise ValueError("num should be above 1 cannot be less")
         if self.id < 0:
             raise ValueError("ID cannot be negative")
-        if self.num + self.id > MAX_INTERRUPTS:
-            raise ValueError(
-                f"Can have ids above {MAX_INTERRUPTS} current ids = {list(range(self.id,self.id + self.num))}"
-            )
 
 
 class Peripheral(ABC):
@@ -165,6 +159,16 @@ class PeripheralDomain(ABC):
         """
         ...
 
+    def extend_interrupt(self, interrupts: Dict[str, Interrupt]):
+        """
+        Extend the system interrupts with new interrupts from a domain.
+
+        :param Dict[str, Interrupt] interrupts: The interrupts to add.
+        """
+        for name, irq in interrupts.items():
+            if name not in self._interrupts:
+                self._interrupts[name] = irq
+
     def add_peripheral(self, peripheral: Peripheral):
         """
         Add a peripheral to the domain. The peripheral should be fully configured when added. If the peripheral has no offset, it will be automatically computed during build.
@@ -176,6 +180,7 @@ class PeripheralDomain(ABC):
                 f"Peripheral is not a {self._get_peripheral_type().__name__}"
             )
         self._peripherals.append(peripheral)
+        self.extend_interrupt(peripheral.get_interrupts())
 
     def remove_peripheral(self, peripheral: Peripheral):
         """

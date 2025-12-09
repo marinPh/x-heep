@@ -7,7 +7,10 @@ from .peripherals.abstractions import PeripheralDomain, Interrupt
 from .peripherals.base_peripherals_domain import BasePeripheralDomain
 from .peripherals.user_peripherals_domain import UserPeripheralDomain
 from .pads.PadRing import PadRing
+import numpy as np
 import re
+
+MAX_INTERRUPTS = 64
 
 
 class XHeep:
@@ -23,10 +26,7 @@ class XHeep:
     IL_COMPATIBLE_BUS_TYPES = [BusType.NtoM]
     """Constant set of bus types that support interleaved memory banks"""
 
-    def __init__(
-        self,
-        bus_type: BusType,
-    ):
+    def __init__(self, bus_type: BusType, max_intrs: int = MAX_INTERRUPTS):
         if not type(bus_type) is BusType:
             raise TypeError(
                 f"XHeep.bus_type should be of type BusType not {type(self._bus_type)}"
@@ -44,6 +44,8 @@ class XHeep:
         self._interrupts: Dict[str, Interrupt] = {}
 
         self._extensions = {}
+
+        self.max_intrs = max_intrs
 
     # ------------------------------------------------------------
     # CPU
@@ -143,6 +145,19 @@ class XHeep:
             and self.are_user_peripherals_configured()
         )
 
+    def extend_interrupt(self, interrupts: Dict[str, Interrupt]):
+        """
+        Extend the system interrupts with new interrupts from a domain.
+
+        :param Dict[str, Interrupt] interrupts: The interrupts to add.
+        """
+        for name, irq in interrupts.items():
+            if name not in self._interrupts:
+                self._interrupts[name] = irq
+
+    def get_num_intr(self):
+        return np.array([irq.num for irq in self._interrupts.values()]).sum()
+
     def add_peripheral_domain(self, domain: PeripheralDomain):
         """
         Add a peripheral domain to the system. The domain should already contain all peripherals well configured. When adding a domain, a deepcopy is made to avoid side effects.
@@ -157,6 +172,7 @@ class XHeep:
             raise ValueError(
                 "Domain is neither a BasePeripheralDomain nor a UserPeripheralDomain"
             )
+        # self.extend_interrupt(domain.get_interrupts())
 
     def get_user_peripheral_domain(self):
         """
@@ -249,7 +265,7 @@ class XHeep:
         for name, irq in domain.get_interrupts().items():
             if irq is None:
                 assigned_id = possible_ids.pop(0)
-                self.add_interrupt(name, assigned_id)
+                self.add_interrupt(name, Interrupt(assigned_id))
             else:
                 if validate:
                     required = set(range(irq.id, irq.id + irq.num))
@@ -308,7 +324,6 @@ class XHeep:
         :return: The interrupts of the system.
         :rtype: Dict[str,int]
         """
-        print(type(list(self._interrupts.values())[0]))
         return deepcopy(self._interrupts)
 
     def set_interrupts(self, interrupts: Dict[str, int]):
@@ -325,7 +340,7 @@ class XHeep:
             )
         self._interrupts = interrupts.copy()
 
-    def add_interrupt(self, name: str, irq: int):
+    def add_interrupt(self, name: str, irq: Interrupt):
         """
         Add an interrupt to the system.
 
@@ -341,7 +356,7 @@ class XHeep:
 
         if irq is not None and not isinstance(irq, Interrupt):
             raise TypeError(
-                f"xheep.add_interrupt() irq should be of type int not {type(irq)}"
+                f"xheep.add_interrupt() irq should be of type Interrupt not {type(irq)}"
             )
 
         if name in self._interrupts:
@@ -373,7 +388,6 @@ class XHeep:
             filtered = [x for x in names if x[0] == name]
             filtered.sort(key=lambda x: x[1])
             start: int = min([int(f[2]) for f in filtered])
-            print(filtered)
             irq = Interrupt(filtered[0][1], len(filtered), start)
             self.add_interrupt(name, irq)
         names = [
@@ -397,7 +411,6 @@ class XHeep:
                     cnt += 1
             else:
                 temp[name] = irq.id
-        print(temp)
         return temp
 
     def get_interrupts_for_peripheral(

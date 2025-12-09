@@ -1,4 +1,4 @@
-from ..abstractions import UserPeripheral,Interrupt
+from ..abstractions import UserPeripheral, Interrupt
 
 
 class UART(UserPeripheral):
@@ -10,11 +10,12 @@ class UART(UserPeripheral):
     _name = "uart"
 
     _interrupts = {
-        "uart_intr_tx_watermark": Interrupt(1, "UART"),
-        "uart_intr_rx_watermark": Interrupt(2, "UART"),
-        "uart_intr_rx_overflow": Interrupt(3, "UART"),
-        "uart_intr_rx_frame_err": Interrupt(4, "UART"),
-        "uart_intr_rx_break_err": Interrupt(5, "UART"),
-        "uart_intr_rx_timeout": Interrupt(6, "UART"),
-        "uart_intr_rx_parity_err": Interrupt(7, "UART"),
+        "uart_intr_tx_watermark": Interrupt(1, peripheral="UART"),
+        "uart_intr_rx_watermark": Interrupt(2, peripheral="UART"),
+        "uart_intr_tx_empty": Interrupt(3, peripheral="UART"),
+        "uart_intr_rx_overflow": Interrupt(4, peripheral="UART"),
+        "uart_intr_rx_frame_err": Interrupt(5, peripheral="UART"),
+        "uart_intr_rx_break_err": Interrupt(6, peripheral="UART"),
+        "uart_intr_rx_timeout": Interrupt(7, peripheral="UART"),
+        "uart_intr_rx_parity_err": Interrupt(8, peripheral="UART"),
     }

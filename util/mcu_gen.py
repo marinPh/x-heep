@@ -124,6 +124,8 @@ def generate_xheep(args):
         exit("debug start address must be greater than 0x10000")
 
     debug_size_address = string2int(config["debug"]["length"])
+
+    # FIXME: couldnt that simple be a peripheral ?
     ext_slave_start_address = string2int(config["ext_slaves"]["address"])
     ext_slave_size_address = string2int(config["ext_slaves"]["length"])
 
@@ -141,8 +143,8 @@ def generate_xheep(args):
             + str(stack_size + heap_size)
         )
 
-    plic_used_n_interrupts = len(config["interrupts"]["list"])
-    plit_n_interrupts = config["interrupts"]["number"]
+    plic_used_n_interrupts = xheep.get_num_intr()
+    plit_n_interrupts = xheep.max_intrs
 
     # Here the xheep system is built,
     # The missing gaps are filled, like the missing end address of the data section.
