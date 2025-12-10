@@ -145,10 +145,12 @@ intrs = [
 ]
 %>
 % for name, irq in intrs:
-  % if irq.num > 1:
-  logic [${irq.start_seq + irq.num }:${irq.start_seq+1}] ${name};
-  % else:
+  % if name != "null_intr":
+    % if irq.num > 1:
+  logic [${irq.start_seq + irq.num -1}:${irq.start_seq}] ${name};
+    % else:
   logic ${name};
+    % endif
   % endif
 % endfor
 
@@ -157,7 +159,7 @@ intrs = [
 
   // Assign internal interrupts
 % for name, irq in intrs:
-%if irq.id ==0:
+%if name == "null_intr":
 assign intr_vector[${irq.id}] = 1'b0;  // ID [0] is a special case and must be tied to zero. ;
 % elif irq.num>1:
 assign intr_vector[${irq.id+irq.num-1}:${irq.id}] = ${name};

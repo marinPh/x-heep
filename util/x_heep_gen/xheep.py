@@ -156,7 +156,13 @@ class XHeep:
                 self._interrupts[name] = irq
 
     def get_num_intr(self):
-        return np.array([irq.num for irq in self._interrupts.values()]).sum()
+        return np.array(
+            [
+                irq.num
+                for name, irq in self._interrupts.items()
+                if not name.startswith("EXT_")
+            ]
+        ).sum()
 
     def add_peripheral_domain(self, domain: PeripheralDomain):
         """
