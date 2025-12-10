@@ -57,7 +57,7 @@ class PadRing:
 
         # Read HJSON description of External Pads
 
-        pad_objs = []
+        pad_objs: List[Pad] = []
         external_pad_list = []
 
         pad_constant_driver_assign = ""
@@ -82,7 +82,6 @@ class PadRing:
 
         # external pads (continue indexing, always emit ring)
         # merge, totals
-
         total_pad = len(pad_objs)
         total_pad_muxed = len(pad_muxed_list)
 
@@ -183,12 +182,7 @@ def separate_and_sort_pads(pads, sort_by_layout_index=False):
 
         if pad_mapping in pad_lists:
             pad_lists[pad_mapping].append(pad)
-        else:
-            print(
-                f"ERROR: Pad {pad.name} has an invalid mapping {pad_mapping}. "
-                "Please set mapping to top, bottom, left, or right."
-            )
-            raise ValueError("Invalid pad mapping")
+
 
     # Sort pads by layout index if requested
     if sort_by_layout_index:
@@ -359,9 +353,9 @@ def build_pads_from_block(
     pads_attributes_bits: str,
     default_constant_attribute: bool,
     always_emit_ring: bool,
-):
-    pad_list = []
-    pad_muxed_list = []
+) -> Tuple[List[Pad], List[Pad], str, str]:
+    pad_list: List[Pad] = []
+    pad_muxed_list: List[Pad] = []
     const_assign_parts = []
     mux_process_parts = []
 

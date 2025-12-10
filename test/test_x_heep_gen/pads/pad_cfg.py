@@ -103,18 +103,18 @@ def config() -> PadRing:
     jtag_tms = SinglePad(
         name="jtag_tms",
         layout_index=4,
-        type=PadType.INPUT,
+        type=PadType.BYPASS_INPUT,
         mapping=PadMapping.RIGHT,
         layout=pad1_layout,
         orient=Orientation.MX90,
     )
     pad_group.add_pad(jtag_tms)
 
-    # "jtag_tdo": mapping="right", cell=PAD2, orient="mx90", type="output"
+    # "jtag_tdo": mapping="right", cell=PAD2, orient="mx90", type="supply"
     jtag_tdo = SinglePad(
         name="jtag_tdo",
         layout_index=5,
-        type=PadType.OUTPUT,
+        type=PadType.SUPPLY,
         mapping=PadMapping.RIGHT,
         layout=pad2_layout,
         orient=Orientation.MX90,
@@ -132,7 +132,7 @@ def config() -> PadRing:
     )
     pad_group.add_pad(execute_from_flash)
 
-    # "jtag_tck": mapping="bottom", cell=PAD1, orient="mx"
+    # "jtag_tck": mapping="bottom", cell=PAD1, orient="mx", keep_internal
     jtag_tck = SinglePad(
         name="jtag_tck",
         layout_index=8,
@@ -140,6 +140,7 @@ def config() -> PadRing:
         mapping=PadMapping.BOTTOM,
         layout=pad1_layout,
         orient=Orientation.MX,
+        keep_internal=True,
     )
     pad_group.add_pad(jtag_tck)
 
@@ -239,7 +240,7 @@ def config() -> PadRing:
         name="pdm2pcm_pdm",
         layout_index=14,
         type=PadType.INOUT,
-        mapping=PadMapping.RIGHT,
+        mapping=PadMapping.TOP,
         layout=pad3_layout,
         orient=Orientation.R0,
     )

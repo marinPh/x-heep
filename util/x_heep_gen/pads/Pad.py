@@ -467,7 +467,7 @@ class Pad:
             self.pad_mapping = pad_mapping
         elif isinstance(pad_mapping, str):
             # accept "top", "TOP", etc.
-            self.pad_mapping = PadMapping(pad_mapping.lower())
+            self.pad_mapping = PadMapping(pad_mapping.lower()) if pad_mapping else None
         else:
             raise TypeError(
                 f"pad_mapping must be PadMapping | str | None, got {type(pad_mapping)}"
