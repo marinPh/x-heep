@@ -59,7 +59,8 @@ def _assert_type(t: str, where: str) -> None:
 
 def _assert_mapping(m: str, where: str) -> None:
     # is instance if PadMapping enum
-    if not isinstance(m, PadMapping):
+    if m is not None and not isinstance(m, PadMapping):
+        print(f"----------m={m} of type {type(m)}")
         raise ValidationError(
             f"{where}: invalid mapping '{m}'. Valid: {list(PadMapping)}"
         )
@@ -432,13 +433,12 @@ class PadGroup:
         pads_cfg = cfg.get("pads", {})
 
         for pad_name, pad_info in pads_cfg.items():
-            pad_type = PadType(pad_info.get("type", "input"))
-            mapping_str = pad_info.get("mapping", "top")
-            mapping = PadMapping(mapping_str)
+            pad_type = PadType(pad_info.get("type", None))
+            mapping_str = pad_info.get("mapping", None)
+            mapping = PadMapping(mapping_str) if mapping_str is not None else None
 
             la = pad_info.get("layout_attributes", {})
             layout_index = la.get("index", 0)
-            print(f"pad_name = {pad_name}, la = {la}")
             cell_name = la.get("cell")
 
             # Get layout from name → fallback: empty layout
@@ -455,6 +455,7 @@ class PadGroup:
 
             active = pad_info.get("active", "high")
             driven_manually = PadGroup._to_bool(pad_info.get("driven_manually", False))
+            keep_internal = PadGroup._to_bool(pad_info.get("keep_internal", False))
 
             base_kwargs = dict(
                 name=pad_name,
@@ -467,6 +468,7 @@ class PadGroup:
                 ),
                 active=active,
                 driven_manually=driven_manually,
+                keep_internal=keep_internal,
             )
 
             # ----------------- multiplexer case -----------------

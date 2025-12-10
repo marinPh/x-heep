@@ -106,10 +106,6 @@ class PadRing:
         right_pad_list = [
             pad for pad in pad_objs if pad.pad_mapping == PadMapping.RIGHT
         ]
-        left_pad_list = left_pad_list.sort(key=lambda x: x.layout_index)
-        right_pad_list = right_pad_list.sort(key=lambda x: x.layout_index)
-        top_pad_list = top_pad_list.sort(key=lambda x: x.layout_index)
-        bottom_pad_list = bottom_pad_list.sort(key=lambda x: x.layout_index)
         bondpad_offsets = bondpad_offsets
 
         self.pad_list = pad_objs
@@ -140,7 +136,7 @@ def pad_subset(pad_list: List[PadDef], all_pads: List[Pad]) -> List[Pad]:
     return subset
 
 
-def prepare_pads_for_layout(pad_group: PadGroup):
+def prepare_pads_for_layout(pad_group: PadGroup)-> Dict[str, float]:
     """
     Separate pads into pad lists for the top, bottom, left, and right pads and order them according to their layout_index attribute, and set their positions on the floorplan.
     """
