@@ -136,7 +136,7 @@ def pad_subset(pad_list: List[PadDef], all_pads: List[Pad]) -> List[Pad]:
     return subset
 
 
-def prepare_pads_for_layout(pad_group: PadGroup)-> Dict[str, float]:
+def prepare_pads_for_layout(pad_group: PadGroup) -> Dict[str, float]:
     """
     Separate pads into pad lists for the top, bottom, left, and right pads and order them according to their layout_index attribute, and set their positions on the floorplan.
     """
