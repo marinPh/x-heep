@@ -57,7 +57,7 @@ class PadRing:
 
         # Read HJSON description of External Pads
 
-        pad_objs = []
+        pad_objs: List[Pad] = []
         external_pad_list = []
 
         pad_constant_driver_assign = ""
@@ -82,7 +82,14 @@ class PadRing:
 
         # external pads (continue indexing, always emit ring)
         # merge, totals
-
+        phys_pads = [
+            p
+            for p in pad_objs
+            if not p.type.startswith("bypass_")
+            and p.keep_internal is False
+            and not p.skip_declaration
+            and p.layout_bondpad is not None
+        ]
         total_pad = len(pad_objs)
         total_pad_muxed = len(pad_muxed_list)
 
@@ -99,13 +106,13 @@ class PadRing:
             last_pad.remove_comma_io_interface()
             pad_objs.append(last_pad)
 
-        top_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.TOP]
+        top_pad_list = [pad for pad in phys_pads if pad.pad_mapping == PadMapping.TOP]
         bottom_pad_list = [
-            pad for pad in pad_objs if pad.pad_mapping == PadMapping.BOTTOM
+            pad for pad in phys_pads if pad.pad_mapping == PadMapping.BOTTOM
         ]
-        left_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.LEFT]
+        left_pad_list = [pad for pad in phys_pads if pad.pad_mapping == PadMapping.LEFT]
         right_pad_list = [
-            pad for pad in pad_objs if pad.pad_mapping == PadMapping.RIGHT
+            pad for pad in phys_pads if pad.pad_mapping == PadMapping.RIGHT
         ]
         bondpad_offsets = bondpad_offsets
 
@@ -351,9 +358,9 @@ def build_pads_from_block(
     pads_attributes_bits: str,
     default_constant_attribute: bool,
     always_emit_ring: bool,
-):
-    pad_list = []
-    pad_muxed_list = []
+) -> Tuple[List[Pad], List[Pad], str, str]:
+    pad_list: List[Pad] = []
+    pad_muxed_list: List[Pad] = []
     const_assign_parts = []
     mux_process_parts = []
 
