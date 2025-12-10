@@ -82,14 +82,6 @@ class PadRing:
 
         # external pads (continue indexing, always emit ring)
         # merge, totals
-        phys_pads = [
-            p
-            for p in pad_objs
-            if not p.type.startswith("bypass_")
-            and p.keep_internal is False
-            and not p.skip_declaration
-            and p.layout_bondpad is not None
-        ]
         total_pad = len(pad_objs)
         total_pad_muxed = len(pad_muxed_list)
 
@@ -106,14 +98,18 @@ class PadRing:
             last_pad.remove_comma_io_interface()
             pad_objs.append(last_pad)
 
-        top_pad_list = [pad for pad in phys_pads if pad.pad_mapping == PadMapping.TOP]
+        top_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.TOP]
         bottom_pad_list = [
-            pad for pad in phys_pads if pad.pad_mapping == PadMapping.BOTTOM
+            pad for pad in pad_objs if pad.pad_mapping == PadMapping.BOTTOM
         ]
-        left_pad_list = [pad for pad in phys_pads if pad.pad_mapping == PadMapping.LEFT]
+        left_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.LEFT]
         right_pad_list = [
-            pad for pad in phys_pads if pad.pad_mapping == PadMapping.RIGHT
+            pad for pad in pad_objs if pad.pad_mapping == PadMapping.RIGHT
         ]
+        left_pad_list = left_pad_list.sort(key=lambda x: x.layout_index)
+        right_pad_list = right_pad_list.sort(key=lambda x: x.layout_index)
+        top_pad_list = top_pad_list.sort(key=lambda x: x.layout_index)
+        bottom_pad_list = bottom_pad_list.sort(key=lambda x: x.layout_index)
         bondpad_offsets = bondpad_offsets
 
         self.pad_list = pad_objs
