@@ -12,6 +12,7 @@ class PadType(Enum):
     BYPASS_INPUT = "bypass_input"
     BYPASS_OUTPUT = "bypass_output"
     BYPASS_INOUT = "bypass_inout"
+    SUPPLY = "supply"
 
 
 class PadMapping(Enum):
@@ -214,11 +215,11 @@ class PadGroup:
 
             # print all that are missing
             if self.pad_edge_offset is None:
-                warning += "\n - pad_edge_offset is missing"
+                warning += "\033[93m\n - pad_edge_offset is missing\033[0m"
             if self.bondpad_edge_offset is None:
-                warning += "\n - bondpad_edge_offset is missing"
+                warning += "\033[93m\n - bondpad_edge_offset is missing\033[0m"
             if self.fp_dim is None:
-                warning += "\n - fp_dim is missing"
+                warning += "\033[93m\n - fp_dim is missing\033[0m"
 
             print(warning)
             # wipe globals
