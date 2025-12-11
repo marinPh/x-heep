@@ -113,14 +113,14 @@ def config() -> PadRing:
     pad_group.add_pad(exit_valid)
 
     # -------------------------------------------------------------------------
-    # Range pad for gpio (num: 14, num_offset: 0 -> gpio_0 .. gpio_13)
+    # Range pad for gpio (num: 14, offset: 0 -> gpio_0 .. gpio_13)
     # -------------------------------------------------------------------------
 
     gpio_range = RangePad(
         name="gpio",
         type=PadType.INOUT,
         num=14,
-        num_offset=0,
+        offset=0,
     )
     pad_group.add_pad(gpio_range)
 
