@@ -251,13 +251,17 @@ class XHeep:
         """Get flattened interrupts (delegates to interrupt manager)."""
         return self._interrupt_manager.get_simple_interrupts()
 
-    def get_interrupts_for_peripheral(self, peripheral_name: str) -> Dict[str, Interrupt]:
+    def get_interrupts_for_peripheral(
+        self, peripheral_name: str
+    ) -> Dict[str, Interrupt]:
         """Get interrupts for peripheral (delegates to interrupt manager)."""
         return self._interrupt_manager.get_interrupts_for_peripheral(peripheral_name)
 
     def get_peripheral_interrupt_connections(self, peripheral_name: str) -> list:
         """Get peripheral interrupt connections (delegates to interrupt manager)."""
-        return self._interrupt_manager.get_peripheral_interrupt_connections(peripheral_name)
+        return self._interrupt_manager.get_peripheral_interrupt_connections(
+            peripheral_name
+        )
 
     # ------------------------------------------------------------
     # Extensions
