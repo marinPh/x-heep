@@ -1,5 +1,3 @@
-
-
 import os
 import sys
 import hjson
@@ -202,7 +200,6 @@ def _load_domain_peripherals(
 
 
 def load_peripherals_config(system, config_path: str):
-
 
     if not os.path.exists(config_path):
         raise ValueError(

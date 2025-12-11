@@ -47,9 +47,7 @@ class InterruptManager:
         )
 
         # Assign interrupts from user peripheral domain (without validation)
-        self._assign_interrupts_from_domain(
-            user_domain, possible_ids, validate=False
-        )
+        self._assign_interrupts_from_domain(user_domain, possible_ids, validate=False)
 
         # Sort interrupts by ID for consistent ordering
         self._interrupts = dict(
@@ -59,14 +57,10 @@ class InterruptManager:
     def add_interrupt(self, name: str, irq: Interrupt):
 
         if not isinstance(name, str):
-            raise TypeError(
-                f"interrupt name should be of type str not {type(name)}"
-            )
+            raise TypeError(f"interrupt name should be of type str not {type(name)}")
 
         if irq is not None and not isinstance(irq, Interrupt):
-            raise TypeError(
-                f"irq should be of type Interrupt not {type(irq)}"
-            )
+            raise TypeError(f"irq should be of type Interrupt not {type(irq)}")
 
         if name in self._interrupts:
             raise ValueError(f"Interrupt {name} already exists in the system")
@@ -92,13 +86,15 @@ class InterruptManager:
 
     def get_num_interrupts(self) -> int:
 
-        return int(np.array(
-            [
-                irq.num
-                for name, irq in self._interrupts.items()
-                if not name.startswith("EXT_")
-            ]
-        ).sum())
+        return int(
+            np.array(
+                [
+                    irq.num
+                    for name, irq in self._interrupts.items()
+                    if not name.startswith("EXT_")
+                ]
+            ).sum()
+        )
 
     def get_interrupts_for_peripheral(
         self, peripheral_name: str
@@ -154,7 +150,9 @@ class InterruptManager:
                 temp[name] = irq.id
         return temp
 
-    def get_peripheral_interrupt_connections(self, peripheral_name: str) -> List[Tuple[str, str]]:
+    def get_peripheral_interrupt_connections(
+        self, peripheral_name: str
+    ) -> List[Tuple[str, str]]:
 
         interrupts = self.get_interrupts_for_peripheral(peripheral_name)
         connections = []
@@ -312,7 +310,9 @@ class InterruptManager:
         lines = [f"InterruptManager: {len(self._interrupts)} interrupts"]
         for name, irq in sorted(self._interrupts.items(), key=lambda x: x[1].id):
             if irq.num > 1:
-                lines.append(f"  {name}: IDs {irq.id}-{irq.id + irq.num - 1} (num={irq.num})")
+                lines.append(
+                    f"  {name}: IDs {irq.id}-{irq.id + irq.num - 1} (num={irq.num})"
+                )
             else:
                 lines.append(f"  {name}: ID {irq.id}")
         return "\n".join(lines)
