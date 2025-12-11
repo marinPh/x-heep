@@ -6,6 +6,7 @@ from .peripherals.abstractions import PeripheralDomain
 from .peripherals.base_peripherals_domain import BasePeripheralDomain
 from .peripherals.user_peripherals_domain import UserPeripheralDomain
 from .pads.PadRing import PadRing
+from .master_port_registry import build_master_registry
 
 
 class XHeep:
@@ -192,6 +193,9 @@ class XHeep:
 
     def get_padring(self):
         return self._padring
+    
+    def get_registry(self):
+        return self.registry
 
     # ------------------------------------------------------------
     # Extensions
@@ -231,6 +235,7 @@ class XHeep:
             self._base_peripheral_domain.build()
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.build()
+        self.registry = build_master_registry(self)
 
     def validate(self) -> bool:
         """

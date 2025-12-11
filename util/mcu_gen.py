@@ -20,6 +20,7 @@ from x_heep_gen.load_config import load_peripherals_config
 from x_heep_gen.pads.PadRing import PadRing
 from x_heep_gen.xheep import BusType
 from x_heep_gen.cpu.cpu import CPU
+from x_heep_gen.master_port_registry import build_master_registry
 import os
 
 
@@ -161,6 +162,7 @@ def generate_xheep(args):
     xheep.set_padring(pad_ring)
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")
+
 
     kwargs = {
         "xheep": xheep,

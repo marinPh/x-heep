@@ -41,15 +41,12 @@ package core_v_mini_mcu_pkg;
 
   localparam bus_type_e BusType = ${xheep.bus_type().value};
 
-  //master idx
-  localparam logic [31:0] CORE_INSTR_IDX = 0;
-  localparam logic [31:0] CORE_DATA_IDX = 1;
-  localparam logic [31:0] DEBUG_MASTER_IDX = 2;
-  localparam logic [31:0] DMA_READ_P0_IDX = 3;
-  localparam logic [31:0] DMA_WRITE_P0_IDX = 4;
-  localparam logic [31:0] DMA_ADDR_P0_IDX = 5;
- 
-  localparam SYSTEM_XBAR_NMASTER = ${3 + int(dma.get_num_master_ports())*3};
+  //master idx - AUTO-GENERATED FROM MASTER PORT REGISTRY
+% for port_name, port_info in xheep.get_registry().get_ports_in_order():
+  localparam logic [31:0] ${port_name.upper()}_IDX = ${port_info['index']};
+% endfor
+
+  localparam SYSTEM_XBAR_NMASTER = ${xheep.get_registry().get_total_masters()};
 
   // Internal slave memory map and index
   // -----------------------------------

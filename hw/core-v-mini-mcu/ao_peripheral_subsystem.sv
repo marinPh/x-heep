@@ -119,7 +119,6 @@ module ao_peripheral_subsystem
 
   localparam DMA_GLOBAL_TRIGGER_SLOT_NUM = 5;
   localparam DMA_EXT_TRIGGER_SLOT_NUM = core_v_mini_mcu_pkg::DMA_CH_NUM * 2;
-
   /*_________________________________________________________________________________________________________________________________ */
 
   /* Signals declaration */
