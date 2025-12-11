@@ -183,7 +183,6 @@ def separate_and_sort_pads(pads, sort_by_layout_index=False):
         if pad_mapping in pad_lists:
             pad_lists[pad_mapping].append(pad)
 
-
     # Sort pads by layout index if requested
     if sort_by_layout_index:
         for mapping in pad_lists:
