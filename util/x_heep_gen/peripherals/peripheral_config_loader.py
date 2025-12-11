@@ -1,88 +1,4 @@
-"""
-Peripheral Configuration Loader Module
 
-This module provides functionality for loading and configuring peripheral devices
-from HJSON configuration files into the X-HEEP system.
-
-ARCHITECTURAL RATIONALE:
-=======================
-
-This module was created to separate peripheral-specific configuration loading
-logic from the general system configuration loader. This separation provides
-several architectural benefits:
-
-1. SINGLE RESPONSIBILITY PRINCIPLE
-   - This module has ONE job: transform peripheral configuration data into
-     peripheral domain objects
-   - load_config.py handles system-wide configuration orchestration
-   - Each module has a clear, focused purpose
-
-2. COHESION
-   - All peripheral loading logic is co-located with peripheral domain classes
-   - Peripheral-specific knowledge (DMA complexity, factory patterns) stays
-     within the peripheral subsystem
-   - Reduces cognitive load: developers working on peripherals find all
-     related code in one place
-
-3. ENCAPSULATION
-   - Peripheral loading details are hidden from the main system configuration
-   - Changes to peripheral loading (e.g., new peripheral types) don't affect
-     the main configuration loader
-   - Factory pattern implementation is encapsulated here
-
-4. TESTABILITY
-   - Peripheral loading can be tested independently from system configuration
-   - Mock XHeep objects can be used without loading entire system configs
-   - Unit tests can focus on peripheral-specific logic
-
-5. EXTENSIBILITY
-   - Adding new peripheral types requires changes only to this module
-   - New peripheral factories can be added without touching load_config.py
-   - Supports future plugin architectures for custom peripherals
-
-6. DEPENDENCY MANAGEMENT
-   - Reduces coupling between system configuration and peripheral subsystem
-   - load_config.py depends on this module, not vice versa
-   - Clear dependency direction: System -> Peripherals (not bidirectional)
-
-DESIGN PATTERNS USED:
-=====================
-
-1. FACTORY PATTERN
-   - Peripheral factories map peripheral names to constructor functions
-   - Abstracts peripheral instantiation from configuration logic
-   - Allows for flexible peripheral creation strategies
-
-2. STRATEGY PATTERN
-   - Different peripheral types use different creation strategies
-   - DMA uses complex configuration strategy
-   - Standard peripherals use simple strategy
-   - Strategy is selected based on peripheral type
-
-3. TEMPLATE METHOD PATTERN
-   - _load_domain_peripherals provides template for loading any domain
-   - Subclasses/callers provide domain-specific parameters
-   - Common workflow enforced, customization points provided
-
-USAGE:
-======
-
-from x_heep_gen.peripherals.peripheral_config_loader import load_peripherals_config
-from x_heep_gen.xheep import XHeep
-
-system = XHeep(bus_type=BusType.NtoM)
-load_peripherals_config(system, 'path/to/peripherals.hjson')
-
-The loader will:
-1. Parse the HJSON configuration file
-2. Create peripheral factory maps for base and user peripherals
-3. Instantiate peripheral objects using the factories
-4. Organize peripherals into their respective domains
-5. Add configured domains to the system object
-
-:author: X-HEEP Team
-:date: 2024
-"""
 
 import os
 import sys
@@ -211,29 +127,7 @@ def _create_dma_peripheral(peripheral_config, offset, length):
 def _create_peripheral_from_config(
     peripheral_name, peripheral_config, peripheral_factory_map
 ):
-    """
-    Create a peripheral instance from configuration using the factory pattern.
 
-    This function acts as a dispatcher that:
-    1. Extracts common parameters (offset, length) from config
-    2. Validates the peripheral type exists
-    3. Selects the appropriate factory function
-    4. Invokes the factory with appropriate parameters
-
-    The factory pattern allows for flexible peripheral creation:
-    - Standard peripherals: factory(offset, length)
-    - Complex peripherals (DMA): factory(config, offset, length)
-
-    This design makes it easy to add new peripheral types without modifying
-    the loading logic - just add a new entry to the factory map.
-
-    :param str peripheral_name: Name of the peripheral (e.g., "uart", "dma")
-    :param dict peripheral_config: Configuration dictionary for the peripheral
-    :param dict peripheral_factory_map: Mapping of names to factory functions
-    :return: Configured peripheral instance
-    :rtype: BasePeripheral subclass
-    :raises ValueError: If peripheral name doesn't exist in factory map
-    """
     offset = int(peripheral_config["offset"], 16)
     length = int(peripheral_config["length"], 16)
 
@@ -258,45 +152,7 @@ def _load_domain_peripherals(
     are_configured_check,
     get_domain_attr,
 ):
-    """
-    Generic function to load peripherals into a domain from configuration.
 
-    This function implements the Template Method pattern, providing a common
-    workflow for loading any peripheral domain while allowing customization
-    through parameters.
-
-    Workflow:
-    ---------
-    1. Create domain object (if not already configured)
-    2. Iterate through peripheral configurations
-    3. Skip metadata fields (address, length)
-    4. Skip already-added peripherals (programmatic configuration)
-    5. Check inclusion flags
-    6. Create peripheral instances via factories
-    7. Add peripherals to domain
-    8. Add domain to system
-
-    Special Rules:
-    --------------
-    - Base domain: DMA is always included (even if marked "no")
-    - User domain: Peripherals marked "no" are skipped
-    - Programmatic config takes precedence over file config
-
-    This design supports both file-based and programmatic configuration,
-    with programmatic taking priority. This is useful for:
-    - Testing with mock peripherals
-    - Runtime peripheral customization
-    - Conditional peripheral inclusion
-
-    :param XHeep system: The system object to populate
-    :param dict fields: Configuration fields for the domain
-    :param str domain_type: Type of domain ('base' or 'user')
-    :param dict peripheral_factory_map: Mapping of names to factory functions
-    :param callable domain_constructor: Constructor for the domain object
-    :param callable are_configured_check: Function to check if domain exists
-    :param callable get_domain_attr: Function to get domain from system
-    :return: None (modifies system object in place)
-    """
     domain = (
         domain_constructor(int(fields["address"], 16), int(fields["length"], 16))
         if not are_configured_check()
@@ -346,63 +202,7 @@ def _load_domain_peripherals(
 
 
 def load_peripherals_config(system, config_path: str):
-    """
-    Load peripheral configuration from HJSON file into X-HEEP system.
 
-    This is the main entry point for peripheral configuration loading.
-    It orchestrates the entire loading process:
-
-    1. File Loading and Parsing
-       - Validates file existence
-       - Parses HJSON (human-friendly JSON with comments)
-       - Resolves JSON references ($ref pointers)
-
-    2. Factory Map Definition
-       - Creates base peripheral factories (always-on domain)
-       - Creates user peripheral factories (user domain)
-       - Maps peripheral names to constructor functions
-
-    3. Domain Processing
-       - Processes "ao_peripherals" (always-on/base domain)
-       - Processes "peripherals" (user domain)
-       - Delegates to _load_domain_peripherals for each
-
-    Configuration File Structure:
-    -----------------------------
-    {
-      "ao_peripherals": {
-        "address": "0x20000000",
-        "length": "0x10000",
-        "soc_ctrl": { "offset": "0x0", "length": "0x1000" },
-        "dma": { "offset": "0x1000", "length": "0x1000", ... }
-      },
-      "peripherals": {
-        "address": "0x30000000",
-        "length": "0x10000",
-        "uart": { "offset": "0x0", "length": "0x1000" },
-        "gpio": { "offset": "0x1000", "length": "0x1000" }
-      }
-    }
-
-    Factory Pattern Benefits:
-    ------------------------
-    - Decouples peripheral creation from configuration logic
-    - Easy to add new peripheral types
-    - Supports different construction strategies per peripheral
-    - Enables testing with mock factories
-
-    Error Handling:
-    --------------
-    - File not found: ValueError with clear message
-    - Parse errors: SystemExit with parse error details
-    - Invalid peripherals: ValueError from factory lookup
-
-    :param XHeep system: The system object to populate with peripherals
-    :param str config_path: Path to the HJSON peripheral configuration file
-    :return: None (modifies system object in place)
-    :raises ValueError: If config file doesn't exist or peripheral invalid
-    :raises SystemExit: If HJSON parsing fails
-    """
 
     if not os.path.exists(config_path):
         raise ValueError(
