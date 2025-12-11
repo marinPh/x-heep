@@ -193,7 +193,7 @@ class XHeep:
 
     def get_padring(self):
         return self._padring
-    
+
     def get_registry(self):
         return self.registry
 

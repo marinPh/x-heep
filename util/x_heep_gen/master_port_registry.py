@@ -188,15 +188,6 @@ def build_master_registry(xheep):
                 },
             )
 
-    # ========================================================================
-    # Future Extension Point: Add New Master Peripherals Here
-    # ========================================================================
-    # Example for adding a GPU with master ports:
-    # gpu = xheep.get_base_peripheral_domain().get_gpu()
-    # if gpu.get_is_included():
-    #     registry.register_port('gpu_read', metadata={'type': 'gpu'})
-    #     registry.register_port('gpu_write', metadata={'type': 'gpu'})
-
     return registry
 
 

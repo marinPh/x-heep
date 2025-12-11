@@ -163,7 +163,6 @@ def generate_xheep(args):
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")
 
-
     kwargs = {
         "xheep": xheep,
         "external_domains": external_domains,
