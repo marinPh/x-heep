@@ -105,9 +105,9 @@ class Layout:
 class PadDef:
     name: str
     type: PadType
-    mapping: PadMapping
-    layout_index: int = 0
-    layout: Layout = field(default_factory=Layout)
+    mapping: Optional[PadMapping] = None
+    layout_index: Optional[int] = 0
+    layout: Optional[Layout] = None
     layers: Optional[List[str]] = None
     properties: Dict[str, Any] = field(default_factory=dict)
     active: str = "high"
