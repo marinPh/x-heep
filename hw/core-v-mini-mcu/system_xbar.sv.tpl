@@ -4,6 +4,7 @@
 
 <%
     memory_ss = xheep.memory_ss()
+    registry = xheep.get_registry()
 %>
 
 module system_xbar
@@ -12,7 +13,7 @@ module system_xbar
   import core_v_mini_mcu_pkg::*;
 #(
     parameter core_v_mini_mcu_pkg::bus_type_e BUS_TYPE = core_v_mini_mcu_pkg::BusType,
-    parameter XBAR_NMASTER = 3,
+    parameter XBAR_NMASTER = ${registry.get_total_masters()},
     parameter XBAR_NSLAVE = 6,
     localparam int unsigned IdxWidth = cf_math_pkg::idx_width(XBAR_NSLAVE)
 ) (
