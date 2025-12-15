@@ -43,29 +43,44 @@ class BasePeripheralDomain(PeripheralDomain):
         GPIO_ao(),
     ]
 
-    def __init__(self, start_address: int = 0x20000000, length: int = 0x00100000):
+    def __init__(
+        self,
+        start_address: int = 0x20000000,
+        length: int = 0x00100000,
+        master_registry=None,
+    ):
         """
         Initialize the base peripheral domain.
         Start address : 0x20000000
         Length :       0x00100000
 
         At the beginning, there is no base peripheral. All non-added peripherals will be added during build().
+
+        :param int start_address: Start address of the domain
+        :param int length: Length of the domain
+        :param master_registry: Optional reference to MasterRegistry
         """
         super().__init__(
             name="Base",
             start_address=start_address,
             length=length,
+            master_registry=master_registry,
         )
 
     def add_peripheral(self, peripheral: BasePeripheral):
         """
         Add a peripheral to the domain if it is a BasePeripheral. If not, raise an error.
+        Also registers any master ports the peripheral exposes.
 
         :param BasePeripheral peripheral: The peripheral to add.
         """
         if not isinstance(peripheral, BasePeripheral):
             raise ValueError("Peripheral is not a BasePeripheral")
         self._peripherals.append(peripheral)
+
+        # Register peripheral's master ports (if any)
+        if self._master_registry is not None:
+            self._master_registry.register_peripheral_masters(peripheral)
 
     def remove_peripheral(self, peripheral: BasePeripheral):
         """

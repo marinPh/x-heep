@@ -41,6 +41,54 @@ from .peripherals.user_peripherals import (
 )
 
 
+def parse_master_ports(config_dict, peripheral=None, system=None):
+    """
+    Parse master_ports declarations from hjson configuration.
+
+    Supports two modes:
+    1. Peripheral-level: peripheral is provided, adds specs to peripheral.master_specs
+    2. Global-level: peripheral is None, system is provided, registers global masters
+
+    :param dict config_dict: The hjson config dict that may contain 'master_ports'
+    :param peripheral: Optional peripheral instance to add master specs to
+    :param system: Optional XHeep system instance for global masters
+    """
+    if "master_ports" not in config_dict:
+        return  # No master ports declared
+
+    master_ports = config_dict["master_ports"]
+    if not isinstance(master_ports, list):
+        print(f"Warning: master_ports must be a list, got {type(master_ports)}")
+        return
+
+    for master_spec in master_ports:
+        if not isinstance(master_spec, dict):
+            print(f"Warning: master port spec must be a dict, got {type(master_spec)}")
+            continue
+
+        name = master_spec.get("name")
+        if not name:
+            print("Warning: master port must have a 'name' field")
+            continue
+
+        # Normalize spec to have all fields
+        normalized_spec = {
+            "name": name,
+            "type": master_spec.get("type", "custom"),
+            "index": master_spec.get("index", 0),
+        }
+
+        # Add to peripheral or global
+        if peripheral is not None:
+            # Add spec to peripheral's master_specs list
+            peripheral.master_specs.append(normalized_spec)
+        elif system is not None:
+            # Register global master via registry factory
+            system.master_registry.register_from_spec(normalized_spec, owner=None)
+        else:
+            print("Warning: parse_master_ports called without peripheral or system")
+
+
 def to_int(input) -> Union[int, None]:
     if type(input) is int:
         return input
@@ -242,7 +290,9 @@ def load_peripherals_config(system: XHeep, config_path: str):
         if name == "ao_peripherals":
             base_peripherals = (
                 BasePeripheralDomain(
-                    int(fields["address"], 16), int(fields["length"], 16)
+                    int(fields["address"], 16),
+                    int(fields["length"], 16),
+                    master_registry=system.master_registry,
                 )
                 if not system.are_base_peripherals_configured()
                 else None
@@ -351,6 +401,10 @@ def load_peripherals_config(system: XHeep, config_path: str):
                         raise ValueError(
                             f"Peripheral {peripheral_name} does not exist."
                         )
+
+                    # Parse peripheral-level master ports (if any)
+                    parse_master_ports(peripheral_config, peripheral=peripheral)
+
                     # Adding peripheral to domain
                     base_peripherals.add_peripheral(peripheral)
 
@@ -361,7 +415,9 @@ def load_peripherals_config(system: XHeep, config_path: str):
         elif name == "peripherals":
             user_peripherals = (
                 UserPeripheralDomain(
-                    int(fields["address"], 16), int(fields["length"], 16)
+                    int(fields["address"], 16),
+                    int(fields["length"], 16),
+                    master_registry=system.master_registry,
                 )
                 if not system.are_user_peripherals_configured()
                 else None
@@ -407,6 +463,10 @@ def load_peripherals_config(system: XHeep, config_path: str):
                         raise ValueError(
                             f"Peripheral {peripheral_name} does not exist."
                         )
+
+                    # Parse peripheral-level master ports (if any)
+                    parse_master_ports(peripheral_config, peripheral=peripheral)
+
                     # Adding peripheral to domain
                     user_peripherals.add_peripheral(peripheral)
                 # All peripherals in configuration file have been added
@@ -451,6 +511,9 @@ def load_cfg_hjson(src: str) -> XHeep:
         raise RuntimeError("No bus type configuration found")
 
     system = XHeep(BusType(bus_config))
+
+    # Parse global master ports (if any)
+    parse_master_ports(config, system=system)
     memory_ss = MemorySS()
 
     load_ram_configuration(memory_ss, mem_config)

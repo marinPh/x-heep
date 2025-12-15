@@ -18,6 +18,11 @@
   base_peripheral_domain = xheep.get_base_peripheral_domain()
   dma = base_peripheral_domain.get_dma()
   memory_ss = xheep.memory_ss()
+  registry = xheep.master_registry
+
+  # Get DMA master index map from registry (removes template duplication)
+  dma_master_idx_map = registry.get_dma_master_index_map(dma)
+  slave_registry = xheep.slave_registry
 %>
 
 package core_v_mini_mcu_pkg;
@@ -41,22 +46,28 @@ package core_v_mini_mcu_pkg;
 
   localparam bus_type_e BusType = ${xheep.bus_type().value};
 
-  //master idx
-  localparam logic [31:0] CORE_INSTR_IDX = 0;
-  localparam logic [31:0] CORE_DATA_IDX = 1;
-  localparam logic [31:0] DEBUG_MASTER_IDX = 2;
-  localparam logic [31:0] DMA_READ_P0_IDX = 3;
-  localparam logic [31:0] DMA_WRITE_P0_IDX = 4;
-  localparam logic [31:0] DMA_ADDR_P0_IDX = 5;
- 
-  localparam SYSTEM_XBAR_NMASTER = ${3 + int(dma.get_num_master_ports())*3};
+  // Master port indices (auto-generated from registry)
+  localparam SYSTEM_XBAR_NMASTER = ${registry.get_total_count()};
+% for master in registry.get_all():
+  localparam logic [31:0] ${master.name}_IDX = 32'd${master.index};
+% endfor
+
+% for port_type, idx_list in dma_master_idx_map.items():
+  localparam logic [31:0] DMA_${port_type.upper()}_MASTER_IDXS [DMA_NUM_MASTER_PORTS] = '{
+%   for value in idx_list:
+    32'd${value}${"," if not loop.last else ""}
+%   endfor
+  };
+% endfor
 
   // Internal slave memory map and index
   // -----------------------------------
   //must be power of two
   localparam int unsigned MEM_SIZE = 32'h${f'{memory_ss.ram_size_address():08X}'};
 
-  localparam SYSTEM_XBAR_NSLAVE = ${memory_ss.ram_numbanks() + 5};
+  localparam SYSTEM_XBAR_NSLAVE = ${slave_registry.get_total_count()};
+
+  // all slaves ->
 
   localparam int unsigned LOG_SYSTEM_XBAR_NMASTER = SYSTEM_XBAR_NMASTER > 1 ? $clog2(SYSTEM_XBAR_NMASTER) : 32'd1;
   localparam int unsigned LOG_SYSTEM_XBAR_NSLAVE = SYSTEM_XBAR_NSLAVE > 1 ? $clog2(SYSTEM_XBAR_NSLAVE) : 32'd1;
@@ -84,36 +95,40 @@ package core_v_mini_mcu_pkg;
   localparam logic [31:0] RAM_IL${i}_IDX = RAM${group.first_name}_IDX;
 % endfor
 
-  localparam logic[31:0] DEBUG_START_ADDRESS = 32'h${debug_start_address};
-  localparam logic[31:0] DEBUG_SIZE = 32'h${debug_size_address};
+<%
+  debug_slave = slave_registry.get_by_name("DEBUG")
+%>
+  localparam logic[31:0] DEBUG_START_ADDRESS = 32'h${f'{debug_slave.start_address:08X}'};
+  localparam logic[31:0] DEBUG_SIZE = 32'h${f'{debug_slave.size:08X}'};
   localparam logic[31:0] DEBUG_END_ADDRESS = DEBUG_START_ADDRESS + DEBUG_SIZE;
-  localparam logic[31:0] DEBUG_IDX = 32'd${memory_ss.ram_numbanks() + 1};
+  localparam logic[31:0] DEBUG_IDX = 32'd${debug_slave.index};
 
-  localparam logic[31:0] AO_PERIPHERAL_START_ADDRESS = 32'h${hex(base_peripheral_domain.get_start_address())[2:]};
-  localparam logic[31:0] AO_PERIPHERAL_SIZE = 32'h${hex(base_peripheral_domain.get_length())[2:]};
+<%
+  ao_peripheral_slave = slave_registry.get_by_name("AO_PERIPHERAL")
+  peripheral_slave = slave_registry.get_by_name("PERIPHERAL")
+  flash_slave = slave_registry.get_by_name("FLASH_MEM")
+%>
+  localparam logic[31:0] AO_PERIPHERAL_START_ADDRESS = 32'h${f'{ao_peripheral_slave.start_address:08X}'};
+  localparam logic[31:0] AO_PERIPHERAL_SIZE = 32'h${f'{ao_peripheral_slave.size:08X}'};
   localparam logic[31:0] AO_PERIPHERAL_END_ADDRESS = AO_PERIPHERAL_START_ADDRESS + AO_PERIPHERAL_SIZE;
-  localparam logic[31:0] AO_PERIPHERAL_IDX = 32'd${memory_ss.ram_numbanks() + 2};
+  localparam logic[31:0] AO_PERIPHERAL_IDX = 32'd${ao_peripheral_slave.index};
 
-  localparam logic[31:0] PERIPHERAL_START_ADDRESS = 32'h${hex(user_peripheral_domain.get_start_address())[2:]};
-  localparam logic[31:0] PERIPHERAL_SIZE = 32'h${hex(user_peripheral_domain.get_length())[2:]};
+  localparam logic[31:0] PERIPHERAL_START_ADDRESS = 32'h${f'{peripheral_slave.start_address:08X}'};
+  localparam logic[31:0] PERIPHERAL_SIZE = 32'h${f'{peripheral_slave.size:08X}'};
   localparam logic[31:0] PERIPHERAL_END_ADDRESS = PERIPHERAL_START_ADDRESS + PERIPHERAL_SIZE;
-  localparam logic[31:0] PERIPHERAL_IDX = 32'd${memory_ss.ram_numbanks() + 3};
+  localparam logic[31:0] PERIPHERAL_IDX = 32'd${peripheral_slave.index};
 
-  localparam logic[31:0] FLASH_MEM_START_ADDRESS = 32'h${flash_mem_start_address};
-  localparam logic[31:0] FLASH_MEM_SIZE = 32'h${flash_mem_size_address};
+  localparam logic[31:0] FLASH_MEM_START_ADDRESS = 32'h${f'{flash_slave.start_address:08X}'};
+  localparam logic[31:0] FLASH_MEM_SIZE = 32'h${f'{flash_slave.size:08X}'};
   localparam logic[31:0] FLASH_MEM_END_ADDRESS = FLASH_MEM_START_ADDRESS + FLASH_MEM_SIZE;
-  localparam logic[31:0] FLASH_MEM_IDX = 32'd${memory_ss.ram_numbanks() + 4};
+  localparam logic[31:0] FLASH_MEM_IDX = 32'd${flash_slave.index};
 
   localparam addr_map_rule_t [SYSTEM_XBAR_NSLAVE-1:0] XBAR_ADDR_RULES = '{
-      '{ idx: ERROR_IDX, start_addr: ERROR_START_ADDRESS, end_addr: ERROR_END_ADDRESS },
-% for bank in memory_ss.iter_ram_banks():
-      '{ idx: RAM${bank.name()}_IDX, start_addr: RAM${bank.name()}_START_ADDRESS, end_addr: RAM${bank.name()}_END_ADDRESS },
+% for slave in slave_registry.get_all():
+      '{ idx: ${slave.name}_IDX, start_addr: ${slave.name}_START_ADDRESS, end_addr: ${slave.name}_END_ADDRESS }${"," if not loop.last else ""}
 % endfor
-      '{ idx: DEBUG_IDX, start_addr: DEBUG_START_ADDRESS, end_addr: DEBUG_END_ADDRESS },
-      '{ idx: AO_PERIPHERAL_IDX, start_addr: AO_PERIPHERAL_START_ADDRESS, end_addr: AO_PERIPHERAL_END_ADDRESS },
-      '{ idx: PERIPHERAL_IDX, start_addr: PERIPHERAL_START_ADDRESS, end_addr: PERIPHERAL_END_ADDRESS },
-      '{ idx: FLASH_MEM_IDX, start_addr: FLASH_MEM_START_ADDRESS, end_addr: FLASH_MEM_END_ADDRESS }
   };
+
 
   // External slave address map
   // --------------------------

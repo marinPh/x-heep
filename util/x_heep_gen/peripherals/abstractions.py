@@ -7,6 +7,7 @@ from abc import (
 )  # Used to define abstract classes that cannot be instantiated, only well defined subclasses can be instantiated.
 from enum import Enum
 from copy import deepcopy
+from itertools import count
 from typing import List
 
 
@@ -21,6 +22,7 @@ class Peripheral(ABC):
     _length: int = int("0x00010000", 16)  # default length of 64KB
     _name: str
     _address: int = None
+    _instance_counter = count()
 
     def __init__(self, offset=None, length=None):
         """
@@ -36,6 +38,11 @@ class Peripheral(ABC):
 
         if length is not None:
             self._length = length
+
+        # Master port specifications (list of dicts)
+        # Each spec: {"name": str, "type": str, "index": int}
+        self.master_specs = []
+        self._instance_id = next(Peripheral._instance_counter)
 
     def get_address(self):
         """
@@ -63,6 +70,29 @@ class Peripheral(ABC):
         :rtype: str
         """
         return self._name
+
+    def add_master_port_spec(
+        self, name: str, port_type: str = "custom", port_index: int = 0
+    ):
+        """
+        Add a master port specification to this peripheral.
+
+        Stores the specification as a dict. The MasterRegistry will create
+        the actual MasterPort object from this spec during registration.
+
+        :param str name: Name of the master port (e.g., "MY_PERIPH_MASTER")
+        :param str port_type: Type identifier (e.g., "axi", "obi", "custom")
+        :param int port_index: Port index for peripherals with multiple ports
+        """
+        self.master_specs.append({"name": name, "type": port_type, "index": port_index})
+
+    def __eq__(self, other):
+        if not isinstance(other, Peripheral):
+            return NotImplemented
+        return self._instance_id == other._instance_id
+
+    def __hash__(self):
+        return hash(self._instance_id)
 
 
 class BasePeripheral(Peripheral, ABC):
@@ -93,20 +123,25 @@ class PeripheralDomain(ABC):
     _peripherals: List[
         Peripheral
     ]  # type has to be precised for filtering in validation
+    _master_registry = None  # Reference to master registry
 
     @abstractmethod
-    def __init__(self, name: str, start_address: int, length: int):
+    def __init__(
+        self, name: str, start_address: int, length: int, master_registry=None
+    ):
         """
         Initialize the peripheral domain. Is abstract because each peripheral domain has its own way of initializing without letting the user define start address and length.
 
         :param str name: The name of the peripheral domain. Convention : starts with a capital letter and is in singular form (no "peripheral domain" at the end)
         :param int start_address: The start address of the peripheral domain.
         :param int length: The length of the peripheral domain.
+        :param master_registry: Optional reference to MasterRegistry for registering peripheral masters
         """
         self._name = f"{name} Peripheral Domain"
         self._start_address = start_address
         self._length = length
         self._peripherals = []
+        self._master_registry = master_registry
 
     @abstractmethod
     def add_peripheral(self, peripheral: Peripheral):

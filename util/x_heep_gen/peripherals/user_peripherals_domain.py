@@ -15,18 +15,28 @@ class UserPeripheralDomain(PeripheralDomain):
     Length :        0x00100000
     """
 
-    def __init__(self, start_address: int = 0x30000000, length: int = 0x00100000):
+    def __init__(
+        self,
+        start_address: int = 0x30000000,
+        length: int = 0x00100000,
+        master_registry=None,
+    ):
         """
         Initialize the user peripheral domain.
         Start address : 0x30000000
         Length :       0x00100000
 
         At the beginning, there is no base peripheral. All non-added peripherals will be added during build().
+
+        :param int start_address: Start address of the domain
+        :param int length: Length of the domain
+        :param master_registry: Optional reference to MasterRegistry
         """
         super().__init__(
             name="User",
             start_address=start_address,
             length=length,
+            master_registry=master_registry,
         )
 
     def get_pdm2pcm(self):
@@ -43,12 +53,17 @@ class UserPeripheralDomain(PeripheralDomain):
     def add_peripheral(self, peripheral: UserPeripheral):
         """
         Add a peripheral to the domain if it is a UserPeripheral. If not, raise an error.
+        Also registers any master ports the peripheral exposes.
 
         :param UserPeripheral peripheral: The peripheral to add.
         """
         if not isinstance(peripheral, UserPeripheral):
             raise ValueError("Peripheral is not a UserPeripheral")
         self._peripherals.append(peripheral)
+
+        # Register peripheral's master ports (if any)
+        if self._master_registry is not None:
+            self._master_registry.register_peripheral_masters(peripheral)
 
     def remove_peripheral(self, peripheral: UserPeripheral):
         """

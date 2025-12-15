@@ -6,6 +6,8 @@ from .peripherals.abstractions import PeripheralDomain
 from .peripherals.base_peripherals_domain import BasePeripheralDomain
 from .peripherals.user_peripherals_domain import UserPeripheralDomain
 from .pads.PadRing import PadRing
+from .system.master_registry import MasterRegistry
+from .system.slave_registry import SlaveRegistry
 
 
 class XHeep:
@@ -41,6 +43,14 @@ class XHeep:
         self._padring: PadRing = None
 
         self._extensions = {}
+
+        # Master port registry (configuration time)
+        self.master_registry = MasterRegistry()
+        self.master_registry.register_fixed_masters()
+
+        # Slave port registry (configuration time)
+        self.slave_registry = SlaveRegistry()
+        self._template_slaves_registered = False
 
     # ------------------------------------------------------------
     # CPU
@@ -194,6 +204,23 @@ class XHeep:
         return self._padring
 
     # ------------------------------------------------------------
+    # Master Ports
+    # ------------------------------------------------------------
+
+    def add_global_master_port(self, name: str, port_type: str = "custom"):
+        """
+        Add a global master port (not owned by any peripheral).
+
+        This is for master ports that exist independently of peripherals,
+        such as external AXI masters or custom interfaces.
+
+        :param str name: Name of the master port (e.g., "EXT_AXI_MASTER")
+        :param str port_type: Type identifier (e.g., "axi", "custom"), default "custom"
+        """
+        spec = {"name": name, "type": port_type, "index": 0}
+        self.master_registry.register_from_spec(spec, owner=None)
+
+    # ------------------------------------------------------------
     # Extensions
     # ------------------------------------------------------------
 
@@ -231,6 +258,49 @@ class XHeep:
             self._base_peripheral_domain.build()
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.build()
+
+        # Build master registry (assigns indices to all master ports)
+        self.master_registry.build()
+        self.slave_registry.build()
+
+    def register_template_slaves(
+        self,
+        debug_start: int,
+        debug_size: int,
+        flash_start: int,
+        flash_size: int,
+    ):
+        """
+        Register fixed slaves from configuration-time address constants.
+
+        Called before build() so templates can rely on the registry contents
+        instead of mutating it themselves. RAM banks are registered here too.
+
+        :param int debug_start: Debug module start address
+        :param int debug_size: Debug module size
+        :param int flash_start: Flash memory start
+        :param int flash_size: Flash memory size
+        """
+        if self._template_slaves_registered:
+            return
+
+        if self._base_peripheral_domain and self._user_peripheral_domain:
+            self.slave_registry.register_fixed_slaves(
+                memory_ss=self._memory_ss,
+                debug_start=debug_start,
+                debug_size=debug_size,
+                ao_peripheral_start=self._base_peripheral_domain.get_start_address(),
+                ao_peripheral_size=self._base_peripheral_domain.get_length(),
+                peripheral_start=self._user_peripheral_domain.get_start_address(),
+                peripheral_size=self._user_peripheral_domain.get_length(),
+                flash_start=flash_start,
+                flash_size=flash_size,
+            )
+
+            # Register RAM banks
+            if self._memory_ss:
+                self.slave_registry.register_ram_banks(self._memory_ss)
+            self._template_slaves_registered = True
 
     def validate(self) -> bool:
         """

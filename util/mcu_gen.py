@@ -154,6 +154,14 @@ def generate_xheep(args):
 
     interrupts = {**config["interrupts"]["list"], **ext_int_list}
 
+    # Register slave ports with fixed addresses before building the system
+    xheep.register_template_slaves(
+        debug_start=int(debug_start_address, 16),
+        debug_size=int(debug_size_address, 16),
+        flash_start=int(flash_mem_start_address, 16),
+        flash_size=int(flash_mem_size_address, 16),
+    )
+
     # Here the xheep system is built,
     # The missing gaps are filled, like the missing end address of the data section.
     xheep.build()

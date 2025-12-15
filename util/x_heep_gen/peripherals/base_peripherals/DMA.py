@@ -53,6 +53,9 @@ class DMA(BasePeripheral):
         self._zero_padding = 0 if zero_padding == "no" else 1
         self._is_included = 0 if is_included == "no" else 1
 
+        # Populate master_specs with DMA's built-in master ports
+        self._populate_dma_master_specs()
+
     def get_is_included(self):
         """
         Get whether the DMA is included.
@@ -236,6 +239,26 @@ class DMA(BasePeripheral):
                     "With 1 master port, the number of DMA channels per master port has to be equal to the number of DMA channels"
                 )
             return "default: 1"
+
+    def _populate_dma_master_specs(self):
+        """
+        Populate master_specs with DMA's built-in master port specifications.
+
+        Each DMA master port has 3 OBI interfaces:
+        - read (for reading source data)
+        - write (for writing destination data)
+        - addr (for address mode - reading addresses from memory)
+        """
+        if self._num_master_ports > 0:
+            for port_idx in range(self._num_master_ports):
+                for port_type in ["read", "write", "addr"]:
+                    self.master_specs.append(
+                        {
+                            "name": f"DMA_{port_type.upper()}_P{port_idx}",
+                            "type": port_type,
+                            "index": port_idx,
+                        }
+                    )
 
     def validate(self):
         """
