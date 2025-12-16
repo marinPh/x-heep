@@ -46,9 +46,7 @@ def config():
     system.set_memory_ss(memory_ss)
 
     # Peripheral domains initialization
-    base_intr = {
-        "null_intr": Interrupt(0)
-    }
+
     base_peripheral_domain = BasePeripheralDomain()
     user_peripheral_domain = UserPeripheralDomain()
 
@@ -81,6 +79,9 @@ def config():
     system.add_peripheral_domain(user_peripheral_domain)
     
     system.add_interrupts_from_peripheral_domains()
+    base_intr = {
+        "null_intr": Interrupt(0)
+    }
     system.extend_interrupt(base_intr)
 
     return system
