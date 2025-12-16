@@ -219,11 +219,11 @@ class XHeep:
         """
         spec = {"name": name, "type": port_type, "index": 0}
         self.master_registry.register_from_spec(spec, owner=None)
-        
+
     # ------------------------------------------------------------
     # DEBUG and FLASH
     # ------------------------------------------------------------
-    
+
     def set_debug_flash_addresses(
         self,
         debug_start: int,
@@ -239,21 +239,19 @@ class XHeep:
         :param int flash_start: Flash memory start
         :param int flash_size: Flash memory size
         """
-        #TODO: should be used by tpls
+        # TODO: should be used by tpls
         self.debug_start = debug_start
         self.debug_size = debug_size
         self.flash_start = flash_start
         self.flash_size = flash_size
-        
+
         self.register_template_slaves(
             debug_start=debug_start,
             debug_size=debug_size,
             flash_start=flash_start,
             flash_size=flash_size,
         )
-        
 
-        
     # ------------------------------------------------------------
     # Extensions
     # ------------------------------------------------------------
