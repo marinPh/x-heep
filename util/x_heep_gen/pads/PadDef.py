@@ -60,7 +60,6 @@ def _assert_type(t: str, where: str) -> None:
 def _assert_mapping(m: str, where: str) -> None:
     # is instance if PadMapping enum
     if m is not None and not isinstance(m, PadMapping):
-        print(f"----------m={m} of type {type(m)}")
         raise ValidationError(
             f"{where}: invalid mapping '{m}'. Valid: {list(PadMapping)}"
         )
