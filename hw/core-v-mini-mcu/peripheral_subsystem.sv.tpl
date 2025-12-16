@@ -4,6 +4,12 @@
 
 <%
   user_peripheral_domain = xheep.get_user_peripheral_domain()
+
+intrs = [
+  (name, irq)
+  for name, irq in xheep.get_interrupts().items()
+  if name != "EXT_INTR"
+]
 %>
 <%def name="reg_to_tlul_inst(instance_name, tl_h2d, tl_d2h, idx_name)">
   reg_to_tlul #(
@@ -137,13 +143,7 @@ module peripheral_subsystem
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
   logic [${xheep.get_interrupts()["gpio_intr"].start_seq}-1:0] gpio_int_unused;
-  <%
-intrs = [
-  (name, irq)
-  for name, irq in xheep.get_interrupts().items()
-  if name != "EXT_INTR"
-]
-%>
+
 % for name, irq in intrs:
   % if name != "null_intr":
     % if irq.num > 1:

@@ -15,7 +15,6 @@ class InterruptManager:
         """
         self._interrupts: Dict[str, Interrupt] = {}
         self._max_interrupts = None
-        
 
     # ================================================================
     # Core Assignment Methods
@@ -96,7 +95,6 @@ class InterruptManager:
                 ]
             ).sum()
         )
-        
 
     def get_interrupts_for_peripheral(
         self, peripheral_name: str
@@ -183,7 +181,7 @@ class InterruptManager:
     # ================================================================
     # Configuration Methods
     # ================================================================
-    
+
     def set_max_intrs(self, max_interrupts: int):
         """
         Set the maximum number of interrupts supported.

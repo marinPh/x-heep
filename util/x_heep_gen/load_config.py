@@ -271,7 +271,6 @@ def load_cfg_file(f: PurePath) -> XHeep:
     :rtype: XHeep
     :raise RuntimeError: when and invalid configuration is passed or when the sanity checks failed
     """
-    print(f)
     if not isinstance(f, PurePath):
         raise TypeError("parameter should be of type PurePath")
 
