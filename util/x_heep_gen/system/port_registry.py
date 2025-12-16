@@ -30,6 +30,7 @@ class PortRegistry(ABC):
         """Initialize empty registry."""
         self._ports: List[PortType] = []
         self._is_built = False
+        self._is_configured = False
 
     def register(self, port: PortType) -> PortType:
         """

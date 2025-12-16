@@ -85,6 +85,7 @@ class SlaveRegistry(PortRegistry):
             SlavePort("PERIPHERAL", peripheral_start, peripheral_size, owner=None)
         )
         self.register(SlavePort("FLASH_MEM", flash_start, flash_size, owner=None))
+        self._is_configured = True
 
     def register_ram_banks(self, memory_ss):
         """

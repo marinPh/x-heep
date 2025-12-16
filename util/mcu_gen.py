@@ -136,7 +136,16 @@ def generate_xheep(args):
 
     stack_size = string2int(config["linker_script"]["stack_size"])
     heap_size = string2int(config["linker_script"]["heap_size"])
-
+    
+    xheep.set_debug_flash_addresses(
+        int(debug_start_address, 16),
+        int(debug_size_address, 16),
+        int(flash_mem_start_address, 16),
+        int(flash_mem_size_address, 16),
+    )
+    
+    xheep.master_registry.register_fixed_masters()
+    
     if (
         int(stack_size, 16) + int(heap_size, 16)
     ) > xheep.memory_ss().ram_size_address():
@@ -153,14 +162,6 @@ def generate_xheep(args):
     }
 
     interrupts = {**config["interrupts"]["list"], **ext_int_list}
-
-    # Register slave ports with fixed addresses before building the system
-    xheep.register_template_slaves(
-        debug_start=int(debug_start_address, 16),
-        debug_size=int(debug_size_address, 16),
-        flash_start=int(flash_mem_start_address, 16),
-        flash_size=int(flash_mem_size_address, 16),
-    )
 
     # Here the xheep system is built,
     # The missing gaps are filled, like the missing end address of the data section.

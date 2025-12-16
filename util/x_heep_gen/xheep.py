@@ -219,7 +219,41 @@ class XHeep:
         """
         spec = {"name": name, "type": port_type, "index": 0}
         self.master_registry.register_from_spec(spec, owner=None)
+        
+    # ------------------------------------------------------------
+    # DEBUG and FLASH
+    # ------------------------------------------------------------
+    
+    def set_debug_flash_addresses(
+        self,
+        debug_start: int,
+        debug_size: int,
+        flash_start: int,
+        flash_size: int,
+    ):
+        """
+        Sets the debug and flash addresses in the slave registry.
 
+        :param int debug_start: Debug module start address
+        :param int debug_size: Debug module size
+        :param int flash_start: Flash memory start
+        :param int flash_size: Flash memory size
+        """
+        #TODO: should be used by tpls
+        self.debug_start = debug_start
+        self.debug_size = debug_size
+        self.flash_start = flash_start
+        self.flash_size = flash_size
+        
+        self.register_template_slaves(
+            debug_start=debug_start,
+            debug_size=debug_size,
+            flash_start=flash_start,
+            flash_size=flash_size,
+        )
+        
+
+        
     # ------------------------------------------------------------
     # Extensions
     # ------------------------------------------------------------
@@ -258,10 +292,10 @@ class XHeep:
             self._base_peripheral_domain.build()
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.build()
-
-        # Build master registry (assigns indices to all master ports)
-        self.master_registry.build()
-        self.slave_registry.build()
+        if self.master_registry._is_configured:
+            self.master_registry.build()
+        if self.slave_registry._is_configured:
+            self.slave_registry.build()
 
     def register_template_slaves(
         self,

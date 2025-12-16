@@ -37,7 +37,6 @@ class MasterRegistry(PortRegistry):
     def __init__(self):
         """Initialize an empty master registry."""
         super().__init__()
-        self._fixed_masters_registered: bool = False
 
     # ===================================================================
     # CONFIGURATION TIME API
@@ -50,14 +49,14 @@ class MasterRegistry(PortRegistry):
         Called once during XHeep.__init__().
         These are the fixed master ports that always exist.
         """
-        if self._fixed_masters_registered:
+        if self._is_configured:
             return  # Already registered
 
         self.register(MasterPort("CORE_INSTR", None, "cpu"))
         self.register(MasterPort("CORE_DATA", None, "cpu"))
         self.register(MasterPort("DEBUG_MASTER", None, "debug"))
 
-        self._fixed_masters_registered = True
+        self._is_configured = True
 
     def register_from_spec(self, spec, owner=None):
         """
