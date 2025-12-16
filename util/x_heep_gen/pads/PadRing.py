@@ -98,12 +98,14 @@ class PadRing:
             last_pad.remove_comma_io_interface()
             pad_objs.append(last_pad)
 
-        # Separate pads by mapping (top, bottom, left, right)
-        pad_lists = separate_and_sort_pads(pad_objs, sort_by_layout_index=False)
-        top_pad_list = pad_lists[PadMapping.TOP]
-        bottom_pad_list = pad_lists[PadMapping.BOTTOM]
-        left_pad_list = pad_lists[PadMapping.LEFT]
-        right_pad_list = pad_lists[PadMapping.RIGHT]
+        top_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.TOP]
+        bottom_pad_list = [
+            pad for pad in pad_objs if pad.pad_mapping == PadMapping.BOTTOM
+        ]
+        left_pad_list = [pad for pad in pad_objs if pad.pad_mapping == PadMapping.LEFT]
+        right_pad_list = [
+            pad for pad in pad_objs if pad.pad_mapping == PadMapping.RIGHT
+        ]
         bondpad_offsets = bondpad_offsets
 
         self.pad_list = pad_objs
@@ -134,74 +136,40 @@ def pad_subset(pad_list: List[PadDef], all_pads: List[Pad]) -> List[Pad]:
     return subset
 
 
-def _get_pad_cell_width(pad, pad_name=None):
-    """
-    Extract pad cell width with proper error handling.
-
-    :param pad: Pad object with layout attribute
-    :param str pad_name: Optional pad name for error messages (defaults to pad.name)
-    :return: Pad cell width as float
-    :rtype: float
-    :raises ValueError: If pad cell is not defined or width is missing
-    """
-    if pad_name is None:
-        pad_name = getattr(pad, "name", "unknown")
-
-    # Get pad cell from layout
-    pad_cell = getattr(pad.layout, "cell_pad", None) if hasattr(pad, "layout") else None
-
-    if pad_cell is None:
-        raise ValueError(f"Pad cell not defined for pad '{pad_name}'")
-
-    # Extract width with error handling
-    try:
-        return float(pad_cell.width)
-    except (AttributeError, KeyError) as e:
-        raise ValueError(f"Width not defined for pad cell of pad '{pad_name}'") from e
-
-
-def separate_and_sort_pads(pads, sort_by_layout_index=False):
-    """
-    Separate pads by their mapping (top, bottom, left, right) and optionally sort by layout index.
-
-    :param pads: List of pad objects (Pad or PadDef)
-    :param bool sort_by_layout_index: Whether to sort pads by their layout_index attribute
-    :return: Dictionary with PadMapping keys and lists of pads as values
-    :rtype: dict
-    """
-    pad_lists = {
-        PadMapping.TOP: [],
-        PadMapping.BOTTOM: [],
-        PadMapping.RIGHT: [],
-        PadMapping.LEFT: [],
-    }
-
-    for pad in pads:
-        # Handle both 'mapping' and 'pad_mapping' attributes
-        pad_mapping = getattr(pad, "mapping", getattr(pad, "pad_mapping", None))
-
-        if pad_mapping in pad_lists:
-            pad_lists[pad_mapping].append(pad)
-
-    # Sort pads by layout index if requested
-    if sort_by_layout_index:
-        for mapping in pad_lists:
-            pad_lists[mapping].sort(key=lambda x: x.layout_index)
-
-    return pad_lists
-
-
-def prepare_pads_for_layout(pad_group: PadGroup):
+def prepare_pads_for_layout(pad_group: PadGroup) -> Dict[str, float]:
     """
     Separate pads into pad lists for the top, bottom, left, and right pads and order them according to their layout_index attribute, and set their positions on the floorplan.
     """
 
-    # Separate pads according to side and order by layout index
-    pad_lists = separate_and_sort_pads(pad_group.get_pads(), sort_by_layout_index=True)
-    top_pad_list = pad_lists[PadMapping.TOP]
-    bottom_pad_list = pad_lists[PadMapping.BOTTOM]
-    left_pad_list = pad_lists[PadMapping.LEFT]
-    right_pad_list = pad_lists[PadMapping.RIGHT]
+    # Separate pads according to side
+    top_pad_list: List[PadDef] = []
+    bottom_pad_list: List[PadDef] = []
+    right_pad_list: List[PadDef] = []
+    left_pad_list: List[PadDef] = []
+    pad_lists = {
+        PadMapping.TOP: top_pad_list,
+        PadMapping.BOTTOM: bottom_pad_list,
+        PadMapping.RIGHT: right_pad_list,
+        PadMapping.LEFT: left_pad_list,
+    }
+    for pad in pad_group.get_pads():
+        if pad.mapping in pad_lists.keys():
+            pad_lists[pad.mapping].append(pad)
+        else:
+            pad_mapping = getattr(pad, "mapping", getattr(pad, "pad_mapping", None))
+            print(
+                "ERROR: Pad {0} has an invalid mapping {1}. Please set mapping to top, bottom, left, or right.".format(
+                    pad.name, pad_mapping
+                )
+            )
+
+            raise ValueError("Invalid pad mapping")
+
+    # Order pads according to layout index
+    top_pad_list.sort(key=lambda x: x.layout_index)
+    bottom_pad_list.sort(key=lambda x: x.layout_index)
+    left_pad_list.sort(key=lambda x: x.layout_index)
+    right_pad_list.sort(key=lambda x: x.layout_index)
 
     # Calculate pad offsets and check wheth
     ## Conver lists of PadDef to lists of Pad objects
@@ -321,12 +289,42 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
             last_bp_cell = pad_list[i - 1].layout
             last_bp_width = last_bp_cell.bond_pad.width
 
-        # Get pad cell width using helper function
-        pad_width = _get_pad_cell_width(pad)
+        # Get pad width from physical attributes
+        pad_cell = pad.layout.cell_pad
+        if pad_cell is not None:
+            try:
+                pad_width = float(pad.layout.cell_pad.width)
+            except KeyError:
+                print(
+                    "ERROR: Width not defined for pad cell {0} of pad {1}".format(
+                        pad_cell, pad.layout.name
+                    )
+                )
+                raise ValueError("Pad cell width not defined")
+        else:
+            print("ERROR: A pad cell is not defined for pad {0}".format(pad.name))
 
-        # Get previous pad width if not first pad
+            raise ValueError("Pad cell not defined")
+
         if i > 0:
-            last_pad_width = _get_pad_cell_width(pad_list[i - 1])
+            last_pad_cell = pad_list[i - 1].layout.cell_pad
+            if pad_cell is not None:
+                try:
+                    last_pad_width = float(last_pad_cell.width)
+                except KeyError:
+                    print(
+                        "ERROR: A pad cell is not defined for pad {0}".format(
+                            pad_list[i - 1].name
+                        )
+                    )
+                    raise ValueError("Pad cell width not defined")
+            else:
+                print(
+                    "ERROR: A pad cell is not defined for pad {1}".format(
+                        pad_list[i - 1].name
+                    )
+                )
+                raise ValueError("Pad cell not defined")
         if (i == 0) and (pad.layout.offset is None):
             # First pad: set offset to align with bondpad
             pad.layout.offset = (
