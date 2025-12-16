@@ -201,7 +201,7 @@ class XHeep:
     # ------------------------------------------------------------
     # Interrupts
     # ------------------------------------------------------------
-    
+
     def set_max_intrs(self, max_intrs: int):
         """
         Sets the maximum number of interrupts for the system.
