@@ -40,7 +40,7 @@ class XHeep:
         self._base_peripheral_domain = None
         self._user_peripheral_domain = None
         self._padring: PadRing = None
-        self._interrupt_manager = InterruptManager(max_intrs)
+        self._interrupt_manager = InterruptManager()
 
         self._extensions = {}
 
@@ -202,6 +202,20 @@ class XHeep:
     # ------------------------------------------------------------
     # Interrupts
     # ------------------------------------------------------------
+    
+    def set_max_intrs(self, max_intrs: int):
+        """
+        Sets the maximum number of interrupts for the system.
+
+        :param int max_intrs: The maximum number of interrupts.
+        :raise TypeError: when max_intrs is of incorrect type.
+        """
+        if not isinstance(max_intrs, int):
+            raise TypeError(
+                f"XHeep.max_intrs should be of type int not {type(self.max_intrs)}"
+            )
+        self.max_intrs = max_intrs
+        self._interrupt_manager.set_max_interrupts(max_intrs)
 
     @property
     def interrupts(self) -> InterruptManager:
