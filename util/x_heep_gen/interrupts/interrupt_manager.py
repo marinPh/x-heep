@@ -7,14 +7,15 @@ from ..peripherals.abstractions import Interrupt
 
 class InterruptManager:
 
-    def __init__(self, max_interrupts: int = 64):
+    def __init__(self):
         """
         Initialize the InterruptManager.
 
         :param int max_interrupts: Maximum number of interrupts supported
         """
         self._interrupts: Dict[str, Interrupt] = {}
-        self._max_interrupts = max_interrupts
+        self._max_interrupts = None
+        
 
     # ================================================================
     # Core Assignment Methods
@@ -95,6 +96,7 @@ class InterruptManager:
                 ]
             ).sum()
         )
+        
 
     def get_interrupts_for_peripheral(
         self, peripheral_name: str
@@ -181,6 +183,14 @@ class InterruptManager:
     # ================================================================
     # Configuration Methods
     # ================================================================
+    
+    def set_max_intrs(self, max_interrupts: int):
+        """
+        Set the maximum number of interrupts supported.
+
+        :param int max_interrupts: Maximum number of interrupts
+        """
+        self._max_interrupts = max_interrupts
 
     def parse_config_dict(self, interrupts: Dict[str, int]):
 
