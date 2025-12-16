@@ -110,9 +110,9 @@ class PadDef:
     layout: Optional[Layout] = None
     layers: Optional[List[str]] = None
     properties: Dict[str, Any] = field(default_factory=dict)
-    active: str = "high"
+    active: Optional[str] = PadActive.HIGH.value
     orient: Optional[Orientation] = None
-    driven_manually: bool = False
+    driven_manually: Optional[bool] = False
     keep_internal: Optional[bool] = None
     skip: Optional[bool] = None
     constant_attribute: Optional[bool] = None
