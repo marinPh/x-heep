@@ -6,6 +6,7 @@
     dma = base_peripheral_domain.get_dma()
     pdm2pcm = user_peripheral_domain.get_pdm2pcm()
     cpu = xheep.cpu()
+    intr_manager = xheep.get_interrupt_manager()
 %>
 
 {
@@ -92,7 +93,7 @@
     interrupts: {
         used: ${plic_used_n_interrupts}
         total: ${plit_n_interrupts}
-        list: ${xheep.get_simple_interrupts()}
+        list: ${intr_manager.get_simple_interrupts()}
     }
 
     // Pad Configuration

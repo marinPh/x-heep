@@ -4,6 +4,9 @@ from typing import List, Union
 import hjson
 import os
 import sys
+
+from .peripherals.abstractions import Interrupt
+from .pads.PadRing import PadRing
 from jsonref import JsonRef
 
 from .cpu.cpu import CPU
@@ -40,6 +43,9 @@ from .peripherals.user_peripherals import (
     I2S,
     UART,
 )
+
+import re
+from typing import Dict
 
 
 def to_int(input) -> Union[int, None]:
@@ -104,6 +110,50 @@ def ram_list(l: "List[int]", entry):
     raise RuntimeError(
         "entries in ram configuration should either be integer, lists, or dictionaries"
     )
+
+
+def parse_config_dict(interrupts: Dict[str, int]):
+
+    holder: Dict[str, Interrupt] = dict()
+
+    suffix_re = re.compile(r"^(.*)_(\d+)$")
+
+    #! this is a temporary fix for i2c interrupt naming in hjson configs must change the hsjon files later
+    interrupts = {
+        ("i2c_" + k.lower() if k.lower().startswith("intr") else k.lower()): v
+        for k, v in interrupts.items()
+    }
+
+    # Find interrupts with sequential suffixes (e.g., gpio_0, gpio_1)
+    names = [
+        (
+            re.match(r"^(.*)_(\d+)$", name).group(1),  # base name
+            id,  # interrupt ID
+            re.match(r"^(.*)_(\d+)$", name).group(2),  # sequence number
+        )
+        for name, id in interrupts.items()
+        if re.match(r"^(.*)_(\d+)$", name)
+    ]
+
+    # Group sequential interrupts by base name
+    set_names = set([name for name, _, _ in names])
+    for name in list(set_names):
+        filtered = [x for x in names if x[0] == name]
+        filtered.sort(key=lambda x: x[1])  # Sort by interrupt ID
+        start: int = min([int(f[2]) for f in filtered])  # Find start sequence
+        irq = Interrupt(filtered[0][1], len(filtered), start)
+        holder[name] = irq
+
+    # Add non-sequential interrupts
+    names = [(name, id) for name, id in interrupts.items() if not suffix_re.match(name)]
+    for name, id in names:
+        irq = Interrupt(id)
+        holder[name] = irq
+
+    # Sort by interrupt ID
+    holder = dict(sorted(holder.items(), key=lambda item: item[1].id))
+
+    return holder
 
 
 def load_ram_configuration(memory_ss: MemorySS, mem: hjson.OrderedDict):
@@ -238,6 +288,12 @@ def load_peripherals_config(system: XHeep, config_path: str):
         except ValueError:
             raise SystemExit(sys.exc_info()[1])
 
+    interrupts = config.get("interrupts", {})
+    if interrupts:
+        interrupts = interrupts.get("list", {})
+
+    interrupts_dict: Dict[str, int] = parse_config_dict(interrupts)
+
     for name, fields in config.items():
         # Base Peripherals
         if name == "ao_peripherals":
@@ -353,6 +409,14 @@ def load_peripherals_config(system: XHeep, config_path: str):
                             f"Peripheral {peripheral_name} does not exist."
                         )
                     # Adding peripheral to domain
+                    peripheral_name_lower = peripheral_name.lower()
+                    filtered_interrupts = {
+                        k: interrupts_dict.pop(k)
+                        for k in list(interrupts_dict.keys())
+                        if k.startswith(peripheral_name_lower)
+                    }
+                    peripheral.reset_interrupts(filtered_interrupts)
+
                     base_peripherals.add_peripheral(peripheral)
 
                 # All peripherals in configuration file have been added
@@ -408,8 +472,19 @@ def load_peripherals_config(system: XHeep, config_path: str):
                         raise ValueError(
                             f"Peripheral {peripheral_name} does not exist."
                         )
+
+                    peripheral_name_lower = peripheral_name.lower()
+                    filtered_interrupts = {
+                        k: interrupts_dict.pop(k)
+                        for k in list(interrupts_dict.keys())
+                        if k.startswith(peripheral_name_lower)
+                    }
+                    peripheral.reset_interrupts(filtered_interrupts)
+
                     # Adding peripheral to domain
                     user_peripherals.add_peripheral(peripheral)
+
+                system.get_interrupt_manager().extend_interrupts(interrupts_dict)
                 # All peripherals in configuration file have been added
                 system.add_peripheral_domain(user_peripherals)
 
@@ -431,7 +506,6 @@ def load_cfg_hjson(src: str) -> XHeep:
     cpu_config = None
     cve2_rv32e_config = None
     cve2_rv32m_config = None
-    interrupts_config = None
 
     for key, value in config.items():
         if key == "ram_banks":
@@ -465,7 +539,7 @@ def load_cfg_hjson(src: str) -> XHeep:
 
     system = XHeep(BusType(bus_config))
     memory_ss = MemorySS()
-    system.add_interrupts_from_config_dict(dict(interrupts))
+    # system.get_interrupt_manager().parse_config_dict(dict(interrupts))
 
     load_ram_configuration(memory_ss, mem_config)
 
