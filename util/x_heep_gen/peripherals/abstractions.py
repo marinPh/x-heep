@@ -62,6 +62,12 @@ class Peripheral(ABC):
         """
         return self._address
 
+    def reset_interrupts(self, interrupts: Dict[str, Interrupt]):
+        """
+        Reset the interrupts of the peripheral.
+        """
+        self._interrupts = interrupts.copy()
+
     def get_interrupts(self):
         """
         :return: The interrupts of the peripheral.
@@ -118,14 +124,6 @@ class PeripheralDomain(ABC):
     _peripherals: List[
         Peripheral
     ]  # type has to be precised for filtering in validation
-    _interrupts: Dict[str, Interrupt] = {}
-
-    def get_interrupts(self):
-        """
-        :return: The interrupts of the peripheral domain.
-        :rtype: Dict[str,int]
-        """
-        return self._interrupts.copy()
 
     @abstractmethod
     def __init__(
@@ -133,7 +131,6 @@ class PeripheralDomain(ABC):
         name: str,
         start_address: int,
         length: int,
-        interrupts: Dict[str, int] = {},
     ):
         """
         Initialize the peripheral domain. Is abstract because each peripheral domain has its own way of initializing without letting the user define start address and length.
@@ -146,7 +143,6 @@ class PeripheralDomain(ABC):
         self._start_address = start_address
         self._length = length
         self._peripherals = []
-        self._interrupts = interrupts.copy()
 
     @abstractmethod
     def _get_peripheral_type(self):
@@ -159,16 +155,6 @@ class PeripheralDomain(ABC):
         """
         ...
 
-    def extend_interrupt(self, interrupts: Dict[str, Interrupt]):
-        """
-        Extend the system interrupts with new interrupts from a domain.
-
-        :param Dict[str, Interrupt] interrupts: The interrupts to add.
-        """
-        for name, irq in interrupts.items():
-            if name not in self._interrupts:
-                self._interrupts[name] = irq
-
     def add_peripheral(self, peripheral: Peripheral):
         """
         Add a peripheral to the domain. The peripheral should be fully configured when added. If the peripheral has no offset, it will be automatically computed during build.
@@ -180,7 +166,6 @@ class PeripheralDomain(ABC):
                 f"Peripheral is not a {self._get_peripheral_type().__name__}"
             )
         self._peripherals.append(peripheral)
-        self.extend_interrupt(peripheral.get_interrupts())
 
     def remove_peripheral(self, peripheral: Peripheral):
         """

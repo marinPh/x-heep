@@ -70,10 +70,7 @@ def config():
     system.add_peripheral_domain(base_peripheral_domain)
     system.add_peripheral_domain(user_peripheral_domain)
     
-    system.add_interrupts_from_peripheral_domains()
-    base_intr = {
-        "null_intr": Interrupt(0)
-    }
-    system.extend_interrupt(base_intr)
+    base_intr = {"null_intr": Interrupt(0)}
+    system.get_interrupt_manager().extend_interrupts(base_intr)
 
     return system

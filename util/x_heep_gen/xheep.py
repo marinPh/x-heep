@@ -1,9 +1,8 @@
 from copy import deepcopy
-from typing import Dict
 from .bus_type import BusType
 from .memory_ss.memory_ss import MemorySS
 from .cpu.cpu import CPU
-from .peripherals.abstractions import PeripheralDomain, Interrupt
+from .peripherals.abstractions import PeripheralDomain
 from .peripherals.base_peripherals_domain import BasePeripheralDomain
 from .peripherals.user_peripherals_domain import UserPeripheralDomain
 from .pads.PadRing import PadRing
@@ -158,7 +157,6 @@ class XHeep:
             raise ValueError(
                 "Domain is neither a BasePeripheralDomain nor a UserPeripheralDomain"
             )
-        # self.extend_interrupt(domain.get_interrupts())
 
     def get_user_peripheral_domain(self):
         """
@@ -215,10 +213,9 @@ class XHeep:
                 f"XHeep.max_intrs should be of type int not {type(self.max_intrs)}"
             )
         self.max_intrs = max_intrs
-        self._interrupt_manager.set_max_interrupts(max_intrs)
+        self._interrupt_manager.set_max_intrs(max_intrs)
 
-    @property
-    def interrupts(self) -> InterruptManager:
+    def get_interrupt_manager(self) -> InterruptManager:
         """
         Access the interrupt manager for this system.
 
@@ -226,57 +223,17 @@ class XHeep:
         :rtype: InterruptManager
 
         Example:
-            >>> system.interrupts.add_interrupt("uart_tx", Interrupt(5))
-            >>> intrs = system.interrupts.get_interrupts()
+            >>> system.get_interrupt_manager().add_interrupt("uart_tx", Interrupt(5))
+            >>> intrs = system.get_interrupt_manager().get_interrupts()
         """
         return self._interrupt_manager
 
-    # Backward-compatible delegation methods
-    def extend_interrupt(self, interrupts: Dict[str, Interrupt]):
-        """Extend interrupts (delegates to interrupt manager)."""
-        self._interrupt_manager.extend_interrupts(interrupts)
-
-    def get_num_intr(self):
-        """Get number of interrupts (delegates to interrupt manager)."""
-        return self._interrupt_manager.get_num_interrupts()
-
-    def add_interrupts_from_peripheral_domains(self):
-        """Assign interrupts from peripheral domains (delegates to interrupt manager)."""
-        self._interrupt_manager.assign_from_peripheral_domains(
-            self._base_peripheral_domain, self._user_peripheral_domain
-        )
-
-    def get_interrupts(self) -> Dict[str, Interrupt]:
-        """Get all interrupts (delegates to interrupt manager)."""
-        return self._interrupt_manager.get_interrupts()
-
-    def set_interrupts(self, interrupts: Dict[str, int]):
-        """Set interrupts (delegates to interrupt manager)."""
-        self._interrupt_manager.set_interrupts(interrupts)
-
-    def add_interrupt(self, name: str, irq: Interrupt):
-        """Add an interrupt (delegates to interrupt manager)."""
-        self._interrupt_manager.add_interrupt(name, irq)
-
-    def add_interrupts_from_config_dict(self, interrupts: Dict[str, int]):
-        """Add interrupts from config dict (delegates to interrupt manager)."""
-        self._interrupt_manager.parse_config_dict(interrupts)
-
-    def get_simple_interrupts(self) -> Dict[str, int]:
-        """Get flattened interrupts (delegates to interrupt manager)."""
-        return self._interrupt_manager.get_simple_interrupts()
-
-    def get_interrupts_for_peripheral(
-        self, peripheral_name: str
-    ) -> Dict[str, Interrupt]:
-        """Get interrupts for peripheral (delegates to interrupt manager)."""
-        return self._interrupt_manager.get_interrupts_for_peripheral(peripheral_name)
-
-    def get_peripheral_interrupt_connections(self, peripheral_name: str) -> list:
-        """Get peripheral interrupt connections (delegates to interrupt manager)."""
-        return self._interrupt_manager.get_peripheral_interrupt_connections(
-            peripheral_name
-        )
+    @property
+    def interrupts(self) -> InterruptManager:
+        """
+        Backward-compatible alias for :meth:`get_interrupt_manager`.
+        """
+        return self.get_interrupt_manager()
 
     # ------------------------------------------------------------
     # Extensions
@@ -314,6 +271,10 @@ class XHeep:
             self.memory_ss().build()
         if self.are_base_peripherals_configured():
             self._base_peripheral_domain.build()
+            self._interrupt_manager.assign_from_peripheral_domains(
+                self._base_peripheral_domain,
+                self._user_peripheral_domain,
+            )
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.build()
         if self.get_padring() is not None:

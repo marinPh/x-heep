@@ -2,7 +2,9 @@ import re
 import numpy as np
 from copy import deepcopy
 from typing import Dict, List, Tuple
-from ..peripherals.abstractions import Interrupt
+from ..peripherals.abstractions import Interrupt, PeripheralDomain
+
+DEFAULT_MAX_INTERRUPTS = 64
 
 
 class InterruptManager:
@@ -14,7 +16,8 @@ class InterruptManager:
         :param int max_interrupts: Maximum number of interrupts supported
         """
         self._interrupts: Dict[str, Interrupt] = {}
-        self._max_interrupts = None
+        self._max_interrupts = DEFAULT_MAX_INTERRUPTS
+        self._built = False
 
     # ================================================================
     # Core Assignment Methods
@@ -53,9 +56,9 @@ class InterruptManager:
         self._interrupts = dict(
             sorted(self._interrupts.items(), key=lambda item: item[1].id)
         )
+        self._built = True
 
     def add_interrupt(self, name: str, irq: Interrupt):
-
         if not isinstance(name, str):
             raise TypeError(f"interrupt name should be of type str not {type(name)}")
 
@@ -71,7 +74,6 @@ class InterruptManager:
         self._interrupts[name] = irq
 
     def extend_interrupts(self, interrupts: Dict[str, Interrupt]):
-
         for name, irq in interrupts.items():
             if name not in self._interrupts:
                 self._interrupts[name] = irq
@@ -190,43 +192,6 @@ class InterruptManager:
         """
         self._max_interrupts = max_interrupts
 
-    def parse_config_dict(self, interrupts: Dict[str, int]):
-
-        suffix_re = re.compile(r"^(.*)_(\d+)$")
-
-        # Find interrupts with sequential suffixes (e.g., gpio_0, gpio_1)
-        names = [
-            (
-                re.match(r"^(.*)_(\d+)$", name).group(1),  # base name
-                id,  # interrupt ID
-                re.match(r"^(.*)_(\d+)$", name).group(2),  # sequence number
-            )
-            for name, id in interrupts.items()
-            if re.match(r"^(.*)_(\d+)$", name)
-        ]
-
-        # Group sequential interrupts by base name
-        set_names = set([name for name, _, _ in names])
-        for name in list(set_names):
-            filtered = [x for x in names if x[0] == name]
-            filtered.sort(key=lambda x: x[1])  # Sort by interrupt ID
-            start: int = min([int(f[2]) for f in filtered])  # Find start sequence
-            irq = Interrupt(filtered[0][1], len(filtered), start)
-            self.add_interrupt(name, irq)
-
-        # Add non-sequential interrupts
-        names = [
-            (name, id) for name, id in interrupts.items() if not suffix_re.match(name)
-        ]
-        for name, id in names:
-            irq = Interrupt(id)
-            self.add_interrupt(name, irq)
-
-        # Sort by interrupt ID
-        self._interrupts = dict(
-            sorted(self._interrupts.items(), key=lambda item: item[1].id)
-        )
-
     def set_interrupts(self, interrupts: Dict[str, int]):
         """
         Replace all interrupts with a new set.
@@ -265,7 +230,8 @@ class InterruptManager:
             all_ids.extend(
                 [
                     irq.id
-                    for irq in domain.get_interrupts().values()
+                    for peri in domain.get_peripherals()
+                    for irq in peri.get_interrupts().values()
                     if irq is not None and irq.id is not None
                 ]
             )
@@ -274,36 +240,44 @@ class InterruptManager:
     def _collect_predefined_interrupts_map(self, *domains) -> Dict[int, str]:
         result = {}
         for domain in domains:
-            for name, irq in domain.get_interrupts().items():
-                if irq is not None and irq.id is not None:
-                    result[irq.id] = name
+            for peri in domain.get_peripherals():
+                for name, irq in peri.get_interrupts().items():
+                    if irq is not None and irq.id is not None:
+                        result[irq.id] = name
         return result
 
     def _assign_interrupts_from_domain(
-        self, domain, possible_ids, validate=False, predefined_map=None
+        self,
+        domain: PeripheralDomain,
+        possible_ids,
+        validate=False,
+        predefined_map=None,
     ):
-        for name, irq in domain.get_interrupts().items():
-            if irq is None:
-                # No predefined ID: allocate from available pool
-                assigned_id = possible_ids.pop(0)
-                self.add_interrupt(name, Interrupt(assigned_id))
-            else:
-                # Predefined ID: validate if required
-                if validate:
-                    # Check that all required IDs (id to id+num-1) are available
-                    required = set(range(irq.id, irq.id + irq.num))
-                    can_go = required.issubset(set(possible_ids))
+        for peri in domain.get_peripherals():
+            for name, irq in peri.get_interrupts().items():
+                if irq is None:
+                    # No predefined ID: allocate from available pool
+                    assigned_id = possible_ids.pop(0)
+                    self.add_interrupt(
+                        name, Interrupt(assigned_id, peripheral=peri._name)
+                    )
+                else:
+                    # Predefined ID: validate if required
+                    if validate:
+                        # Check that all required IDs (id to id+num-1) are available
+                        required = set(range(irq.id, irq.id + irq.num))
+                        can_go = required.issubset(set(possible_ids))
 
-                    if not can_go:
-                        # Generate helpful error message
-                        missing = required - set(possible_ids)
-                        missing_names = [predefined_map[miss] for miss in missing]
-                        raise ValueError(
-                            f"Interrupt conflict: IDs {missing} required but already "
-                            f"used by {missing_names}"
-                        )
+                        if not can_go:
+                            # Generate helpful error message
+                            missing = required - set(possible_ids)
+                            missing_names = [predefined_map[miss] for miss in missing]
+                            raise ValueError(
+                                f"Interrupt conflict: IDs {missing} required but already "
+                                f"used by {missing_names}"
+                            )
 
-                self.add_interrupt(name, irq)
+                    self.add_interrupt(name, irq)
 
     # ================================================================
     # String Representation

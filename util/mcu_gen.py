@@ -143,7 +143,7 @@ def generate_xheep(args):
             + str(stack_size + heap_size)
         )
 
-    plic_used_n_interrupts = xheep.get_num_intr()
+    plic_used_n_interrupts = xheep.get_interrupt_manager().get_num_interrupts()
     plit_n_interrupts = xheep.max_intrs
 
     # Here the xheep system is built,

@@ -4,10 +4,11 @@
 
 <%
   user_peripheral_domain = xheep.get_user_peripheral_domain()
+  intr_manager = xheep.get_interrupt_manager()
 
 intrs = [
   (name, irq)
-  for name, irq in xheep.get_interrupts().items()
+  for name, irq in intr_manager.get_interrupts().items()
   if name != "EXT_INTR"
 ]
 %>
@@ -142,7 +143,7 @@ module peripheral_subsystem
 
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [${xheep.get_interrupts()["gpio_intr"].start_seq}-1:0] gpio_int_unused;
+  logic [${intr_manager.get_interrupts()["gpio_intr"].start_seq}-1:0] gpio_int_unused;
 
 % for name, irq in intrs:
   % if name != "null_intr":
