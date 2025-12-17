@@ -102,11 +102,7 @@ def config() -> PadRing:
     # "jtag_tms": mapping="right", cell=PAD1, orient="mx90"
     jtag_tms = SinglePad(
         name="jtag_tms",
-        layout_index=4,
         type=PadType.BYPASS_INPUT,
-        mapping=PadMapping.RIGHT,
-        layout=pad1_layout,
-        orient=Orientation.MX90,
     )
     pad_group.add_pad(jtag_tms)
 
@@ -137,9 +133,6 @@ def config() -> PadRing:
         name="jtag_tck",
         layout_index=8,
         type=PadType.INPUT,
-        mapping=PadMapping.BOTTOM,
-        layout=pad1_layout,
-        orient=Orientation.MX,
         keep_internal=True,
     )
     pad_group.add_pad(jtag_tck)

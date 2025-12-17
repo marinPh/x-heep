@@ -237,38 +237,6 @@ class PadGroup:
                 f"PadGroup '{self.name}': pad with name '{pad.name}' already exists."
             )
 
-        # Look at existing pads
-        if self.pads:
-            has_any_layout = any(p.layout is not None for p in self.pads)
-            has_any_no_layout = any(p.layout is None for p in self.pads)
-
-            # If we already have a mixture, that's an internal inconsistency
-            if has_any_layout and has_any_no_layout:
-                raise ValidationError(
-                    f"PadGroup '{self.name}': inconsistent state detected: "
-                    "some pads have layouts and some do not."
-                )
-
-            # Case A: existing pads all have a layout, new pad must also have a layout
-            if has_any_layout and pad.layout is None:
-                raise ValidationError(
-                    f"PadGroup '{self.name}': pad '{pad.name}' has no layout defined, "
-                    "while other pads do."
-                )
-
-            # Case B: existing pads all have no layout, new pad must also have no layout
-            if has_any_no_layout and pad.layout is not None:
-                raise ValidationError(
-                    f"PadGroup '{self.name}': pad '{pad.name}' has a layout defined, "
-                    "while previous pads had none."
-                )
-
-            # Case C: forbid layouts when physical attributes are missing:
-            if pad.layout is not None and self.fp_dim is None:
-                raise ValidationError(
-                    f"PadGroup '{self.name}': cannot add pad '{pad.name}' with layout "
-                    f"when PadGroup has no physical attributes. layout = {pad.layout}"
-                )
         if pad.layout is not None:
             self.add_layout(pad)
         if isinstance(pad, RangePad):
