@@ -102,11 +102,7 @@ def config() -> PadRing:
     # "jtag_tms": mapping="right", cell=PAD1, orient="mx90"
     jtag_tms = SinglePad(
         name="jtag_tms",
-        layout_index=4,
         type=PadType.BYPASS_INPUT,
-        mapping=PadMapping.RIGHT,
-        layout=pad1_layout,
-        orient=Orientation.MX90,
     )
     pad_group.add_pad(jtag_tms)
 
@@ -132,15 +128,11 @@ def config() -> PadRing:
     )
     pad_group.add_pad(execute_from_flash)
 
-    # "jtag_tck": mapping="bottom", cell=PAD1, orient="mx", keep_internal
+    # "jtag_tck": no explicit layout info in HJSON (treated like clk/jtag_tms)
     jtag_tck = SinglePad(
         name="jtag_tck",
-        layout_index=8,
+        layout_index=0,
         type=PadType.INPUT,
-        mapping=PadMapping.BOTTOM,
-        layout=pad1_layout,
-        orient=Orientation.MX,
-        keep_internal=True,
     )
     pad_group.add_pad(jtag_tck)
 

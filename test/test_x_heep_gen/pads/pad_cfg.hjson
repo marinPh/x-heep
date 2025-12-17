@@ -48,9 +48,7 @@
     "jtag_tms": {
       "num": 1,
       "type": "bypass_input",
-      "mapping": "right",
-      "layout_attributes": { "index": 4, "cell": "PAD1", "orient": "mx90", "bondpad": "BONDPAD1" }
-    },
+      },
     "jtag_tdo": {
       "num": 1,
       "type": "supply",
@@ -74,9 +72,6 @@
     "jtag_tck": {
       "num": 1,
       "type": "input",
-      "mapping": "bottom",
-      "keep_internal": "True",
-      "layout_attributes": { "index": 8, "cell": "PAD1", "orient": "mx", "bondpad": "BONDPAD1" }
     },
     "jtag_trst": {
       "num": 1,
