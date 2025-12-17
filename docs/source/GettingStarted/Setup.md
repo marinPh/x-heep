@@ -4,7 +4,7 @@ There are two ways of setting up X-HEEP. You can either use the provided Docker 
 
 ## Docker setup
 
-A Docker image containing all the required software dependencies is available on [github-packages](https://ghcr.io/esl-epfl/x-heep/x-heep-toolchain:latest).
+A Docker image containing all the required software dependencies is available on [github-packages](https://ghcr.io/x-heep/x-heep/x-heep-toolchain:latest).
 
 It is only required to [install Docker](https://docs.docker.com/engine/install/), pull the image and run the container. The pull and run steps are wrapped in dedicated `makefile` targets that you can access from the top-level directory as:
 ```bash
@@ -18,9 +18,9 @@ The Docker image provides built-in shortcuts (as Bash functions) to select among
 
 | Shortcut | Description | Configuration |
 | -------- | ----------- | ------------- |
+| `init_corev` | Use the Embecosm CORE-V toolchain with PULP extension | `COMPILER=gcc`<br>`COMPILER_PREFIX=riscv32-corev-`<br>`ARCH=rv32imc_zicsr_zifencei_xcvhwlp_xcvmem_xcvmac_xcvbi_xcvalu_xcvsimd_xcvbitmanip` |
 | `init_gcc` | Use the GCC toolchain | `COMPILER=gcc`<br>`COMPILER_PREFIX=riscv32-unknown-`<br>`ARCH=rv32imc_zicsr` |
 | `init_clang` | Use the LLVM/Clang toolchain | `COMPILER=clang`<br>`COMPILER_PREFIX=riscv32-unknown-`<br>`ARCH=rv32imc_zicsr` |
-| `init_corev` | Use the Embecosm CORE-V toolchain with PULP extension | `COMPILER=gcc`<br>`COMPILER_PREFIX=riscv32-unknown-`<br>`ARCH=rv32imc_zicsr_zifencei_xcvhwlp_xcvmem_xcvmac_xcvbi_xcvalu_xcvsimd_xcvbitmanip` |
 
 For example, if you want to compile and link the `hello_world` application using LLVM/Clang:
 ```bash
@@ -98,6 +98,12 @@ source .venv/bin/activate
 ```{warning}
 The RISC-V toolchain environment variable name has changed. Use `RISCV_XHEEP` instead of `RISCV` to avoid conflicts with other projects. If you previously exported `RISCV` for X-HEEP, update your shell initialization files (e.g., `~/.bashrc`, `~/.zshrc`) or environment modules to export `RISCV_XHEEP` and remove or adjust any old `RISCV` definitions accordingly.
 ```
+
+X-HEEP supports the [CORE-V toolchain from Embecosm](https://embecosm.com/downloads/tool-chain-downloads/#core-v-top-of-tree-compilers), but you can also use the standard RISC-V GCC or CLANG toolchains.
+
+You can download and install the CORE-V toolchain by following the instructions on the [Embecosm download page](https://embecosm.com/downloads/tool-chain-downloads/#core-v-top-of-tree-compilers). This is the recommended option since it includes support for the PULP extensions that can be enabled in X-HEEP and is the default toolchain for the provided compilation flow.
+
+Optionally, you can also build and install the standard RISC-V GCC toolchain from source.
 
 The RISC-V compiler requires the [following packages](https://github.com/riscv-collab/riscv-gnu-toolchain) to be installed (Check [OS requirements](#1-os-requirements) for Ubuntu distribution). The GitHub page contains instructions for other linux distributions.
 

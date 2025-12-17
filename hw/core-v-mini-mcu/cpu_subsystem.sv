@@ -325,11 +325,7 @@ module cpu_subsystem
 
     // instantiate the core
     cv32e40p_top #(
-        .COREV_PULP      (COREV_PULP),
-        .COREV_CLUSTER   (0),
-        .FPU             (FPU),
-        .ZFINX           (ZFINX),
-        .NUM_MHPMCOUNTERS(NUM_MHPMCOUNTERS)
+        .COREV_CLUSTER(0)
     ) cv32e40p_top_i (
         .clk_i (clk_i),
         .rst_ni(rst_ni),
