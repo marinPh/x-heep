@@ -128,12 +128,11 @@ def config() -> PadRing:
     )
     pad_group.add_pad(execute_from_flash)
 
-    # "jtag_tck": mapping="bottom", cell=PAD1, orient="mx", keep_internal
+    # "jtag_tck": no explicit layout info in HJSON (treated like clk/jtag_tms)
     jtag_tck = SinglePad(
         name="jtag_tck",
-        layout_index=8,
+        layout_index=0,
         type=PadType.INPUT,
-        keep_internal=True,
     )
     pad_group.add_pad(jtag_tck)
 
