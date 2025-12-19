@@ -41,9 +41,9 @@ module core_v_mini_mcu
 
     input logic jtag_tdi_i,
 
-    input logic uart_rx_i,
-
     output logic jtag_tdo_o,
+
+    input logic uart_rx_i,
 
     output logic uart_tx_o,
 
