@@ -34,9 +34,9 @@ The goal of this test is to guarantee that both input formats produce **identica
 
 ---
 
-### `test_kwargs` Makefile target
+### `test_pads` Makefile target
 
-The `test_kwargs` target validates pad configuration consistency by executing the generator sequence twice:
+The `test_pads` target validates pad configuration consistency by executing the generator sequence twice:
 
 1. Once using the HJSON configuration (`pad_cfg.hjson`)
 2. Once using the Python configuration (`pad_cfg.py`)
@@ -48,8 +48,8 @@ For each run:
 - A Python comparison script (`pad_test.py`) validates the generated output against a golden reference JSON.
 
 ```make
-.PHONY: test_kwargs
-test_kwargs:
+.PHONY: test_pads
+test_pads:
 	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.hjson
 	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
 	python3 test/test_x_heep_gen/pad_test.py
@@ -129,7 +129,7 @@ This workflow ensures the stability and integrity of the codebase by running a s
     *   **Purpose**: Checks that all pad generation still produces the exact same as the golden output.
     *   **Environment**: Runs inside a `ubuntu-latest` VM.
     *   **Steps**:
-        * call `make test_kwargs`.
+        * call `make test_pads`.
           * generate pads using the test pad_cfg.hjson
           * verify is the outpur json matches the golden output
             * if not store difference `/home/marin/ma3/x-heep/test/test_x_heep_gen/diff_output.txt`
