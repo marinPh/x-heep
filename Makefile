@@ -52,8 +52,8 @@ LINKER   ?= on_chip
 TARGET   	?= sim
 
 # Mcu-gen configuration files
-X_HEEP_CFG  ?= configs/general.hjson
-PADS_CFG ?= configs/pad_cfg.py
+X_HEEP_CFG ?= configs/general.hjson
+PADS_CFG ?= configs/pad_cfg.hjson
 PYTHON_X_HEEP_CFG ?=
 # Cached mcu-gen xheep configuration
 XHEEP_CONFIG_CACHE ?= $(BUILD_DIR)/xheep_config_cache.pickle
@@ -344,8 +344,8 @@ test:
 	python3 test/test_x_heep_gen/test_peripherals.py
 	@echo "You can also find the peripheral test outputs in test/test_x_heep_gen/outputs"
 
-.PHONY: test_kwargs
-test_kwargs:
+.PHONY: test_pads
+test_pads:
 	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.hjson
 	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
 	python3 test/test_x_heep_gen/pad_test.py
@@ -353,9 +353,6 @@ test_kwargs:
 	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.py
 	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
 	python3 test/test_x_heep_gen/pad_test.py
-
-	
-
 
 ## Builds the specified app, loads it into the programmer's flash and then opens picocom to see the output
 ## @param PROJECT=<folder_name_of_the_project_to_be_built>

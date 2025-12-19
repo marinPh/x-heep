@@ -21,22 +21,18 @@ Additionally, you can check only the compilation of the applications with the fo
 make test TEST_FLAGS=--compile-only
 ```
 
-This script is also integrated in the CI workflow described in the following section.
+This script is also integrated in the CI workflow.
 
-## Pad configuration tests (HJSON ↔ Python equivalence)
+## Pad configuration tests (HJSON to Python equivalence)
 
-With the introduction of the Python-based pad configuration flow (`pad_cfg.py`), a dedicated test has been added to ensure that the two supported configuration methods remain functionally **equivalent**:
+With the introduction of the Python-based pad configuration flow (`pad_cfg.py`), a dedicated test has been added to ensure that the two supported configuration methods remain functionally equivalent:
 
-- **HJSON-based pad configuration**
-- **Python-based pad configuration**
+- HJSON-based pad configuration
+- Python-based pad configuration
 
-The goal of this test is to guarantee that both input formats produce **identical generator outputs and RTL behavior**.
+The goal of this test is to guarantee that both input formats produce identical generator outputs and RTL behavior.
 
----
-
-### `test_kwargs` Makefile target
-
-The `test_kwargs` target validates pad configuration consistency by executing the generator sequence twice:
+The `test_pads` target validates pad configuration consistency by executing the generator sequence twice:
 
 1. Once using the HJSON configuration (`pad_cfg.hjson`)
 2. Once using the Python configuration (`pad_cfg.py`)
@@ -46,18 +42,6 @@ For each run:
 - `mcu-gen` is invoked to generate the MCU configuration.
 - The cached generator state is then used to emit the keyword-argument JSON template output (`kwargs_output.json.tpl`).
 - A Python comparison script (`pad_test.py`) validates the generated output against a golden reference JSON.
-
-```make
-.PHONY: test_kwargs
-test_kwargs:
-	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.hjson
-	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
-	python3 test/test_x_heep_gen/pad_test.py
-
-	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.py
-	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
-	python3 test/test_x_heep_gen/pad_test.py
-````
 
 ## Github CIs
 
@@ -129,11 +113,11 @@ This workflow ensures the stability and integrity of the codebase by running a s
     *   **Purpose**: Checks that all pad generation still produces the exact same as the golden output.
     *   **Environment**: Runs inside a `ubuntu-latest` VM.
     *   **Steps**:
-        * call `make test_kwargs`.
-          * generate pads using the test pad_cfg.hjson
-          * verify is the outpur json matches the golden output
+        * call `make test_pads`.
+          * generate pads using the test `pad_cfg.hjson`
+          * verify if the output json matches the golden output
             * if not store difference `/home/marin/ma3/x-heep/test/test_x_heep_gen/diff_output.txt`
-          * repeat for pad_cfg.py
+          * repeat for `pad_cfg.py`
 
 ### Release Workflows
 

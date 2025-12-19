@@ -505,8 +505,8 @@ def load_pad_cfg(f: PurePath) -> PadRing:
     Load the Configuration by extension type. It currently supports .hjson and .py
 
     :param PurePath f: path of the configuration
-    :return: the object representing the mcu configuration
-    :rtype: XHeep
+    :return: the PadRing object representing the pad configuration
+    :rtype: PadRing
     :raise RuntimeError: when and invalid configuration is passed or when the sanity checks failed
     """
     if not isinstance(f, PurePath):
@@ -533,7 +533,7 @@ def load_pad_cfg(f: PurePath) -> PadRing:
 
     elif f.suffix == ".py":
         # The python script should have a function config() that takes no parameters and
-        # returns an instance of the XHeep type.
+        # returns an instance of the PadRing type.
         spec = importlib.util.spec_from_file_location("configs._config", f)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
