@@ -293,7 +293,8 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
         raise ValueError("Invalid pad mapping")
 
     # Calculate space occupied by bondpads on the designated side of the chip
-    widths = np.array([pad.layout.bond_pad.width for pad in pad_list])
+    # Simple correction to consider only pads that have bondpads defined
+    widths = np.array([pad.layout.bond_pad.width for pad in pad_list if pad.layout.bond_pad])
     bp_space = float(np.sum(widths))
     bp_space += bp_spacing * (len(pad_list) - 1)
     # Check if the bondpads are able to fit on the side
