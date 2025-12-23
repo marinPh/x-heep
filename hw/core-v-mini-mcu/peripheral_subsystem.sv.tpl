@@ -5,12 +5,10 @@
 <%
   user_peripheral_domain = xheep.get_user_peripheral_domain()
 %>
-
-<%def name="reg_if(peripheral)">
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::${peripheral.name().upper()}_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::${peripheral.name().upper()}_IDX]),
+<%def name="reg_if(peripheral)">\
+      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::${peripheral.__class__.__name__.upper()}_IDX]),
+      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::${peripheral.__class__.__name__.upper()}_IDX]),
 </%def>
-
 module peripheral_subsystem
   import obi_pkg::*;
   import reg_pkg::*;

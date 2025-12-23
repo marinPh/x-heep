@@ -117,6 +117,20 @@ class PeripheralDomain(ABC):
         """
         ...
 
+
+    def get_peripheral(self, peripheral_name: str):
+        """
+        Get a peripheral from the domain by its name.
+
+        :param str peripheral_name: The name of the peripheral to get (case sensitive).
+        :return: The peripheral with the given name, or None if not found.
+        :rtype: Peripheral | None
+        """
+        for p in self._peripherals:
+            if p.__class__.__name__.lower() == peripheral_name:
+                return deepcopy(p)
+        return None
+    
     @abstractmethod
     def remove_peripheral(self, peripheral: Peripheral):
         """
