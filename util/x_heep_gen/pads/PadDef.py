@@ -73,6 +73,7 @@ def _assert_orientation(o: Any, where: str) -> None:
 @dataclass(frozen=True)
 class Dimension:
     width: int
+    name: Optional[str] = None
     length: Optional[int] = None
 
     def __post_init__(self):
@@ -84,7 +85,6 @@ class Dimension:
 
 @dataclass
 class Layout:
-    name: Optional[str] = None
     bond_pad: Optional[Dimension] = None
     cell_pad: Optional[Dimension] = None
     offset: Optional[float] = None
@@ -92,7 +92,6 @@ class Layout:
 
     def copy(self) -> Layout:
         return Layout(
-            name=self.name,
             bond_pad=self.bond_pad,
             cell_pad=self.cell_pad,
             offset=self.offset,
@@ -195,7 +194,7 @@ class PadGroup:
 
     # internal state – user CANNOT pass these in __init__
     pads: List[PadDef] = field(default_factory=list, init=False)
-    layouts: Dict[str, Layout] = field(default_factory=dict, init=False)
+    dimensions: Dict[str, Dimension] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
 
@@ -268,10 +267,9 @@ class PadGroup:
             if d:
                 dimensions[key] = d
 
-        for name, layout in self.layouts.items():
-
-            add_dim_entry(dimensions, name, layout.cell_pad)
-            add_dim_entry(dimensions, f"BOND{name}", layout.bond_pad)
+        for name, dimension in self.dimensions.items():
+            # Use the dimension name directly from the Dimension object
+            add_dim_entry(dimensions, dimension.name, dimension)
 
         pa = {
             "floorplan_dimensions": {
@@ -300,15 +298,37 @@ class PadGroup:
         return sorted(self.pads, key=lambda pad: pad.layout_index)
 
     def add_layout(self, padDef: PadDef) -> None:
-        for k, v in self.layouts.items():
-            if k == padDef.layout.name:
-                if v != padDef.layout:
+        """Add dimensions from a PadDef's layout to the dimensions dictionary."""
+        if padDef.layout is None:
+            return
+
+        # Add cell_pad dimension if present
+        if (
+            padDef.layout.cell_pad is not None
+            and padDef.layout.cell_pad.name is not None
+        ):
+            cell_name = padDef.layout.cell_pad.name
+            if cell_name in self.dimensions:
+                if self.dimensions[cell_name] != padDef.layout.cell_pad:
                     raise ValidationError(
-                        f"PadGroup '{self.name}': layout with name '{padDef.layout.name}' already exists."
+                        f"PadGroup '{self.name}': dimension with name '{cell_name}' already exists."
                     )
-                else:
-                    return
-        self.layouts[padDef.layout.name] = padDef.layout
+            else:
+                self.dimensions[cell_name] = padDef.layout.cell_pad
+
+        # Add bond_pad dimension if present
+        if (
+            padDef.layout.bond_pad is not None
+            and padDef.layout.bond_pad.name is not None
+        ):
+            bond_name = padDef.layout.bond_pad.name
+            if bond_name in self.dimensions:
+                if self.dimensions[bond_name] != padDef.layout.bond_pad:
+                    raise ValidationError(
+                        f"PadGroup '{self.name}': dimension with name '{bond_name}' already exists."
+                    )
+            else:
+                self.dimensions[bond_name] = padDef.layout.bond_pad
 
     def _to_bool(v: Any) -> bool:
         if isinstance(v, bool):
@@ -317,34 +337,25 @@ class PadGroup:
             return v.strip().lower() == "true"
         return bool(v)
 
-    def _build_layouts(
+    def _build_dimensions(
         dimensions: Mapping[str, Mapping[str, Any]],
-    ) -> Dict[str, Layout]:
+    ) -> Dict[str, Dimension]:
         """
-        Build Layout objects from the 'dimensions' subsection.
+        Build Dimension objects from the 'dimensions' subsection.
 
         Expects things like:
-          BONDPAD1, BONDPAD2, ..., PAD1, PAD2, ...
+          PAD1, BONDPAD1, PAD2, BONDPAD2, ...
+        Each dimension gets its name embedded in the Dimension object.
         """
-        layouts: Dict[str, Layout] = {}
+        dims: Dict[str, Dimension] = {}
 
         for name, dim in dimensions.items():
-            # Only start from PAD* entries; use matching BONDPAD*
-            if not name.startswith("PAD"):
-                continue
+            # Create Dimension with name embedded
+            dims[name] = Dimension(
+                width=dim["width"], length=dim.get("length"), name=name
+            )
 
-            suffix = name[len("PAD") :]  # "1", "2", ...
-            pad_dim = Dimension(width=dim["width"], length=dim.get("length"))
-
-            bond_key = f"BONDPAD{suffix}"
-            bond_dim = None
-            if bond_key in dimensions:
-                bdim = dimensions[bond_key]
-                bond_dim = Dimension(width=bdim["width"], length=bdim.get("length"))
-
-            layouts[name] = Layout(name=name, bond_pad=bond_dim, cell_pad=pad_dim)
-
-        return layouts
+        return dims
 
     def build_pad_group(cfg: Mapping[str, Any], name: str = "x_heep_top") -> PadGroup:
         # -------------------------------------------------------------------------
@@ -369,12 +380,13 @@ class PadGroup:
         bp_spacing = spacing.get("bondpad")
         cell_spacing = spacing.get("cell")
 
-        # ---- layouts from "dimensions" ----
+        # ---- dimensions from "dimensions" ----
         dims = pa.get("dimensions")
+
         if dims is not None:
-            layouts = PadGroup._build_layouts(dims)
+            dimensions = PadGroup._build_dimensions(dims)
         else:
-            layouts = {}  # no layouts defined
+            dimensions = {}  # no dimensions defined
 
         # -------------------------------------------------------------------------
         # Build the PadGroup with safe defaults
@@ -390,9 +402,9 @@ class PadGroup:
         if pad_group is None:
             raise ValueError("PadGroup could not be created.")
 
-        # pre-register layouts only if present
-        if layouts:
-            pad_group.layouts.update(layouts)
+        # pre-register dimensions only if present
+        if dimensions:
+            pad_group.dimensions.update(dimensions)
 
         # -------------------------------------------------------------------------
         # Pads section (SAFE)
@@ -408,11 +420,24 @@ class PadGroup:
             layout_index = la.get("index", 0)
             cell_name = la.get("cell")
 
-            # Get layout from name → fallback: empty layout
-            if cell_name in layouts:
-                pad_layout = layouts[cell_name]
+            # Build layout from dimensions
+            if cell_name in dimensions:
+                cell_dim = dimensions[cell_name]
+                # Check for corresponding bond pad
             else:
-                pad_layout = None
+                cell_dim = None
+
+            bond_name = la.get("bondpad")
+            if bond_name in dimensions:
+                bond_dim = dimensions[bond_name]
+            else:
+                bond_dim = None
+
+            pad_layout = (
+                Layout(cell_pad=cell_dim, bond_pad=bond_dim)
+                if (cell_dim or bond_dim)
+                else None
+            )
 
             pad_orient = (
                 Orientation(la.get("orient").upper())

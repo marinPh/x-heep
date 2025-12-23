@@ -421,10 +421,14 @@ class Pad:
 
         self.layout_index = pad_layout_index
         self.layout_orient = orient.value.lower() if orient else orient
-        self.layout_cell = pad_layout.name if pad_layout else ""
-        self.layout_bondpad = f"BOND{pad_layout.name}" if pad_layout else ""
-        self.layout_offset = pad_layout.offset if pad_layout else ""
-        self.layout_skip = pad_layout.skip if pad_layout else ""
+        self.layout_cell = (
+            pad_layout.cell_pad.name if (pad_layout and pad_layout.cell_pad) else ""
+        )
+        self.layout_bondpad = (
+            pad_layout.bond_pad.name if (pad_layout and pad_layout.bond_pad) else ""
+        )
+        self.layout_offset = pad_layout.offset if (pad_layout is not None) else ""
+        self.layout_skip = pad_layout.skip if (pad_layout is not None) else ""
 
         if len(pad_mux_list) == 0:
             self.signal_name_drive.append(self.signal_name)
