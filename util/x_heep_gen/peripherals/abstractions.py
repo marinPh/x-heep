@@ -117,7 +117,6 @@ class PeripheralDomain(ABC):
         """
         ...
 
-
     def get_peripheral(self, peripheral_name: str):
         """
         Get a peripheral from the domain by its name.
@@ -130,7 +129,7 @@ class PeripheralDomain(ABC):
             if p.__class__.__name__.lower() == peripheral_name:
                 return deepcopy(p)
         return None
-    
+
     @abstractmethod
     def remove_peripheral(self, peripheral: Peripheral):
         """
