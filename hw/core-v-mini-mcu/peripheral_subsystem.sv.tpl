@@ -6,6 +6,11 @@
   user_peripheral_domain = xheep.get_user_peripheral_domain()
 %>
 
+<%def name="reg_if(peripheral)">
+      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::${peripheral.name().upper()}_IDX]),
+      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::${peripheral.name().upper()}_IDX]),
+</%def>
+
 module peripheral_subsystem
   import obi_pkg::*;
   import reg_pkg::*;
@@ -327,9 +332,7 @@ module peripheral_subsystem
   ) spi_host_dma_i (
       .clk_i(clk_cg),
       .rst_ni,
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::SPI_HOST_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::SPI_HOST_IDX]),
-      .alert_rx_i(),
+${reg_if(user_peripheral_domain.get_peripheral('spi_host'))}      .alert_rx_i(),
       .alert_tx_o(),
       .passthrough_i(spi_device_pkg::PASSTHROUGH_REQ_DEFAULT),
       .passthrough_o(),
@@ -364,9 +367,7 @@ module peripheral_subsystem
   ) gpio_i (
       .clk_i(clk_cg),
       .rst_ni,
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::GPIO_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::GPIO_IDX]),
-      .gpio_in({cio_gpio_i, 8'b0}),
+${reg_if(user_peripheral_domain.get_peripheral('gpio'))}      .gpio_in({cio_gpio_i, 8'b0}),
       .gpio_out({cio_gpio_o, cio_gpio_unused}),
       .gpio_tx_en_o({cio_gpio_en_o, cio_gpio_en_unused}),
       .gpio_in_sync_o(),
@@ -488,9 +489,7 @@ module peripheral_subsystem
   ) spi2_host (
       .clk_i(clk_cg),
       .rst_ni,
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::SPI2_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::SPI2_IDX]),
-      .alert_rx_i(),
+${reg_if(user_peripheral_domain.get_peripheral('spi2'))}      .alert_rx_i(),
       .alert_tx_o(),
       .passthrough_i(spi_device_pkg::PASSTHROUGH_REQ_DEFAULT),
       .passthrough_o(),
@@ -523,9 +522,7 @@ module peripheral_subsystem
   ) pdm2pcm_i (
       .clk_i(clk_cg),
       .rst_ni,
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::PDM2PCM_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::PDM2PCM_IDX]),
-      .pdm_i(pdm2pcm_pdm_i),
+${reg_if(user_peripheral_domain.get_peripheral('pdm2pcm'))}      .pdm_i(pdm2pcm_pdm_i),
       .pdm_clk_o(pdm2pcm_clk_o)
   );
 % else:
@@ -541,9 +538,7 @@ module peripheral_subsystem
   ) i2s_i (
       .clk_i(clk_cg),
       .rst_ni,
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::I2S_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::I2S_IDX]),
-
+${reg_if(user_peripheral_domain.get_peripheral('i2s'))}
       .i2s_sck_o(i2s_sck_o),
       .i2s_sck_oe_o(i2s_sck_oe_o),
       .i2s_sck_i(i2s_sck_i),
