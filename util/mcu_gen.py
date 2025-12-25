@@ -146,13 +146,14 @@ def generate_xheep(args):
 
     xheep.master_registry.register_fixed_masters()
 
-    if (
-        int(stack_size, 16) + int(heap_size, 16)
-    ) > xheep.memory_ss().ram_size_address():
-        exit(
-            "The stack and heap section must fit in the RAM size, instead they takes "
-            + str(stack_size + heap_size)
-        )
+    xheep.set_debug_flash_addresses(
+        int(debug_start_address, 16),
+        int(debug_size_address, 16),
+        int(flash_mem_start_address, 16),
+        int(flash_mem_size_address, 16),
+    )
+
+    xheep.master_registry.register_fixed_masters()
 
     plic_used_n_interrupts = len(config["interrupts"]["list"])
     plit_n_interrupts = config["interrupts"]["number"]
@@ -170,6 +171,17 @@ def generate_xheep(args):
     xheep.set_padring(pad_ring)
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")
+
+    if (
+        int(stack_size, 16) + int(heap_size, 16)
+    ) > xheep.memory_ss().ram_size_address():
+        exit(
+            "The stack and heap section must fit in the RAM size, instead they take "
+            + str(int(stack_size, 16) + int(heap_size, 16))
+            + " bytes while RAM size is "
+            + str(xheep.memory_ss().ram_size_address())
+            + " bytes."
+        )
 
     kwargs = {
         "xheep": xheep,
