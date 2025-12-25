@@ -153,6 +153,17 @@ def generate_xheep(args):
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")
 
+    if (
+        int(stack_size, 16) + int(heap_size, 16)
+    ) > xheep.memory_ss().ram_size_address():
+        exit(
+            "The stack and heap section must fit in the RAM size, instead they take "
+            + str(int(stack_size, 16) + int(heap_size, 16))
+            + " bytes while RAM size is "
+            + str(xheep.memory_ss().ram_size_address())
+            + " bytes."
+        )
+
     kwargs = {
         "xheep": xheep,
         "external_domains": external_domains,
