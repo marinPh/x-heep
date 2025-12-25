@@ -1,3 +1,17 @@
+"""
+Pad Module (Pad.py)
+
+This module defines the generation-time representation of pads used by templates.
+
+The Pad class is the physical, template-facing representation created by PadRing
+from PadDef configuration objects. It contains all information needed to generate
+SystemVerilog, headers, and other RTL artifacts.
+
+Key distinction:
+    - PadDef: Configuration-time (what user writes)
+    - Pad: Generation-time (what templates see)
+"""
+
 from enum import Enum
 from dataclasses import dataclass
 from typing import Optional, Dict, List, Tuple, Callable
@@ -6,6 +20,17 @@ from .PadDef import PadType, PadMapping, Orientation
 
 # Pad type configuration for signal generation
 PAD_TYPE_CONFIG = {
+    """
+    Configuration for generating pad cell instances by type.
+
+    Maps pad types (input/output/inout) to their:
+        - ctrl_interface: Function generating control interface signals
+        - connections: Function generating port connections
+        - cell: Pad cell module name
+
+    This configuration-driven approach ensures consistent generation
+    across different pad types.
+    """
     "input": {
         "ctrl_interface": lambda sig: f"    output logic {sig}o,",
         "connections": lambda sig: [
@@ -61,8 +86,41 @@ def _build_pad_connections(connections: List[Tuple[str, str]]) -> str:
 
 
 class Pad:
+    """
+    Generation-time pad representation for template rendering.
+
+    This class holds all information needed by Mako templates to generate
+    SystemVerilog, headers, and other RTL artifacts. It is created by PadRing
+    from PadDef configuration objects.
+
+    Attributes generated during construction:
+        - name: Pad name
+        - cell_name: Cell instance name
+        - index: Physical pad index
+        - localparam: SystemVerilog parameter name
+        - pad_type: Pad type (input/output/inout)
+        - pad_mapping: Physical location (top/bottom/left/right)
+        - signal_name: Base signal name (with active suffix if needed)
+        - has_attribute: Whether pad has attributes
+        - attribute_bits: Number of attribute bits
+        - is_muxed: Whether this is a multiplexed pad
+        - layout_*: Physical layout properties (index, orient, cell, bondpad, offset, skip)
+
+    Generated interface strings (populated by create_* methods):
+        - pad_ring_io_interface: IO interface for pad ring
+        - pad_ring_ctrl_interface: Control interface for pad ring
+        - pad_ring_instance: Pad cell instance
+        - core_v_mini_mcu_interface: Core interface
+        - internal_signals: Internal signal declarations
+        - mux_process: Mux selection logic
+        - constant_driver_assign: Constant driver assignments
+        - core_v_mini_mcu_bonding: Core bonding connections
+        - pad_ring_bonding_bonding: Pad ring bonding connections
+        - x_heep_system_interface: System-level interface
+    """
 
     def remove_comma_io_interface(self):
+        """Remove trailing comma from x_heep_system_interface (for last pad)."""
         s = self.x_heep_system_interface.rstrip()
         if s.endswith(","):
             self.x_heep_system_interface = s[:-1]
@@ -70,6 +128,15 @@ class Pad:
             self.x_heep_system_interface = s
 
     def create_pad_ring(self):
+        """
+        Generate pad ring instance and interface strings.
+
+        Populates:
+            - interface: Top-level IO interface
+            - pad_ring_io_interface: Pad ring IO
+            - pad_ring_ctrl_interface: Pad ring control signals
+            - pad_ring_instance: Instantiation of pad cell
+        """
         # Mapping dictionary (unchanged)
         mapping_dict = {
             PadMapping.TOP: "core_v_mini_mcu_pkg::TOP",
@@ -118,6 +185,11 @@ class Pad:
             self.pad_ring_instance = header + attr_line
 
     def create_core_v_mini_mcu_ctrl(self):
+        """
+        Generate core_v_mini_mcu interface signals.
+
+        Populates core_v_mini_mcu_interface based on pad type and drive signals.
+        """
 
         cnt = len(self.pad_type_drive)
 
@@ -152,6 +224,7 @@ class Pad:
                     )
 
     def create_internal_signals(self):
+        """Generate internal signal declarations for pad connections."""
         cnt = len(self.pad_type_drive)
 
         for i in range(cnt):
@@ -172,6 +245,12 @@ class Pad:
                 )
 
     def create_multiplexers(self):
+        """
+        Generate mux selection logic for multiplexed pads.
+
+        Creates mux_process with case statement for selecting between
+        multiple pad functions.
+        """
         cnt = len(self.pad_type_drive)
 
         if cnt > 1:
@@ -386,6 +465,28 @@ class Pad:
         pad_layout,
         orient,
     ):
+        """
+        Initialize a Pad instance for template generation.
+
+        This constructor is called by PadRing.build() to create template-facing
+        pad representations from PadDef configuration objects.
+
+        :param name: Pad name
+        :param cell_name: Cell instance name
+        :param pad_type: PadType enum
+        :param pad_mapping: PadMapping enum (location on die)
+        :param index: Physical pad index
+        :param pad_layout_index: Layout ordering index
+        :param pad_active: Active level ("high" or "low")
+        :param pad_driven_manually: Whether manually driven
+        :param pad_skip_declaration: Whether to skip declaration
+        :param pad_mux_list: List of mux alternatives
+        :param has_attribute: Whether pad has attributes
+        :param attribute_bits: Attribute bit range string
+        :param constant_attribute: Whether attributes are constant
+        :param pad_layout: Layout object with dimensions
+        :param orient: Orientation enum
+        """
 
         self.name = name
         self.cell_name = cell_name

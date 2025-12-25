@@ -502,12 +502,30 @@ def load_cfg_file(f: PurePath) -> XHeep:
 
 def load_pad_cfg(f: PurePath) -> PadRing:
     """
-    Load the Configuration by extension type. It currently supports .hjson and .py
+    Load pad configuration from HJSON or Python file and build PadRing.
 
-    :param PurePath f: path of the configuration
-    :return: the PadRing object representing the pad configuration
+    This function supports two configuration formats:
+        - HJSON (.hjson): Parses HJSON, builds PadGroup via build_pad_group(),
+          then creates PadRing
+        - Python (.py): Imports module and calls config() function which must
+          return a PadRing instance
+
+    Both formats must produce equivalent PadRing objects to ensure consistency.
+
+    :param PurePath f: Path to configuration file (.hjson or .py)
+    :return: Built PadRing object ready for template generation
     :rtype: PadRing
-    :raise RuntimeError: when and invalid configuration is passed or when the sanity checks failed
+    :raises TypeError: If f is not a PurePath
+    :raises RuntimeError: If file extension is not supported
+    :raises ValueError: If configuration is invalid or PadRing creation fails
+    :raises SystemExit: If HJSON parsing fails
+
+    Example:
+        # HJSON format
+        pad_ring = load_pad_cfg(Path("configs/pad_cfg.hjson"))
+
+        # Python format
+        pad_ring = load_pad_cfg(Path("configs/pad_cfg.py"))
     """
     if not isinstance(f, PurePath):
         raise TypeError("parameter should be of type PurePath")
