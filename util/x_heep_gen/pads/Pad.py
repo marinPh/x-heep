@@ -19,18 +19,18 @@ from .PadDef import PadType, PadMapping, Orientation
 
 
 # Pad type configuration for signal generation
+#
+# Configuration for generating pad cell instances by type.
+#
+# Maps pad types (input/output/inout) to their:
+#     - ctrl_interface: Function generating control interface signals
+#     - connections: Function generating port connections
+#     - cell: Pad cell module name
+#
+# This configuration-driven approach ensures consistent generation
+# across different pad types.
+#
 PAD_TYPE_CONFIG = {
-    """
-    Configuration for generating pad cell instances by type.
-
-    Maps pad types (input/output/inout) to their:
-        - ctrl_interface: Function generating control interface signals
-        - connections: Function generating port connections
-        - cell: Pad cell module name
-
-    This configuration-driven approach ensures consistent generation
-    across different pad types.
-    """
     "input": {
         "ctrl_interface": lambda sig: f"    output logic {sig}o,",
         "connections": lambda sig: [
@@ -144,7 +144,7 @@ class Pad:
             PadMapping.BOTTOM: "core_v_mini_mcu_pkg::BOTTOM",
             PadMapping.LEFT: "core_v_mini_mcu_pkg::LEFT",
         }
-
+    
         # Build ", .SIDE(...)" exactly like before
         mapping = (
             f", .SIDE({mapping_dict[self.pad_mapping]})" if self.pad_mapping else ""
@@ -158,8 +158,8 @@ class Pad:
         sig = self.signal_name
 
         # --- Pad type logic (configuration-driven) ---
-        if self.pad_type in PAD_TYPE_CONFIG:
-            config = PAD_TYPE_CONFIG[self.pad_type]
+        if self.pad_type.split('_')[-1] in list(PAD_TYPE_CONFIG.keys()):
+            config = PAD_TYPE_CONFIG[self.pad_type.split('_')[-1]]
 
             # Set IO interface (same for all types)
             self.pad_ring_io_interface = f"    inout wire {self.io_interface},"
@@ -492,7 +492,7 @@ class Pad:
         self.cell_name = cell_name
         self.index = index
         self.localparam = "PAD_" + name.upper()
-        self.pad_type = pad_type.value
+        self.pad_type: str = pad_type.value
         self.pad_mapping = pad_mapping
         self.pad_mux_list = pad_mux_list
         if pad_active == "low":
