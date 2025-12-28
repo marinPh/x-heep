@@ -25,16 +25,14 @@ class InterruptManager:
     def assign_from_peripheral_domains(self, base_domain, user_domain):
 
         # Collect all interrupt IDs from both domains
-        all_ids = self._collect_interrupt_ids_from_domains(base_domain, user_domain)
+        all_ids = [i.id for i in self._interrupts.values()]
 
         # Check no 2 peripherals have the same interrupt ID
         set_ids = set(all_ids)
         if len(all_ids) != len(set_ids):
             raise ValueError("Two peripherals have the same interrupt id")
 
-        # Calculate available interrupt IDs (0 to max_interrupts-1, minus predefined)
         possible_ids = list(set(range(0, self._max_interrupts)).difference(set_ids))
-
         # Get predefined interrupts map for validation error messages
         predefined_map = self._collect_predefined_interrupts_map(
             base_domain, user_domain
@@ -52,9 +50,10 @@ class InterruptManager:
         self._assign_interrupts_from_domain(user_domain, possible_ids, validate=False)
         
         #add external interrupts
+        
         external_interrupts = {
-            f"EXT_INTR_{i-len(self._interrupts)}": Interrupt(id=i, num=1, peripheral="external")
-            for i in range(len(self._interrupts),self._max_interrupts)
+            f"EXT_INTR_{i}": Interrupt(id=id, num=1, peripheral="external")
+            for i,id in enumerate(possible_ids)
         }
         for name, irq in external_interrupts.items():
             self.add_interrupt(name, irq)
@@ -94,7 +93,6 @@ class InterruptManager:
         return deepcopy(self._interrupts)
 
     def get_num_interrupts(self) -> int:
-
         return int(
             np.array(
                 [
@@ -283,6 +281,9 @@ class InterruptManager:
                                 f"Interrupt conflict: IDs {missing} required but already "
                                 f"used by {missing_names}"
                             )
+                    # remove assigned IDs from available pool
+                    for i in range(irq.num):
+                        possible_ids.remove(irq.id + i)
 
                     self.add_interrupt(name, irq)
 

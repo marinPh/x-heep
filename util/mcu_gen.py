@@ -156,15 +156,11 @@ def generate_xheep(args):
             "The stack and heap section must fit in the RAM size, instead they takes "
             + str(stack_size + heap_size)
         )
-
+        
+    # Here the xheep system is built, and the missing gaps are filled
+    xheep.build()
     plic_used_n_interrupts = xheep.get_interrupt_manager().get_num_interrupts()
     plit_n_interrupts = xheep.max_intrs
-
-    # Here the xheep system is built,
-    # The missing gaps are filled, like the missing end address of the data section.
-    xheep.build()
-    pad_ring = PadRing(pad_cfg)
-    xheep.set_padring(pad_ring)
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")
 
