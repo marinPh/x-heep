@@ -90,7 +90,6 @@ def generate_xheep(args):
         exit(f"Error loading pads configuration file: {args.pads_cfg}")
 
     xheep.set_padring(pad_ring)
-
     if args.external_domains != None and args.external_domains != "":
         external_domains = int(args.external_domains)
     else:

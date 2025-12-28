@@ -532,7 +532,6 @@ def load_cfg_hjson(src: str) -> XHeep:
 
     system = XHeep(BusType(bus_config))
     memory_ss = MemorySS()
-    # system.get_interrupt_manager().parse_config_dict(dict(interrupts))
 
     load_ram_configuration(memory_ss, mem_config)
 
