@@ -521,14 +521,7 @@ def load_cfg_hjson(src: str) -> XHeep:
         elif key == "cve2_rv32m":
             cve2_rv32m_config = value
 
-    plic_used_n_interrupts = len(config["interrupts"]["list"])
-    plic_n_interrupts = config["interrupts"]["number"]
-    ext_int_list = {
-        f"EXT_INTR_{k}": v
-        for k, v in enumerate(range(plic_used_n_interrupts, plic_n_interrupts))
-    }
-
-    interrupts = {**config["interrupts"]["list"], **ext_int_list}
+    interrupts = {**config["interrupts"]["list"]}
 
     if mem_config is None:
         raise RuntimeError("No memory configuration found")

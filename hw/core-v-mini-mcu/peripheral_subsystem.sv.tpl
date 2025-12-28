@@ -149,7 +149,7 @@ module peripheral_subsystem
   % if name != "null_intr":
     % if irq.num > 1:
   logic [${irq.start_seq + irq.num -1}:${irq.start_seq}] ${name};
-    % else:
+    % elif not name.startswith('EXT_INTR'):
   logic ${name};
     % endif
   % endif
@@ -164,7 +164,7 @@ module peripheral_subsystem
   assign intr_vector[${irq.id}] = 1'b0;  // ID [0] is a special case and must be tied to zero. ;
 % elif irq.num>1:
   assign intr_vector[${irq.id+irq.num-1}:${irq.id}] = ${name};
-% else: 
+% elif not name.startswith('EXT_INTR'): 
   assign intr_vector[${irq.id}] = ${name};
 % endif
 % endfor
