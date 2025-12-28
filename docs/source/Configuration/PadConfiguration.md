@@ -153,8 +153,6 @@ The automatic pad placement calculates the pad `offset` and `skip` parameters su
 
 Furthermore, `mcu-gen` displays an error message if the number of pads on a given side and the bondpad spacing cause the bondpads to overflow past the I/O boundary on a given side. A solution could be to move pads to a different side, or reduce the bondpad spacing parameter. However, make sure that the bondpad spacing does not exceed the minimum possible spacing defined by the packaging provider.
 
----
-
 ## Python-based Pad Configuration (`pad_cfg.py`)
 
 In addition to `.hjson` files, pads can be configured directly in Python using an object-oriented API.  
@@ -180,8 +178,6 @@ make mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_
 
 * A `config() -> PadRing` function **(pure Python config)**, or
 * A helper that builds a `PadGroup` from an HJSON-like dictionary (e.g. `build_pad_group(cfg)`).
-
----
 
 ### Object model (Python)
 
@@ -220,8 +216,6 @@ The main Python classes correspond closely to the HJSON structure:
   * Enum encoding pad side: `TOP`, `RIGHT`, `BOTTOM`, `LEFT`.
   * Mirrors the HJSON `mapping` attribute.
 
----
-
 ### Mapping HJSON → Python
 
 The key field mappings are:
@@ -239,127 +233,13 @@ The key field mappings are:
 | `layout_attributes.offset/skip` | `Layout.offset`, `Layout.skip`                              |
 | `physical_attributes.*`         | constructor args of `PadGroup` (`fp_dim`, offsets, spacing) |
 
----
-
 ## Example: Pure Python configuration (`config() -> PadRing`)
 
-A Python pad config file can directly construct the pads and return a `PadRing`:
+A Python pad config file can directly construct the pads and return a `PadRing`. An example is shown
+in [configs/pad_cfg.py](https://github.com/x-heep/x-heep/blob/main/configs/pad_cfg.py).
 
-```python
-from x_heep_gen.pads.PadDef import (
-    SinglePad,
-    MultiplexedPad,
-    RangePad,
-    PadGroup,
-    Dimension,
-    Layout,
-)
-from x_heep_gen.pads.PadRing import PadRing
-from x_heep_gen.pads.Pad import PadMapping
-
-
-def config() -> PadRing:
-    # -------------------------------------------------------------------------
-    # Floorplan / global physical attributes (from "physical_attributes")
-    # -------------------------------------------------------------------------
-    # "floorplan_dimensions": { "width": 2000, "length": 1500 }
-    fp_dim = Dimension(width=2000, length=1500)
-
-    # edge offsets and spacing (from "edge_offset" and "spacing")
-    bp_spacing = 25   # spacing.bondpad
-    cell_spacing = None  # optional extra pad/cell spacing
-
-    # -------------------------------------------------------------------------
-    # Layouts & per-cell dimensions (from "dimensions")
-    # -------------------------------------------------------------------------
-    bondpad1_dim = Dimension(width=50, length=None)
-    pad1_dim = Dimension(width=40, length=None)
-    pad1_layout = Layout(name="PAD1", bond_pad=bondpad1_dim, cell_pad=pad1_dim)
-
-    # -------------------------------------------------------------------------
-    # PadGroup that will own all pads and physical attributes
-    # -------------------------------------------------------------------------
-    pad_group = PadGroup(
-        name="x_heep_top",
-        pad_edge_offset=90,
-        bondpad_edge_offset=20,
-        bp_spacing=bp_spacing,
-        cell_spacing=cell_spacing,
-        fp_dim=fp_dim,
-    )
-
-    # Helper for orientations (JSON uses "r90", "mx90", "mx", "r0", etc.)
-    def orient(s: str) -> str:
-        return s.upper()
-
-    # -------------------------------------------------------------------------
-    # Single pads (no mux)
-    # -------------------------------------------------------------------------
-    clk = SinglePad(
-        name="clk",
-        layout_index=0,
-        type="input",
-        mapping=PadMapping.RIGHT,
-        layout=pad1_layout,
-        orient=orient("r90"),
-    )
-    pad_group.add_pad(clk)
-
-    # -------------------------------------------------------------------------
-    # Multiplexed pads
-    # -------------------------------------------------------------------------
-    alt_pdm2pcm_clk = SinglePad(
-        name="pdm2pcm_clk",
-        type="inout",
-        mapping=PadMapping.RIGHT,
-        layout=pad3_layout,
-        orient=orient("r90"),
-    )
-
-    alt_gpio_19 = SinglePad(
-        name="gpio_19",
-        type="inout",
-        mapping=PadMapping.RIGHT,
-        layout=pad3_layout,
-        orient=orient("r90"),
-    )
-
-    pdm2pcm_clk = MultiplexedPad(
-        name="pdm2pcm_clk",
-        layout_index=2,
-        type="inout",
-        mapping=PadMapping.RIGHT,
-        layout=pad3_layout,
-        orient=orient("r90"),
-        alts=[("pdm2pcm_clk", alt_pdm2pcm_clk), ("gpio_19", alt_gpio_19)],
-    )
-    pad_group.add_pad(pdm2pcm_clk)
-
-    # -------------------------------------------------------------------------
-    # Range pad for "gpio" (num: 14, num_offset: 0 -> gpio_0 .. gpio_13)
-    # -------------------------------------------------------------------------
-    gpio_range = RangePad(
-        name="gpio",
-        layout_index=6,
-        type="inout",
-        mapping=PadMapping.LEFT,
-        layout=pad3_layout,
-        num=14,
-        offset=0,
-        orient=orient("mx90"),
-    )
-    pad_group.add_pad(gpio_range)
-
-    # -------------------------------------------------------------------------
-    # Wrap everything in a PadRing
-    # -------------------------------------------------------------------------
-    pad_ring = PadRing(pad_group)
-    return pad_ring
-```
 
 `mcu-gen` will call `config()` to obtain the `PadRing` and continue exactly as with the HJSON-driven path.
-
----
 
 ## Example: Using the OOP loader with HJSON (`build_pad_group`)
 
@@ -396,4 +276,3 @@ This gives you two equivalent flows:
 * **HJSON + loader**: use `build_pad_group(cfg)` to convert existing HJSON structures into the same `PadGroup`/`PadDef` objects.
 
 In both cases, the downstream generator and templates see the same `PadRing` and `Pad` data, so the generated RTL and `.io` integration remain identical.
-

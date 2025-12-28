@@ -1,3 +1,19 @@
+"""
+PadRing Module (PadRing.py)
+
+This module bridges configuration and generation by transforming PadGroup
+(configuration-time) into physical Pad objects (generation-time).
+
+Key responsibilities:
+    - Assign physical positions and indices to pads
+    - Apply layout rules (offsets, spacing, banks)
+    - Generate Pad objects for template consumption
+    - Validate global constraints
+
+Main class:
+    PadRing: Builder that consumes PadGroup and produces List[Pad]
+"""
+
 from nbformat import ValidationError
 from .Pad import Pad, PadMapping
 from .PadDef import PadDef, RangePad, MultiplexedPad, PadGroup, Layout
@@ -6,6 +22,14 @@ import numpy as np
 
 
 def as_bool(v, default: bool = False) -> bool:
+    """
+    Convert value to boolean with flexible string parsing.
+
+    :param v: Value to convert
+    :param bool default: Default value if conversion fails
+    :return: Boolean value
+    :rtype: bool
+    """
     if isinstance(v, bool):
         return v
     if isinstance(v, str):
@@ -18,6 +42,14 @@ def as_bool(v, default: bool = False) -> bool:
 
 
 def get_nested(d, path, default=None):
+    """
+    Safely access nested dictionary value.
+
+    :param d: Dictionary to traverse
+    :param path: List of keys forming path
+    :param default: Default value if path not found
+    :return: Value at path or default
+    """
     cur = d
     for k in path:
         if not isinstance(cur, dict) or k not in cur:
@@ -27,6 +59,16 @@ def get_nested(d, path, default=None):
 
 
 def coerce_enum(enum_cls, raw, default=None):
+    """
+    Flexibly convert raw value to enum instance.
+
+    Tries both name matching (TOP/Right) and value matching ("top"/"right").
+
+    :param enum_cls: Enum class to convert to
+    :param raw: Raw value to convert
+    :param default: Default if conversion fails
+    :return: Enum instance or default
+    """
     if raw is None:
         return default
     if isinstance(raw, enum_cls):
@@ -45,10 +87,54 @@ def coerce_enum(enum_cls, raw, default=None):
 
 
 class PadRing:
+    """
+    Builder that transforms PadGroup into physical Pad objects.
+
+    This is the bridge between configuration time (PadDef/PadGroup) and
+    generation time (Pad objects). It:
+        - Assigns physical indices to pads
+        - Applies layout rules (offsets, spacing)
+        - Generates template-ready Pad objects
+        - Validates constraints
+
+    Usage:
+        pad_group = PadGroup(...)  # from config
+        pad_ring = PadRing(pad_group)
+        pad_ring.build()
+        pads = pad_ring.pad_list  # use in templates
+
+    Attributes (after build()):
+        pad_list: List of all Pad objects
+        total_pad: Total number of pads
+        total_pad_muxed: Number of multiplexed pads
+        top_pad_list, bottom_pad_list, left_pad_list, right_pad_list:
+            Pads grouped by side
+        bondpad_offsets: Physical offsets for each side
+        physical_attributes: Physical properties dictionary
+    """
+
     def __init__(self, pad_group: PadGroup):
+        """
+        Initialize PadRing with a PadGroup configuration.
+
+        :param PadGroup pad_group: Configuration to build from
+        """
         self.pad_group: PadGroup = pad_group
 
     def build(self):
+        """
+        Build Pad objects from PadGroup configuration.
+
+        This is the main method that performs the transformation from
+        configuration to generation objects. It:
+            1. Processes physical layout if defined
+            2. Builds Pad objects from PadDef instances
+            3. Separates pads by side (top/bottom/left/right)
+            4. Calculates offsets and indices
+
+        After calling build(), the pad_list and related attributes
+        are populated and ready for template consumption.
+        """
         pads_attributes_bits = self.pad_group.bits
 
         if not pads_attributes_bits:
@@ -125,7 +211,14 @@ class PadRing:
 
 
 def pad_subset(pad_list: List[PadDef], all_pads: List[Pad]) -> List[Pad]:
+    """
+    Extract subset of Pad objects matching PadDef names.
 
+    :param pad_list: List of PadDef to match
+    :param all_pads: List of all Pad objects
+    :return: Subset of Pad objects with matching names
+    :rtype: List[Pad]
+    """
     subset = []
     pad_dict = {pad.name: pad for pad in all_pads}
     for pad_def in pad_list:
@@ -229,7 +322,18 @@ def build_mux_list(
     pad_constant_attribute: bool,
     pad_layout: Layout = None,
 ):
+    """
+    Build list of Pad objects for mux alternatives in a multiplexed pad.
 
+    :param MultiplexedPad block: Multiplexed pad with alternatives
+    :param pad_mapping: Physical mapping for the pad
+    :param bool pads_attributes_present: Whether attributes are present
+    :param str pads_attributes_bits: Attribute bit range
+    :param bool pad_constant_attribute: Whether attributes are constant
+    :param Layout pad_layout: Optional layout information
+    :return: List of Pad objects for each mux alternative
+    :rtype: list
+    """
     mux_list = []
     if pad_layout is not None:
         pad_layout.skip = None
@@ -293,7 +397,10 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
         raise ValueError("Invalid pad mapping")
 
     # Calculate space occupied by bondpads on the designated side of the chip
-    widths = np.array([pad.layout.bond_pad.width for pad in pad_list])
+    # Simple correction to consider only pads that have bondpads defined
+    widths = np.array(
+        [pad.layout.bond_pad.width for pad in pad_list if pad.layout is not None]
+    )
     bp_space = float(np.sum(widths))
     bp_space += bp_spacing * (len(pad_list) - 1)
     # Check if the bondpads are able to fit on the side

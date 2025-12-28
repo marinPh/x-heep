@@ -1,4 +1,24 @@
-# pad_cfg.py (OOP version)
+"""
+Pad Configuration Module (PadDef.py)
+
+This module defines the configuration-time representation of pads and pad groups.
+It provides classes and enums for describing pads in both Python and HJSON configurations.
+
+Key classes:
+    - PadDef: Configuration-time pad description
+    - PadGroup: System-level pad configuration
+    - RangePad: Generates multiple similar pads
+    - MultiplexedPad: Pad with multiple mux options
+    - Layout: Physical layout attributes
+    - Dimension: Physical dimension specification
+
+Key enums:
+    - PadType: Direction and behavior (input/output/inout/etc.)
+    - PadMapping: Physical location on die (top/bottom/left/right)
+    - Orientation: Physical rotation (R0/R90/R180/R270/MX/MY)
+    - PadActive: Active level (high/low)
+"""
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Iterable, Tuple, Mapping, Any
@@ -23,6 +43,20 @@ class PadMapping(Enum):
 
 
 class Orientation(Enum):
+    """
+    Physical orientation/rotation of pad cell.
+
+    Values:
+        R0: No rotation (0 degrees)
+        R90: 90 degree rotation
+        R180: 180 degree rotation
+        R270: 270 degree rotation
+        MX: Mirror around X axis
+        MY: Mirror around Y axis
+        MX90: Mirror X + 90 degree rotation
+        MY90: Mirror Y + 90 degree rotation
+    """
+
     R0 = "R0"
     R90 = "R90"
     R180 = "R180"
@@ -49,15 +83,31 @@ VALID_ACTIVES = {a.value for a in PadActive}
 
 
 class ValidationError(ValueError):
+    """Exception raised when pad configuration validation fails."""
+
     pass
 
 
 def _assert_type(t: str, where: str) -> None:
+    """
+    Validate that a value is a PadType enum.
+
+    :param t: Value to validate
+    :param str where: Context for error message
+    :raises ValidationError: If validation fails
+    """
     if not isinstance(t, PadType):
         raise ValidationError(f"{where}: invalid orientation is of type '{type(t)}'")
 
 
 def _assert_mapping(m: str, where: str) -> None:
+    """
+    Validate that a value is a PadMapping enum or None.
+
+    :param m: Value to validate
+    :param str where: Context for error message
+    :raises ValidationError: If validation fails
+    """
     # is instance if PadMapping enum
     if m is not None and not isinstance(m, PadMapping):
         raise ValidationError(
@@ -66,13 +116,33 @@ def _assert_mapping(m: str, where: str) -> None:
 
 
 def _assert_orientation(o: Any, where: str) -> None:
+    """
+    Validate that a value is an Orientation enum or None.
+
+    :param o: Value to validate
+    :param str where: Context for error message
+    :raises ValidationError: If validation fails
+    """
     if o is not None and not isinstance(o, Orientation):
         raise ValidationError(f"{where}: invalid orientation is of type '{type(o)}'")
 
 
 @dataclass(frozen=True)
 class Dimension:
+    """
+    Physical dimension specification for pads.
+
+    Attributes:
+        width: Width in micrometers (required)
+        name: Optional name identifier for this dimension
+        length: Optional length in micrometers
+
+    Raises:
+        ValidationError: If width or length are negative
+    """
+
     width: int
+    name: Optional[str] = None
     length: Optional[int] = None
 
     def __post_init__(self):
@@ -84,15 +154,29 @@ class Dimension:
 
 @dataclass
 class Layout:
-    name: Optional[str] = None
+    """
+    Physical layout attributes for a pad.
+
+    Attributes:
+        bond_pad: Optional bond pad dimensions
+        cell_pad: Optional cell pad dimensions
+        offset: Optional offset from edge in micrometers
+        skip: Optional spacing to next pad in micrometers
+    """
+
     bond_pad: Optional[Dimension] = None
     cell_pad: Optional[Dimension] = None
     offset: Optional[float] = None
     skip: Optional[float] = None
 
     def copy(self) -> Layout:
+        """
+        Create a shallow copy of this Layout.
+
+        :return: New Layout instance with same attributes
+        :rtype: Layout
+        """
         return Layout(
-            name=self.name,
             bond_pad=self.bond_pad,
             cell_pad=self.cell_pad,
             offset=self.offset,
@@ -102,6 +186,33 @@ class Layout:
 
 @dataclass(frozen=False)
 class PadDef:
+    """
+    Configuration-time pad description.
+
+    This is the user-facing representation of a pad, containing logical
+    information about the pad's purpose, direction, and configuration.
+    Physical details (indices, banks) are computed later by PadRing.
+
+    Attributes:
+        name: Unique pad name (required)
+        type: Pad type/direction (required)
+        mapping: Physical edge placement (top/bottom/left/right)
+        layout_index: Index for ordering pads on same edge
+        layout: Physical layout attributes
+        layers: Optional list of metal layers
+        properties: Additional key-value properties
+        active: Active level (high/low)
+        orient: Physical orientation
+        driven_manually: Whether pad is manually driven (not auto-generated)
+        keep_internal: Whether to keep internal signals
+        skip: Whether to skip this pad
+        constant_attribute: Whether pad has constant attributes
+
+    Raises:
+        ValidationError: If validation fails (invalid type, mapping, orientation,
+                        or if bond_pad defined without cell_pad)
+    """
+
     name: str
     type: PadType
     mapping: Optional[PadMapping] = None
@@ -134,14 +245,34 @@ class PadDef:
             )
 
     def is_bond_pad_defined(self) -> bool:
+        """Check if bond pad dimensions are defined."""
         return self.layout.bond_pad is not None
 
     def is_cell_pad_defined(self) -> bool:
+        """Check if cell pad dimensions are defined."""
         return self.layout.cell_pad is not None
 
 
 @dataclass(frozen=False)
 class RangePad(PadDef):
+    """
+    Generates multiple similar pads with indexed names.
+
+    Used for creating groups of pads like gpio_0, gpio_1, gpio_2, etc.
+    Automatically expands into individual PadDef instances.
+
+    Attributes:
+        num: Number of pads to generate
+        offset: Starting index for naming
+
+    Example:
+        RangePad(name="gpio", type=PadType.INOUT, num=8, offset=0)
+        generates: gpio_0, gpio_1, ..., gpio_7
+
+    Raises:
+        ValidationError: If offset is negative
+    """
+
     num: int = 1
     offset: Optional[int] = 0
 
@@ -171,17 +302,69 @@ class RangePad(PadDef):
 
 
 class SinglePad(PadDef):
-    # No additional fields needed for SinglePad
+    """
+    A simple single pad with no special behavior.
+
+    This is a convenience class to make the type hierarchy explicit,
+    but functionally identical to PadDef.
+    """
+
     pass
 
 
 @dataclass(frozen=False)
 class MultiplexedPad(PadDef):
+    """
+    Pad with multiple mux options.
+
+    Allows a single physical pad to be configured for different functions
+    at runtime via multiplexing.
+
+    Attributes:
+        alts: List of (alternative_name, alternative_PadDef) tuples
+
+    Example:
+        MultiplexedPad(
+            name="pad_mux_0",
+            type=PadType.INOUT,
+            alts=[("spi_mosi", spi_pad), ("gpio_5", gpio_pad)]
+        )
+    """
+
     alts: Optional[List[Tuple[str, PadDef]]] = None  # List of (alt_name, alt_type)
 
 
 @dataclass(frozen=False)
 class PadGroup:
+    """
+    System-level pad configuration containing all pads and global settings.
+
+    This is the top-level configuration object that holds:
+    - Individual pad definitions (PadDef instances)
+    - Physical/layout properties (dimensions, offsets, spacing)
+    - Shared dimension definitions
+
+    Both HJSON and Python configurations are loaded into a PadGroup, ensuring
+    a common internal representation regardless of configuration format.
+
+    Attributes:
+        name: Name of this pad group
+        physical_properties: Global physical properties dictionary
+        pad_edge_offset: Offset from die edge to pad cells
+        bondpad_edge_offset: Offset from die edge to bond pads
+        fp_dim: Floorplan dimensions (die size)
+        bp_spacing: Bond pad spacing
+        cell_spacing: Cell pad spacing
+        pad_attribute: Pad attribute configuration
+        bits: Attribute bit range specification
+        pads: List of pad definitions (populated via add_pad)
+        dimensions: Dictionary of shared dimension definitions
+
+    Note:
+        If any required physical properties are missing, all physical
+        properties are set to None with a warning.
+    """
+
     name: str = ""
     physical_properties: Dict[str, Any] = field(default_factory=dict)
     pad_edge_offset: Optional[float] = None
@@ -195,7 +378,7 @@ class PadGroup:
 
     # internal state – user CANNOT pass these in __init__
     pads: List[PadDef] = field(default_factory=list, init=False)
-    layouts: Dict[str, Layout] = field(default_factory=dict, init=False)
+    dimensions: Dict[str, Dimension] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
 
@@ -232,6 +415,14 @@ class PadGroup:
             self.physical_properties = {}
 
     def add_pad(self, pad: PadDef) -> None:
+        """
+        Add a pad definition to this group.
+
+        Handles RangePad expansion and layout dimension registration.
+
+        :param PadDef pad: Pad definition to add
+        :raises ValidationError: If a pad with the same name already exists
+        """
         if any(existing_pad.name == pad.name for existing_pad in self.pads):
             raise ValidationError(
                 f"PadGroup '{self.name}': pad with name '{pad.name}' already exists."
@@ -246,6 +437,16 @@ class PadGroup:
             self.pads.append(pad)
 
     def get_physical_attributes(self):
+        """
+        Build physical attributes dictionary for template generation.
+
+        Returns None if no floorplan dimensions are defined, otherwise
+        returns a dictionary with floorplan_dimensions, edge_offset,
+        spacing, and dimensions.
+
+        :return: Physical attributes dictionary or None
+        :rtype: dict or None
+        """
 
         if self.fp_dim is None:
             return None
@@ -268,10 +469,9 @@ class PadGroup:
             if d:
                 dimensions[key] = d
 
-        for name, layout in self.layouts.items():
-
-            add_dim_entry(dimensions, name, layout.cell_pad)
-            add_dim_entry(dimensions, f"BOND{name}", layout.bond_pad)
+        for name, dimension in self.dimensions.items():
+            # Use the dimension name directly from the Dimension object
+            add_dim_entry(dimensions, dimension.name, dimension)
 
         pa = {
             "floorplan_dimensions": {
@@ -294,21 +494,55 @@ class PadGroup:
         return pa
 
     def get_multiplexed_pads(self) -> List[MultiplexedPad]:
+        """
+        Get all multiplexed pads in this group.
+
+        :return: List of MultiplexedPad instances
+        :rtype: List[MultiplexedPad]
+        """
         return [pad for pad in self.pads if isinstance(pad, MultiplexedPad)]
 
     def get_pads(self) -> List[PadDef]:
+        """
+        Get all pads sorted by layout_index.
+
+        :return: Sorted list of all pads
+        :rtype: List[PadDef]
+        """
         return sorted(self.pads, key=lambda pad: pad.layout_index)
 
     def add_layout(self, padDef: PadDef) -> None:
-        for k, v in self.layouts.items():
-            if k == padDef.layout.name:
-                if v != padDef.layout:
+        """Add dimensions from a PadDef's layout to the dimensions dictionary."""
+        if padDef.layout is None:
+            return
+
+        # Add cell_pad dimension if present
+        if (
+            padDef.layout.cell_pad is not None
+            and padDef.layout.cell_pad.name is not None
+        ):
+            cell_name = padDef.layout.cell_pad.name
+            if cell_name in self.dimensions:
+                if self.dimensions[cell_name] != padDef.layout.cell_pad:
                     raise ValidationError(
-                        f"PadGroup '{self.name}': layout with name '{padDef.layout.name}' already exists."
+                        f"PadGroup '{self.name}': dimension with name '{cell_name}' already exists."
                     )
-                else:
-                    return
-        self.layouts[padDef.layout.name] = padDef.layout
+            else:
+                self.dimensions[cell_name] = padDef.layout.cell_pad
+
+        # Add bond_pad dimension if present
+        if (
+            padDef.layout.bond_pad is not None
+            and padDef.layout.bond_pad.name is not None
+        ):
+            bond_name = padDef.layout.bond_pad.name
+            if bond_name in self.dimensions:
+                if self.dimensions[bond_name] != padDef.layout.bond_pad:
+                    raise ValidationError(
+                        f"PadGroup '{self.name}': dimension with name '{bond_name}' already exists."
+                    )
+            else:
+                self.dimensions[bond_name] = padDef.layout.bond_pad
 
     def _to_bool(v: Any) -> bool:
         if isinstance(v, bool):
@@ -317,36 +551,63 @@ class PadGroup:
             return v.strip().lower() == "true"
         return bool(v)
 
-    def _build_layouts(
+    def _build_dimensions(
         dimensions: Mapping[str, Mapping[str, Any]],
-    ) -> Dict[str, Layout]:
+    ) -> Dict[str, Dimension]:
         """
-        Build Layout objects from the 'dimensions' subsection.
+        Build Dimension objects from HJSON dimensions subsection.
 
-        Expects things like:
-          BONDPAD1, BONDPAD2, ..., PAD1, PAD2, ...
+        Converts HJSON dimension specifications into Dimension objects
+        with embedded names for later reference.
+
+        :param dimensions: Dictionary mapping dimension names to their specs
+        :return: Dictionary of Dimension objects
+        :rtype: Dict[str, Dimension]
+
+        Example input:
+            {"PAD1": {"width": 75, "length": 75},
+             "BONDPAD1": {"width": 70}}
         """
-        layouts: Dict[str, Layout] = {}
+        dims: Dict[str, Dimension] = {}
 
         for name, dim in dimensions.items():
-            # Only start from PAD* entries; use matching BONDPAD*
-            if not name.startswith("PAD"):
-                continue
+            # Create Dimension with name embedded
+            dims[name] = Dimension(
+                width=dim["width"], length=dim.get("length"), name=name
+            )
 
-            suffix = name[len("PAD") :]  # "1", "2", ...
-            pad_dim = Dimension(width=dim["width"], length=dim.get("length"))
-
-            bond_key = f"BONDPAD{suffix}"
-            bond_dim = None
-            if bond_key in dimensions:
-                bdim = dimensions[bond_key]
-                bond_dim = Dimension(width=bdim["width"], length=bdim.get("length"))
-
-            layouts[name] = Layout(name=name, bond_pad=bond_dim, cell_pad=pad_dim)
-
-        return layouts
+        return dims
 
     def build_pad_group(cfg: Mapping[str, Any], name: str = "x_heep_top") -> PadGroup:
+        """
+        Build a PadGroup from HJSON configuration dictionary.
+
+        This is the main entry point for loading pad configurations from HJSON.
+        It constructs a PadGroup with all pads and physical properties.
+
+        :param cfg: HJSON configuration dictionary
+        :param str name: Name for the pad group
+        :return: Constructed PadGroup with all pads configured
+        :rtype: PadGroup
+
+        Configuration structure expected:
+            {
+                "physical_attributes": {
+                    "floorplan_dimensions": {"width": ..., "length": ...},
+                    "edge_offset": {"pad": ..., "bondpad": ...},
+                    "spacing": {"bondpad": ..., "cell": ...},
+                    "dimensions": {"PAD1": {...}, "BONDPAD1": {...}}
+                },
+                "pads": {
+                    "pad_name": {
+                        "type": "input/output/inout/...",
+                        "mapping": "top/bottom/left/right",
+                        "layout_attributes": {...},
+                        "mux": {...}  // optional for multiplexed pads
+                    }
+                }
+            }
+        """
         # -------------------------------------------------------------------------
         # Physical attributes (SAFE)
         # -------------------------------------------------------------------------
@@ -369,12 +630,13 @@ class PadGroup:
         bp_spacing = spacing.get("bondpad")
         cell_spacing = spacing.get("cell")
 
-        # ---- layouts from "dimensions" ----
+        # ---- dimensions from "dimensions" ----
         dims = pa.get("dimensions")
+
         if dims is not None:
-            layouts = PadGroup._build_layouts(dims)
+            dimensions = PadGroup._build_dimensions(dims)
         else:
-            layouts = {}  # no layouts defined
+            dimensions = {}  # no dimensions defined
 
         # -------------------------------------------------------------------------
         # Build the PadGroup with safe defaults
@@ -390,9 +652,9 @@ class PadGroup:
         if pad_group is None:
             raise ValueError("PadGroup could not be created.")
 
-        # pre-register layouts only if present
-        if layouts:
-            pad_group.layouts.update(layouts)
+        # pre-register dimensions only if present
+        if dimensions:
+            pad_group.dimensions.update(dimensions)
 
         # -------------------------------------------------------------------------
         # Pads section (SAFE)
@@ -408,11 +670,24 @@ class PadGroup:
             layout_index = la.get("index", 0)
             cell_name = la.get("cell")
 
-            # Get layout from name → fallback: empty layout
-            if cell_name in layouts:
-                pad_layout = layouts[cell_name]
+            # Build layout from dimensions
+            if cell_name in dimensions:
+                cell_dim = dimensions[cell_name]
+                # Check for corresponding bond pad
             else:
-                pad_layout = None
+                cell_dim = None
+
+            bond_name = la.get("bondpad")
+            if bond_name in dimensions:
+                bond_dim = dimensions[bond_name]
+            else:
+                bond_dim = None
+
+            pad_layout = (
+                Layout(cell_pad=cell_dim, bond_pad=bond_dim)
+                if (cell_dim or bond_dim)
+                else None
+            )
 
             pad_orient = (
                 Orientation(la.get("orient").upper())

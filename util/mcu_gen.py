@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+# Copyright 2025 EPFL
 # Copyright 2020 ETH Zurich and University of Bologna.
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
 
-# Simplified version of occamygen.py https://github.com/pulp-platform/snitch/blob/master/util/occamygen.py
+# Originally derived from occamygen.py: https://github.com/pulp-platform/snitch/blob/master/util/occamygen.py
+
 
 import argparse
 import hjson
@@ -17,7 +19,6 @@ from jsonref import JsonRef
 from mako.template import Template
 import x_heep_gen.load_config
 from x_heep_gen.load_config import load_peripherals_config
-from x_heep_gen.pads.PadRing import PadRing
 from x_heep_gen.xheep import BusType
 from x_heep_gen.cpu.cpu import CPU
 import os
@@ -86,7 +87,9 @@ def generate_xheep(args):
     # Load pads HJSON configuration file
     pad_ring = x_heep_gen.load_config.load_pad_cfg(pathlib.PurePath(str(args.pads_cfg)))
     if pad_ring is None:
-        exit("Error loading pads configuration file")
+        exit(f"Error loading pads configuration file: {args.pads_cfg}")
+
+    xheep.set_padring(pad_ring)
 
     if args.external_domains != None and args.external_domains != "":
         external_domains = int(args.external_domains)
@@ -146,9 +149,7 @@ def generate_xheep(args):
     plic_used_n_interrupts = xheep.get_interrupt_manager().get_num_interrupts()
     plit_n_interrupts = xheep.max_intrs
 
-    # Here the xheep system is built,
-    # The missing gaps are filled, like the missing end address of the data section.
-    xheep.set_padring(pad_ring)
+    # Here the xheep system is built, and the missing gaps are filled
     xheep.build()
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")

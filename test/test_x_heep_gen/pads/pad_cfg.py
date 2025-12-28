@@ -27,24 +27,24 @@ def config() -> PadRing:
     # Layouts & per-cell / per-bondpad dimensions (from "dimensions")
     # -------------------------------------------------------------------------
     # BONDPAD1: 50, PAD1: 40
-    bondpad1_dim = Dimension(width=50, length=None)
-    pad1_dim = Dimension(width=40, length=None)
-    pad1_layout = Layout(name="PAD1", bond_pad=bondpad1_dim, cell_pad=pad1_dim)
+    bondpad1_dim = Dimension(width=50, length=None, name="BONDPAD1")
+    pad1_dim = Dimension(width=40, length=None, name="PAD1")
+    pad1_layout = Layout(bond_pad=bondpad1_dim, cell_pad=pad1_dim)
 
     # BONDPAD2: 60, PAD2: 45
-    bondpad2_dim = Dimension(width=60, length=None)
-    pad2_dim = Dimension(width=45, length=None)
-    pad2_layout = Layout(name="PAD2", bond_pad=bondpad2_dim, cell_pad=pad2_dim)
+    bondpad2_dim = Dimension(width=60, length=None, name="BONDPAD2")
+    pad2_dim = Dimension(width=45, length=None, name="PAD2")
+    pad2_layout = Layout(bond_pad=bondpad2_dim, cell_pad=pad2_dim)
 
     # BONDPAD3: 70, PAD3: 50
-    bondpad3_dim = Dimension(width=70, length=None)
-    pad3_dim = Dimension(width=50, length=None)
-    pad3_layout = Layout(name="PAD3", bond_pad=bondpad3_dim, cell_pad=pad3_dim)
+    bondpad3_dim = Dimension(width=70, length=None, name="BONDPAD3")
+    pad3_dim = Dimension(width=50, length=None, name="PAD3")
+    pad3_layout = Layout(bond_pad=bondpad3_dim, cell_pad=pad3_dim)
 
     # BONDPAD4: 80, PAD4: 55
-    bondpad4_dim = Dimension(width=80, length=None)
-    pad4_dim = Dimension(width=55, length=None)
-    pad4_layout = Layout(name="PAD4", bond_pad=bondpad4_dim, cell_pad=pad4_dim)
+    bondpad4_dim = Dimension(width=80, length=None, name="BONDPAD4")
+    pad4_dim = Dimension(width=55, length=None, name="PAD4")
+    pad4_layout = Layout(bond_pad=bondpad4_dim, cell_pad=pad4_dim)
 
     offsets = Dimension(width=0, length=0)
 

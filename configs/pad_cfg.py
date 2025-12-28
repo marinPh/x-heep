@@ -1,7 +1,6 @@
-# Copyright 2020 ETH Zurich and University of Bologna.
+# Copyright 2025 EPFL.
 # Solderpad Hardware License, Version 0.51, see LICENSE for details.
 # SPDX-License-Identifier: SHL-0.51
-# Derived from Occamy: https://github.com/pulp-platform/snitch/blob/master/hw/system/occamy/src/occamy_cfg.hjson
 #
 # Pad configuration for core-v-mini-mcu. Python version of pad_cfg.hjson.
 #
@@ -22,7 +21,7 @@ def config() -> PadRing:
     Returns the pad configuration as a PadRing object.
     This is the Python class-based equivalent of configs/pad_cfg.hjson.
 
-    Note: This version contains only logical pad definitions from the hjson.
+    Note: This version contains only logical pad definitions as done in the hjson.
     Physical layout attributes (mapping, orient, layout_index, dimensions) are not included.
     """
 

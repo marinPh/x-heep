@@ -124,16 +124,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Setup Project
         uses: ./.github/actions/setup-project
-
       - name: Configure the job container and simulate all apps
         shell: bash -l {0}
         run: |
           make clean-all
           # Run the test script
-          make test_kwargs
+          make test_pads
 
   check-vendor:
     name: Vendor up-to-date
