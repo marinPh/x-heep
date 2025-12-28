@@ -272,9 +272,9 @@ class XHeep:
         if self.are_base_peripherals_configured():
             self._base_peripheral_domain.build()
             self._interrupt_manager.assign_from_peripheral_domains(
-                    self._base_peripheral_domain,
-                    self._user_peripheral_domain,
-                )
+                self._base_peripheral_domain,
+                self._user_peripheral_domain,
+            )
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.build()
         if self.get_padring() is not None:
