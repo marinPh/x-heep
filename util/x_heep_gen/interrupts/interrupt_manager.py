@@ -48,17 +48,16 @@ class InterruptManager:
 
         # Assign interrupts from user peripheral domain (without validation)
         self._assign_interrupts_from_domain(user_domain, possible_ids, validate=False)
-        
-        #add external interrupts
-        
+
+        # add external interrupts
+
         external_interrupts = {
             f"EXT_INTR_{i}": Interrupt(id=id, num=1, peripheral="external")
-            for i,id in enumerate(possible_ids)
+            for i, id in enumerate(possible_ids)
         }
         for name, irq in external_interrupts.items():
             self.add_interrupt(name, irq)
-            
-        
+
         # Sort interrupts by ID for consistent ordering
         self._interrupts = dict(
             sorted(self._interrupts.items(), key=lambda item: item[1].id)
