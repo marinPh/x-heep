@@ -24,6 +24,8 @@ class InterruptManager:
     # ================================================================
 
     def assign_from_peripheral_domains(self, base_domain, user_domain):
+        if self._built:
+            pass  # Already built, skip re-assignment
 
         # Collect all interrupt IDs from both domains
         all_ids = self._collect_interrupt_ids_from_domains(base_domain, user_domain)
