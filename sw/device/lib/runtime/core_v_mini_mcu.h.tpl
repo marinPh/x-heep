@@ -8,7 +8,9 @@
     dma = base_peripheral_domain.get_dma()
     memory_ss = xheep.memory_ss()
     intr_manager = xheep.get_interrupt_manager()
-    #external_domains = len([e for e in intr_manager.get_interrupts() if e.startswith("EXT_")])
+    possible_ids = list(set(range(0, intr_manager._max_interrupts)).difference(set(intr_manager.get_simple_interrupts().values())))
+    external_interrupts = intr_manager.get_external_interrupts()
+    external_domains = len(external_interrupts)
 %>
 
 #ifndef COREV_MINI_MCU_H_
@@ -128,12 +130,16 @@ extern "C" {
 % for key, value in intr_manager.get_simple_interrupts().items():
 #define ${key.upper()} ${value}
 % endfor
+% for key, intr_obj in external_interrupts.items():
+#define ${key.upper()} ${intr_obj.id}
+% endfor
 
 % if xheep.get_padring().pads_attributes != None:
 % for pad in xheep.get_padring().pad_list:
 #define ${pad.localparam}_ATTRIBUTE ${pad.index}
 % endfor
 % endif
+
 
 #define GPIO_AO_DOMAIN_LIMIT 8
 

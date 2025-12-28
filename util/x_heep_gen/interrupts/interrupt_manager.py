@@ -31,7 +31,6 @@ class InterruptManager:
         set_ids = set(all_ids)
         if len(all_ids) != len(set_ids):
             raise ValueError("Two peripherals have the same interrupt id")
-
         possible_ids = list(set(range(0, self._max_interrupts)).difference(set_ids))
         # Get predefined interrupts map for validation error messages
         predefined_map = self._collect_predefined_interrupts_map(
@@ -51,19 +50,13 @@ class InterruptManager:
 
         # add external interrupts
 
-        external_interrupts = {
-            f"EXT_INTR_{i}": Interrupt(id=id, num=1, peripheral="external")
-            for i, id in enumerate(possible_ids)
-        }
-        for name, irq in external_interrupts.items():
-            self.add_interrupt(name, irq)
-
         # Sort interrupts by ID for consistent ordering
         self._interrupts = dict(
             sorted(self._interrupts.items(), key=lambda item: item[1].id)
         )
 
     def add_interrupt(self, name: str, irq: Interrupt):
+
         if not isinstance(name, str):
             raise TypeError(f"interrupt name should be of type str not {type(name)}")
 
@@ -101,6 +94,19 @@ class InterruptManager:
                 ]
             ).sum()
         )
+
+    def get_external_interrupts(self) -> Dict[str, Interrupt]:
+        possible_ids = list(
+            set(range(0, self._max_interrupts)).difference(
+                set(self.get_simple_interrupts().values())
+            )
+        )
+        result = {
+            f"EXT_INTR_{i}": Interrupt(id=id, num=1, peripheral="external")
+            for i, id in enumerate(possible_ids)
+        }
+
+        return result
 
     def get_interrupts_for_peripheral(
         self, peripheral_name: str
@@ -218,29 +224,6 @@ class InterruptManager:
     # Internal Helper Methods (Private)
     # ================================================================
 
-    def _collect_interrupt_ids_from_domains(self, *domains) -> List[int]:
-        """
-        Collect all predefined interrupt IDs from multiple peripheral domains.
-
-        Only collects IDs from interrupts that have been explicitly assigned
-        (i.e., irq is not None and irq.id is not None).
-
-        :param domains: Variable number of peripheral domains
-        :return: List of all predefined interrupt IDs
-        :rtype: List[int]
-        """
-        all_ids = []
-        for domain in domains:
-            all_ids.extend(
-                [
-                    irq.id
-                    for peri in domain.get_peripherals()
-                    for irq in peri.get_interrupts().values()
-                    if irq is not None and irq.id is not None
-                ]
-            )
-        return all_ids
-
     def _collect_predefined_interrupts_map(self, *domains) -> Dict[int, str]:
         result = {}
         for domain in domains:
@@ -282,7 +265,11 @@ class InterruptManager:
                             )
                     # remove assigned IDs from available pool
                     for i in range(irq.num):
-                        possible_ids.remove(irq.id + i)
+                        try:
+
+                            possible_ids.remove(irq.id + i)
+                        except ValueError:
+                            pass
 
                     self.add_interrupt(name, irq)
 
