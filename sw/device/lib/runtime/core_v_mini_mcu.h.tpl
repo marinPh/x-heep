@@ -8,6 +8,7 @@
     dma = base_peripheral_domain.get_dma()
     memory_ss = xheep.memory_ss()
     intr_manager = xheep.get_interrupt_manager()
+    #external_domains = len([e for e in intr_manager.get_interrupts() if e.startswith("EXT_")])
 %>
 
 #ifndef COREV_MINI_MCU_H_
