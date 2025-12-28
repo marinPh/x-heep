@@ -17,15 +17,12 @@ class InterruptManager:
         """
         self._interrupts: Dict[str, Interrupt] = {}
         self._max_interrupts = DEFAULT_MAX_INTERRUPTS
-        self._built = False
 
     # ================================================================
     # Core Assignment Methods
     # ================================================================
 
     def assign_from_peripheral_domains(self, base_domain, user_domain):
-        if self._built:
-            pass  # Already built, skip re-assignment
 
         # Collect all interrupt IDs from both domains
         all_ids = self._collect_interrupt_ids_from_domains(base_domain, user_domain)
@@ -58,7 +55,6 @@ class InterruptManager:
         self._interrupts = dict(
             sorted(self._interrupts.items(), key=lambda item: item[1].id)
         )
-        self._built = True
 
     def add_interrupt(self, name: str, irq: Interrupt):
         if not isinstance(name, str):
@@ -68,7 +64,7 @@ class InterruptManager:
             raise TypeError(f"irq should be of type Interrupt not {type(irq)}")
 
         if name in self._interrupts:
-            raise ValueError(f"Interrupt {name} already exists in the system")
+            return
 
         if irq is not None and irq in self._interrupts.values():
             raise ValueError(f"Interrupt IRQ {irq} already exists in the system")
