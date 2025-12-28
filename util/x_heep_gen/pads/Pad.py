@@ -144,7 +144,7 @@ class Pad:
             PadMapping.BOTTOM: "core_v_mini_mcu_pkg::BOTTOM",
             PadMapping.LEFT: "core_v_mini_mcu_pkg::LEFT",
         }
-    
+
         # Build ", .SIDE(...)" exactly like before
         mapping = (
             f", .SIDE({mapping_dict[self.pad_mapping]})" if self.pad_mapping else ""
@@ -158,8 +158,8 @@ class Pad:
         sig = self.signal_name
 
         # --- Pad type logic (configuration-driven) ---
-        if self.pad_type.split('_')[-1] in list(PAD_TYPE_CONFIG.keys()):
-            config = PAD_TYPE_CONFIG[self.pad_type.split('_')[-1]]
+        if self.pad_type.split("_")[-1] in list(PAD_TYPE_CONFIG.keys()):
+            config = PAD_TYPE_CONFIG[self.pad_type.split("_")[-1]]
 
             # Set IO interface (same for all types)
             self.pad_ring_io_interface = f"    inout wire {self.io_interface},"
