@@ -1,0 +1,19 @@
+{
+  // Single pad edge case - absolute minimum configuration
+  "physical_attributes": {
+    "floorplan_dimensions": { "width": 500, "length": 500 },
+    "edge_offset": { "bondpad": 10, "pad": 30 },
+    "spacing": { "bondpad": 15 },
+    "dimensions": {
+      "SINGLE_PAD": { "width": 25 }
+    }
+  },
+  "pads": {
+    "clk": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 0, "cell": "SINGLE_PAD", "orient": "r90", "bondpad": "SINGLE_PAD" }
+    }
+  }
+}

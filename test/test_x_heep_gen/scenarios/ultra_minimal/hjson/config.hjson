@@ -1,0 +1,26 @@
+{
+  // Ultra minimal pad configuration - absolute minimum for functionality
+  "physical_attributes": {
+    "floorplan_dimensions": { "width": 800, "length": 800 },
+    "edge_offset": { "bondpad": 15, "pad": 40 },
+    "spacing": { "bondpad": 20 },
+    "dimensions": {
+      "MINIMAL_PAD": { "width": 30 }
+    }
+  },
+  "pads": {
+    "clk": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 0, "cell": "MINIMAL_PAD", "orient": "r90", "bondpad": "MINIMAL_PAD" }
+    },
+    "rst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 1, "cell": "MINIMAL_PAD", "orient": "r90", "bondpad": "MINIMAL_PAD" }
+    }
+  }
+}

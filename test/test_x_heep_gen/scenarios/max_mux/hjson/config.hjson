@@ -1,0 +1,94 @@
+{
+  // Maximum multiplexing test - every pad has mux options
+  "physical_attributes": {
+    "floorplan_dimensions": { "width": 1500, "length": 1500 },
+    "edge_offset": { "bondpad": 20, "pad": 80 },
+    "spacing": { "bondpad": 25 },
+    "dimensions": {
+      "MUX_PAD": { "width": 55 }
+    }
+  },
+  "pads": {
+    "clk": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 0, "cell": "MUX_PAD", "orient": "r90", "bondpad": "MUX_PAD" }
+    },
+    "rst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 1, "cell": "MUX_PAD", "orient": "r90", "bondpad": "MUX_PAD" }
+    },
+    "mux_pad_0": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 2, "cell": "MUX_PAD", "orient": "r0", "bondpad": "MUX_PAD" },
+      "mux": {
+        "uart_rx": { "type": "input" },
+        "spi_miso": { "type": "inout" },
+        "gpio_0": { "type": "inout" }
+      }
+    },
+    "mux_pad_1": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 3, "cell": "MUX_PAD", "orient": "r0", "bondpad": "MUX_PAD" },
+      "mux": {
+        "uart_tx": { "type": "output" },
+        "spi_mosi": { "type": "inout" },
+        "gpio_1": { "type": "inout" }
+      }
+    },
+    "mux_pad_2": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "left",
+      "layout_attributes": { "index": 4, "cell": "MUX_PAD", "orient": "mx90", "bondpad": "MUX_PAD" },
+      "mux": {
+        "i2c_scl": { "type": "inout" },
+        "spi_sck": { "type": "inout" },
+        "gpio_2": { "type": "inout" },
+        "pwm_0": { "type": "output" }
+      }
+    },
+    "mux_pad_3": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "left",
+      "layout_attributes": { "index": 5, "cell": "MUX_PAD", "orient": "mx90", "bondpad": "MUX_PAD" },
+      "mux": {
+        "i2c_sda": { "type": "inout" },
+        "spi_cs": { "type": "inout" },
+        "gpio_3": { "type": "inout" },
+        "pwm_1": { "type": "output" }
+      }
+    },
+    "mux_pad_4": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 6, "cell": "MUX_PAD", "orient": "mx", "bondpad": "MUX_PAD" },
+      "mux": {
+        "pdm_clk": { "type": "inout" },
+        "gpio_4": { "type": "inout" },
+        "pwm_2": { "type": "output" }
+      }
+    },
+    "mux_pad_5": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 7, "cell": "MUX_PAD", "orient": "mx", "bondpad": "MUX_PAD" },
+      "mux": {
+        "pdm_data": { "type": "inout" },
+        "gpio_5": { "type": "inout" },
+        "pwm_3": { "type": "output" }
+      }
+    }
+  }
+}

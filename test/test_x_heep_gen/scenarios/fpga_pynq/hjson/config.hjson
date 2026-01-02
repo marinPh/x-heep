@@ -1,0 +1,69 @@
+{
+  // FPGA PYNQ-Z2 board configuration
+  "physical_attributes": {
+    "floorplan_dimensions": { "width": 1800, "length": 1600 },
+    "edge_offset": { "bondpad": 18, "pad": 60 },
+    "spacing": { "bondpad": 22 },
+    "dimensions": {
+      "FPGA_PAD": { "width": 42 }
+    }
+  },
+  "pads": {
+    "clk": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 0, "cell": "FPGA_PAD", "orient": "r90", "bondpad": "FPGA_PAD" }
+    },
+    "rst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 1, "cell": "FPGA_PAD", "orient": "r90", "bondpad": "FPGA_PAD" }
+    },
+    "uart_rx": {
+      "num": 1,
+      "type": "input",
+      "mapping": "top",
+      "layout_attributes": { "index": 2, "cell": "FPGA_PAD", "orient": "r0", "bondpad": "FPGA_PAD" }
+    },
+    "uart_tx": {
+      "num": 1,
+      "type": "output",
+      "mapping": "top",
+      "layout_attributes": { "index": 3, "cell": "FPGA_PAD", "orient": "r0", "bondpad": "FPGA_PAD" }
+    },
+    "gpio": {
+      "num": 8,
+      "num_offset": 0,
+      "type": "inout",
+      "mapping": "left",
+      "layout_attributes": { "index": 4, "cell": "FPGA_PAD", "orient": "mx90", "bondpad": "FPGA_PAD" }
+    },
+    "spi_sck": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 5, "cell": "FPGA_PAD", "orient": "mx", "bondpad": "FPGA_PAD" }
+    },
+    "spi_mosi": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 6, "cell": "FPGA_PAD", "orient": "mx", "bondpad": "FPGA_PAD" }
+    },
+    "spi_miso": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 7, "cell": "FPGA_PAD", "orient": "mx", "bondpad": "FPGA_PAD" }
+    },
+    "spi_cs": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 8, "cell": "FPGA_PAD", "orient": "mx", "bondpad": "FPGA_PAD" }
+    }
+  }
+}
