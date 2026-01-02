@@ -384,6 +384,12 @@ test_pads_golden_from_main:
 test_pads_golden_verify:
 	$(PYTHON) test/test_x_heep_gen/generate_goldens.py --verify --dry-run
 
+## Generate golden references from hjson configs only (skip python configs)
+## Use this when Python config support is not yet available on current branch
+.PHONY: test_pads_golden_hjson
+test_pads_golden_hjson:
+	$(PYTHON) test/test_x_heep_gen/generate_goldens.py --hjson-only $(if $(SCENARIO),--scenario $(SCENARIO))
+
 ## Builds the specified app, loads it into the programmer's flash and then opens picocom to see the output
 ## @param PROJECT=<folder_name_of_the_project_to_be_built>
 run-fpga-flash-load:

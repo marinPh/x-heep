@@ -365,6 +365,11 @@ def main():
         action="store_true",
         help="Verify golden files after generation",
     )
+    parser.add_argument(
+        "--hjson-only",
+        action="store_true",
+        help="Only generate from hjson configs (skip python configs)",
+    )
 
     args = parser.parse_args()
 
@@ -421,8 +426,8 @@ def main():
                 else:
                     failed += 1
 
-            # Process python config
-            if configs["python"].exists():
+            # Process python config (skip if --hjson-only flag is set)
+            if configs["python"].exists() and not args.hjson_only:
                 total += 1
                 if generator.generate_golden(
                     scenario, "python", configs["python"], args.dry_run
@@ -430,6 +435,8 @@ def main():
                     success += 1
                 else:
                     failed += 1
+            elif configs["python"].exists() and args.hjson_only:
+                log_info(f"Skipping python config for {scenario} (--hjson-only mode)")
 
             print()
 
