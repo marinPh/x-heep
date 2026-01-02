@@ -23,13 +23,14 @@ import shutil
 
 class Color:
     """ANSI color codes for terminal output."""
-    RED = '\033[0;31m'
-    GREEN = '\033[0;32m'
-    YELLOW = '\033[1;33m'
-    BLUE = '\033[0;34m'
-    MAGENTA = '\033[0;35m'
-    CYAN = '\033[0;36m'
-    NC = '\033[0m'  # No Color
+
+    RED = "\033[0;31m"
+    GREEN = "\033[0;32m"
+    YELLOW = "\033[1;33m"
+    BLUE = "\033[0;34m"
+    MAGENTA = "\033[0;35m"
+    CYAN = "\033[0;36m"
+    NC = "\033[0m"  # No Color
 
 
 def log_info(msg: str):
@@ -54,7 +55,9 @@ class GoldenGenerator:
     def __init__(self, repo_root: Path, scenarios_dir: Path):
         self.repo_root = repo_root
         self.scenarios_dir = scenarios_dir
-        self.template_file = scenarios_dir.parent / "pads" / "output" / "kwargs_output.json.tpl"
+        self.template_file = (
+            scenarios_dir.parent / "pads" / "output" / "kwargs_output.json.tpl"
+        )
         self.xheep_config_cache = repo_root / "build" / "xheep_config_cache.pickle"
         self.python_cmd = self._find_python()
 
@@ -220,10 +223,14 @@ class GoldenGenerator:
         if not template_output.exists() and self.template_file.exists():
             if not dry_run:
                 shutil.copy(self.template_file, template_output)
-            log_info(f"  Copied template to {template_output.relative_to(self.repo_root)}")
+            log_info(
+                f"  Copied template to {template_output.relative_to(self.repo_root)}"
+            )
 
         if dry_run:
-            log_info(f"  [DRY-RUN] Would generate golden for {scenario} ({config_format})")
+            log_info(
+                f"  [DRY-RUN] Would generate golden for {scenario} ({config_format})"
+            )
             return True
 
         # Step 1: Run mcu-gen
@@ -470,14 +477,18 @@ def main():
                 print(f"     ls -la {scenarios_dir}/*/golden/*.json")
                 print()
                 print("  2. Verify they are correct:")
-                print(f"     cat {scenarios_dir}/<scenario>/golden/kwargs_output.json | less")
+                print(
+                    f"     cat {scenarios_dir}/<scenario>/golden/kwargs_output.json | less"
+                )
                 print()
                 print("  3. Run tests to validate:")
                 print("     make test_pads")
                 print()
                 print("  4. If everything looks good, commit the golden files:")
                 print("     git add test/test_x_heep_gen/scenarios/*/golden/")
-                print('     git commit -m "Generate golden reference files from main branch"')
+                print(
+                    '     git commit -m "Generate golden reference files from main branch"'
+                )
 
         return 0
 

@@ -172,10 +172,20 @@ def test_pad_config_generates_expected_output(
     """
     # Paths
     golden_output = (
-        repo_root / "test" / "test_x_heep_gen" / "pads" / "golden_pads" / "kwargs_output.json"
+        repo_root
+        / "test"
+        / "test_x_heep_gen"
+        / "pads"
+        / "golden_pads"
+        / "kwargs_output.json"
     )
     generated_output = (
-        repo_root / "test" / "test_x_heep_gen" / "pads" / "output" / "kwargs_output.json"
+        repo_root
+        / "test"
+        / "test_x_heep_gen"
+        / "pads"
+        / "output"
+        / "kwargs_output.json"
     )
     diff_output = tmp_path / f"diff_{config_format}.txt"
 
@@ -193,7 +203,12 @@ def test_pad_config_generates_expected_output(
 
     # Step 2: Generate the output template
     template_path = str(
-        repo_root / "test" / "test_x_heep_gen" / "pads" / "output" / "kwargs_output.json.tpl"
+        repo_root
+        / "test"
+        / "test_x_heep_gen"
+        / "pads"
+        / "output"
+        / "kwargs_output.json.tpl"
     )
     result = mcu_gen_runner(
         xheep_cfg="configs/ci.hjson",
@@ -208,9 +223,9 @@ def test_pad_config_generates_expected_output(
     )
 
     # Step 3: Verify the generated output exists
-    assert generated_output.exists(), (
-        f"Generated output file not found: {generated_output}"
-    )
+    assert (
+        generated_output.exists()
+    ), f"Generated output file not found: {generated_output}"
 
     # Step 4: Compare against golden reference
     are_equal, diff_message = compare_json_files(
@@ -267,7 +282,12 @@ def test_hjson_and_python_configs_produce_identical_output(
     hjson_output = tmp_path / "hjson_output.json"
     python_output = tmp_path / "python_output.json"
     template_path = str(
-        repo_root / "test" / "test_x_heep_gen" / "pads" / "output" / "kwargs_output.json.tpl"
+        repo_root
+        / "test"
+        / "test_x_heep_gen"
+        / "pads"
+        / "output"
+        / "kwargs_output.json.tpl"
     )
 
     # Generate output for hjson format
@@ -286,7 +306,12 @@ def test_hjson_and_python_configs_produce_identical_output(
 
     # Copy hjson output
     generated_output = (
-        repo_root / "test" / "test_x_heep_gen" / "pads" / "output" / "kwargs_output.json"
+        repo_root
+        / "test"
+        / "test_x_heep_gen"
+        / "pads"
+        / "output"
+        / "kwargs_output.json"
     )
     import shutil
 
