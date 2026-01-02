@@ -346,15 +346,43 @@ test:
 	python3 test/test_x_heep_gen/test_peripherals.py
 	@echo "You can also find the peripheral test outputs in test/test_x_heep_gen/outputs"
 
+## Run scenario-based pad configuration tests
+## Automatically discovers and tests all scenarios in test/test_x_heep_gen/scenarios/
+## @param PYTEST_FLAGS=Additional flags to pass to pytest
+## Examples:
+##   make test_pads                              # Run all scenarios
+##   make test_pads PYTEST_FLAGS="-k minimal"    # Run specific scenario
+##   make test_pads PYTEST_FLAGS="-k hjson"      # Test only hjson format
+##   make test_pads PYTEST_FLAGS="-n auto"       # Run in parallel (requires pytest-xdist)
 .PHONY: test_pads
 test_pads:
-	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.hjson
-	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
-	python3 test/test_x_heep_gen/pad_test.py
+	$(PYTHON) -m pytest test/test_x_heep_gen/test_scenarios.py -v $(PYTEST_FLAGS)
 
-	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.py
-	$(PYTHON) util/mcu_gen.py --cached_path $(XHEEP_CONFIG_CACHE) --cached --outtpl test/test_x_heep_gen/pads/output/kwargs_output.json.tpl
-	python3 test/test_x_heep_gen/pad_test.py
+## List all discovered pad configuration test scenarios
+.PHONY: test_pads_list
+test_pads_list:
+	$(PYTHON) -m pytest test/test_x_heep_gen/test_scenarios.py::test_scenario_discovery -v -s
+
+## Generate golden reference files for all pad configuration test scenarios
+## This should be run from main branch to establish known-good golden references
+## @param SCENARIO=<scenario_name> to generate only specific scenario (optional)
+## Examples:
+##   make test_pads_golden                           # Generate all goldens from current state
+##   make test_pads_golden_from_main                 # Checkout main, generate, return to branch
+##   make test_pads_golden SCENARIO=minimal_pads     # Generate only minimal_pads scenario
+.PHONY: test_pads_golden
+test_pads_golden:
+	$(PYTHON) test/test_x_heep_gen/generate_goldens.py $(if $(SCENARIO),--scenario $(SCENARIO))
+
+## Generate golden references from main branch (safe - returns to original branch)
+.PHONY: test_pads_golden_from_main
+test_pads_golden_from_main:
+	$(PYTHON) test/test_x_heep_gen/generate_goldens.py --from-main --verify
+
+## Verify existing golden reference files are valid
+.PHONY: test_pads_golden_verify
+test_pads_golden_verify:
+	$(PYTHON) test/test_x_heep_gen/generate_goldens.py --verify --dry-run
 
 ## Builds the specified app, loads it into the programmer's flash and then opens picocom to see the output
 ## @param PROJECT=<folder_name_of_the_project_to_be_built>

@@ -1,0 +1,38 @@
+{
+  "physical_attributes": {
+    "floorplan_dimensions": { "width": 1000, "length": 1000 },
+    "edge_offset": { "bondpad": 15, "pad": 50 },
+    "spacing": { "bondpad": 20 },
+    "dimensions": {
+      "BONDPAD_DEFAULT": { "width": 40 },
+      "PAD_DEFAULT": { "width": 30 }
+    }
+  },
+  "pads": {
+    "clk": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 0, "cell": "PAD_DEFAULT", "orient": "r90", "bondpad": "BONDPAD_DEFAULT" }
+    },
+    "rst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 1, "cell": "PAD_DEFAULT", "orient": "r90", "bondpad": "BONDPAD_DEFAULT" }
+    },
+    "uart_rx": {
+      "num": 1,
+      "type": "input",
+      "mapping": "top",
+      "layout_attributes": { "index": 2, "cell": "PAD_DEFAULT", "orient": "r0", "bondpad": "BONDPAD_DEFAULT" }
+    },
+    "uart_tx": {
+      "num": 1,
+      "type": "output",
+      "mapping": "top",
+      "layout_attributes": { "index": 3, "cell": "PAD_DEFAULT", "orient": "r0", "bondpad": "BONDPAD_DEFAULT" }
+    }
+  }
+}
