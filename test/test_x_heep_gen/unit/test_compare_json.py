@@ -180,9 +180,9 @@ def test_multiple_changes_all_reported(temp_json_files):
 
     assert are_equal is False
     # Should report change in 'a', 'nested', and list addition
-    assert ("a" in msg or "root['a']" in msg)
+    assert "a" in msg or "root['a']" in msg
     assert "nested" in msg
-    assert ("c" in msg or "3" in msg)
+    assert "c" in msg or "3" in msg
 
 
 def test_diff_output_path_writes_file(temp_json_files, tmp_path):

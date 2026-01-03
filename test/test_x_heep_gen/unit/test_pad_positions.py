@@ -70,7 +70,9 @@ def test_multiple_equal_pads_evenly_spaced(sample_pad_group):
     # Offset = 730/2 = 365
 
     pads = [
-        create_test_pad(f"pad_{i}", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=i)
+        create_test_pad(
+            f"pad_{i}", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=i
+        )
         for i in range(3)
     ]
 
@@ -93,7 +95,9 @@ def test_pads_that_dont_fit_raise_error(sample_pad_group):
     # Total: 60*20 + 25*19 = 1675 > 1000 - 2*20 = 960
 
     pads = [
-        create_test_pad(f"pad_{i}", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=i)
+        create_test_pad(
+            f"pad_{i}", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=i
+        )
         for i in range(20)
     ]
 
@@ -104,9 +108,15 @@ def test_pads_that_dont_fit_raise_error(sample_pad_group):
 def test_bondpad_centering_with_variable_widths(sample_pad_group):
     """Test bondpad centering with pads of different widths."""
     pads = [
-        create_test_pad("pad_0", PadMapping.TOP, bondpad_width=50, cell_width=40, layout_index=0),
-        create_test_pad("pad_1", PadMapping.TOP, bondpad_width=70, cell_width=60, layout_index=1),
-        create_test_pad("pad_2", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=2),
+        create_test_pad(
+            "pad_0", PadMapping.TOP, bondpad_width=50, cell_width=40, layout_index=0
+        ),
+        create_test_pad(
+            "pad_1", PadMapping.TOP, bondpad_width=70, cell_width=60, layout_index=1
+        ),
+        create_test_pad(
+            "pad_2", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=2
+        ),
     ]
 
     # Total bondpad space = 50 + 70 + 60 + 25*2 = 230
@@ -126,8 +136,12 @@ def test_bondpad_centering_with_variable_widths(sample_pad_group):
 def test_skip_parameter_calculation(sample_pad_group):
     """Test that skip parameter is calculated correctly."""
     pads = [
-        create_test_pad("pad_0", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=0),
-        create_test_pad("pad_1", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=1),
+        create_test_pad(
+            "pad_0", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=0
+        ),
+        create_test_pad(
+            "pad_1", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=1
+        ),
     ]
 
     set_pad_positions(sample_pad_group, pads)
@@ -143,7 +157,12 @@ def test_skip_parameter_calculation(sample_pad_group):
 def test_different_edge_orientations():
     """Test positioning works for all edge orientations."""
     # Test TOP, BOTTOM, LEFT, RIGHT
-    for mapping in [PadMapping.TOP, PadMapping.BOTTOM, PadMapping.LEFT, PadMapping.RIGHT]:
+    for mapping in [
+        PadMapping.TOP,
+        PadMapping.BOTTOM,
+        PadMapping.LEFT,
+        PadMapping.RIGHT,
+    ]:
         fp_dim = Dimension(width=1000, length=1500)
         pad_group = PadGroup(
             name="test",
@@ -249,7 +268,9 @@ def test_maximum_pads_that_exactly_fit():
 
     # 11 pads should fit
     pads_11 = [
-        create_test_pad(f"pad_{i}", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=i)
+        create_test_pad(
+            f"pad_{i}", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=i
+        )
         for i in range(11)
     ]
 
@@ -258,7 +279,9 @@ def test_maximum_pads_that_exactly_fit():
 
     # 12 pads should not fit
     pads_12 = [
-        create_test_pad(f"pad_{i}", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=i)
+        create_test_pad(
+            f"pad_{i}", PadMapping.TOP, bondpad_width=60, cell_width=50, layout_index=i
+        )
         for i in range(12)
     ]
 

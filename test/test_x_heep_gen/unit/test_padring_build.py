@@ -123,10 +123,34 @@ def test_multiplexed_pad_mux_selector_width(sample_pad_layout):
 
     # Create multiplexed pad with 4 alternatives
     # 4 alts -> (4-1).bit_length() = 3.bit_length() = 2 bits needed
-    alt1 = SinglePad(name="alt1", type=PadType.INPUT, mapping=PadMapping.TOP, layout=sample_pad_layout, orient=Orientation.R0)
-    alt2 = SinglePad(name="alt2", type=PadType.OUTPUT, mapping=PadMapping.TOP, layout=sample_pad_layout, orient=Orientation.R0)
-    alt3 = SinglePad(name="alt3", type=PadType.INOUT, mapping=PadMapping.TOP, layout=sample_pad_layout, orient=Orientation.R0)
-    alt4 = SinglePad(name="alt4", type=PadType.INOUT, mapping=PadMapping.TOP, layout=sample_pad_layout, orient=Orientation.R0)
+    alt1 = SinglePad(
+        name="alt1",
+        type=PadType.INPUT,
+        mapping=PadMapping.TOP,
+        layout=sample_pad_layout,
+        orient=Orientation.R0,
+    )
+    alt2 = SinglePad(
+        name="alt2",
+        type=PadType.OUTPUT,
+        mapping=PadMapping.TOP,
+        layout=sample_pad_layout,
+        orient=Orientation.R0,
+    )
+    alt3 = SinglePad(
+        name="alt3",
+        type=PadType.INOUT,
+        mapping=PadMapping.TOP,
+        layout=sample_pad_layout,
+        orient=Orientation.R0,
+    )
+    alt4 = SinglePad(
+        name="alt4",
+        type=PadType.INOUT,
+        mapping=PadMapping.TOP,
+        layout=sample_pad_layout,
+        orient=Orientation.R0,
+    )
 
     mux_pad = MultiplexedPad(
         name="mux_pad",
@@ -195,8 +219,9 @@ def test_mux_selector_width_edge_cases(sample_pad_layout):
         pad_ring = PadRing(pad_group)
         pad_ring.build()
 
-        assert pad_ring.max_total_pad_mux_bitlengh == expected_bits, \
-            f"Failed for {num_alts} alternatives: expected {expected_bits} bits, got {pad_ring.max_total_pad_mux_bitlengh}"
+        assert (
+            pad_ring.max_total_pad_mux_bitlengh == expected_bits
+        ), f"Failed for {num_alts} alternatives: expected {expected_bits} bits, got {pad_ring.max_total_pad_mux_bitlengh}"
 
 
 def test_mixed_pad_types(sample_pad_layout):
@@ -245,8 +270,20 @@ def test_mixed_pad_types(sample_pad_layout):
     pad_group.add_pad(gpio)
 
     # Add multiplexed pad (2 alts)
-    alt1 = SinglePad(name="uart_rx", type=PadType.INPUT, mapping=PadMapping.TOP, layout=sample_pad_layout, orient=Orientation.R0)
-    alt2 = SinglePad(name="spi_miso", type=PadType.INOUT, mapping=PadMapping.TOP, layout=sample_pad_layout, orient=Orientation.R0)
+    alt1 = SinglePad(
+        name="uart_rx",
+        type=PadType.INPUT,
+        mapping=PadMapping.TOP,
+        layout=sample_pad_layout,
+        orient=Orientation.R0,
+    )
+    alt2 = SinglePad(
+        name="spi_miso",
+        type=PadType.INOUT,
+        mapping=PadMapping.TOP,
+        layout=sample_pad_layout,
+        orient=Orientation.R0,
+    )
 
     mux_pad = MultiplexedPad(
         name="mux_pad",
@@ -283,10 +320,38 @@ def test_side_based_separation(sample_pad_layout):
     )
 
     # Add pads to each side
-    pad_top = SinglePad(name="top", layout_index=0, type=PadType.INOUT, mapping=PadMapping.TOP, layout=sample_pad_layout, orient=Orientation.R0)
-    pad_bottom = SinglePad(name="bottom", layout_index=1, type=PadType.INOUT, mapping=PadMapping.BOTTOM, layout=sample_pad_layout, orient=Orientation.MX)
-    pad_left = SinglePad(name="left", layout_index=2, type=PadType.INOUT, mapping=PadMapping.LEFT, layout=sample_pad_layout, orient=Orientation.MX90)
-    pad_right = SinglePad(name="right", layout_index=3, type=PadType.INOUT, mapping=PadMapping.RIGHT, layout=sample_pad_layout, orient=Orientation.R90)
+    pad_top = SinglePad(
+        name="top",
+        layout_index=0,
+        type=PadType.INOUT,
+        mapping=PadMapping.TOP,
+        layout=sample_pad_layout,
+        orient=Orientation.R0,
+    )
+    pad_bottom = SinglePad(
+        name="bottom",
+        layout_index=1,
+        type=PadType.INOUT,
+        mapping=PadMapping.BOTTOM,
+        layout=sample_pad_layout,
+        orient=Orientation.MX,
+    )
+    pad_left = SinglePad(
+        name="left",
+        layout_index=2,
+        type=PadType.INOUT,
+        mapping=PadMapping.LEFT,
+        layout=sample_pad_layout,
+        orient=Orientation.MX90,
+    )
+    pad_right = SinglePad(
+        name="right",
+        layout_index=3,
+        type=PadType.INOUT,
+        mapping=PadMapping.RIGHT,
+        layout=sample_pad_layout,
+        orient=Orientation.R90,
+    )
 
     pad_group.add_pad(pad_top)
     pad_group.add_pad(pad_bottom)
