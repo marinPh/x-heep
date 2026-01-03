@@ -2,9 +2,15 @@
 
 import subprocess
 import json
+import sys
+import tempfile
 from pathlib import Path
 from typing import Dict, Any
 import pytest
+
+# Add util/ to path for importing x_heep_gen modules
+repo_root_path = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(repo_root_path / "util"))
 
 
 @pytest.fixture(scope="session")
@@ -114,3 +120,66 @@ def load_json():
             return json.load(f)
 
     return _load
+
+
+# ============================================================================
+# Unit Test Fixtures
+# ============================================================================
+
+
+@pytest.fixture
+def sample_dimension():
+    """Create a sample Dimension object for testing."""
+    from x_heep_gen.pads.PadDef import Dimension
+
+    return Dimension(width=50, length=None, name="TEST_PAD")
+
+
+@pytest.fixture
+def sample_pad_layout(sample_dimension):
+    """Create a sample Layout object for testing."""
+    from x_heep_gen.pads.PadDef import Layout, Dimension
+
+    bondpad_dim = Dimension(width=60, length=None, name="TEST_BONDPAD")
+    return Layout(bond_pad=bondpad_dim, cell_pad=sample_dimension)
+
+
+@pytest.fixture
+def sample_pad_group(sample_pad_layout):
+    """Create a minimal PadGroup for testing."""
+    from x_heep_gen.pads.PadDef import PadGroup, Dimension
+
+    fp_dim = Dimension(width=1000, length=1000)
+
+    return PadGroup(
+        name="test_group",
+        pad_edge_offset=50,
+        bondpad_edge_offset=20,
+        bp_spacing=25,
+        cell_spacing=None,
+        fp_dim=fp_dim,
+    )
+
+
+@pytest.fixture
+def temp_json_files(tmp_path):
+    """Fixture for creating temporary JSON files for testing.
+
+    Returns a function that creates JSON files from dicts.
+
+    Usage:
+        def test_something(temp_json_files):
+            file1, file2 = temp_json_files({"a": 1}, {"a": 2})
+            # ... test with file1 and file2
+    """
+
+    def _create_files(*data_dicts):
+        files = []
+        for i, data in enumerate(data_dicts):
+            file_path = tmp_path / f"test_{i}.json"
+            with open(file_path, "w") as f:
+                json.dump(data, f, indent=2)
+            files.append(file_path)
+        return files if len(files) > 1 else files[0]
+
+    return _create_files

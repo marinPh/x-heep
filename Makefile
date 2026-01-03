@@ -363,6 +363,15 @@ test_pads:
 test_pads_list:
 	$(PYTHON) -m pytest test/test_x_heep_gen/test_scenarios.py::test_scenario_discovery -v -s
 
+## Run unit tests for pad configuration framework (fast, no mcu-gen execution)
+## Tests core logic: JSON comparison, geometric positioning, PadRing orchestration
+## Examples:
+##   make test_pads_unit                              # Run all unit tests
+##   make test_pads_unit PYTEST_FLAGS="-k compare"    # Run only comparison tests
+.PHONY: test_pads_unit
+test_pads_unit:
+	$(PYTHON) -m pytest test/test_x_heep_gen/unit/ -v $(PYTEST_FLAGS)
+
 ## Generate golden reference files for all pad configuration test scenarios
 ## This should be run from main branch to establish known-good golden references
 ## @param SCENARIO=<scenario_name> to generate only specific scenario (optional)
