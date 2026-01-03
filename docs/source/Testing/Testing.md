@@ -23,14 +23,57 @@ make test TEST_FLAGS=--compile-only
 
 This script is also integrated in the CI workflow.
 
-## Pad configuration tests (HJSON to Python equivalence)
+## Pad configuration tests
 
-With the introduction of the Python-based pad configuration flow (`pad_cfg.py`), a dedicated test has been added to ensure that the two supported configuration methods remain functionally equivalent:
+The pad configuration framework includes two levels of testing: **unit tests** for isolated logic validation and **integration tests** for end-to-end equivalence verification.
 
-- HJSON-based pad configuration
-- Python-based pad configuration
+### Unit tests (fast, no subprocess execution)
 
-The goal of this test is to guarantee that both input formats produce identical generator outputs and RTL behavior.
+Unit tests validate the core logic of the pad configuration framework in isolation, without invoking `mcu-gen` or requiring golden files. These tests run in under 2 seconds and focus on three critical components:
+
+**Run unit tests:**
+
+```bash
+make test_pads_unit
+```
+
+**What they test:**
+
+1. **JSON comparison logic** (`test_compare_json.py` - 15 tests)
+   - Validates the comparison engine used by all integration tests
+   - Tests value changes, type mismatches, nested structures, list modifications
+   - Ensures accurate diff reporting with floating-point precision handling
+
+2. **Geometric positioning calculations** (`test_pad_positions.py` - 11 tests)
+   - Tests pad centering on chip edges
+   - Validates spacing calculations between multiple pads
+   - Checks bondpad offset and skip parameter computation
+   - Ensures error detection when pads don't fit within floorplan constraints
+
+3. **PadRing orchestration** (`test_padring_build.py` - 9 tests)
+   - Tests transformation from configuration objects to generation-ready pads
+   - Validates RangePad expansion (e.g., `gpio[0:4]` → 5 individual pads)
+   - Checks MultiplexedPad mux selector width calculation (e.g., 4 alternatives → 2 bits)
+   - Verifies side-based pad separation (top/bottom/left/right)
+
+**When to use unit tests:**
+- During development of new pad configuration features
+- For quick validation of logic changes
+- To test edge cases and error handling in isolation
+- Before running slower integration tests
+
+### Integration tests (HJSON to Python equivalence)
+
+With the introduction of the Python-based pad configuration flow (`pad_cfg.py`), integration tests ensure that the two supported configuration methods remain functionally equivalent:
+
+- HJSON-based pad configuration (`pad_cfg.hjson`)
+- Python-based pad configuration (`pad_cfg.py`)
+
+**Run integration tests:**
+
+```bash
+make test_pads
+```
 
 The `test_pads` target validates pad configuration consistency by executing the generator sequence twice:
 
@@ -39,9 +82,29 @@ The `test_pads` target validates pad configuration consistency by executing the 
 
 For each run:
 
-- `mcu-gen` is invoked to generate the MCU configuration.
-- The cached generator state is then used to emit the keyword-argument JSON template output (`kwargs_output.json.tpl`).
-- A Python comparison script (`pad_test.py`) validates the generated output against a golden reference JSON.
+- `mcu-gen` is invoked to generate the MCU configuration
+- The cached generator state is then used to emit the keyword-argument JSON template output (`kwargs_output.json.tpl`)
+- A Python comparison script validates the generated output against a golden reference JSON
+
+**Test scenarios:**
+
+The integration test suite includes 9 scenarios covering diverse pad configurations:
+
+- `ultra_minimal`: Bare minimum configuration (1 pad)
+- `fpga_pynq`: FPGA-specific layout with IO constraints
+- `asic_standard`: Standard ASIC padring configuration
+- `max_mux`: Maximum multiplexing complexity (16 alternatives)
+- `all_orientations`: Tests all 8 pad orientations (R0, R90, R180, R270, MX, MY, MX90, MY90)
+- `single_pad`: Edge case with exactly 1 pad
+- `max_pads`: Stress test with maximum pad density
+- `tight_spacing`: Minimal spacing between pads
+- `all_edges`: Pads distributed across all 4 chip edges
+
+**When to use integration tests:**
+- To verify HJSON ↔ Python equivalence after configuration changes
+- Before committing changes to pad configuration logic
+- To validate that generator outputs haven't regressed
+- To ensure RTL generation consistency across input formats
 
 ## Github CIs
 

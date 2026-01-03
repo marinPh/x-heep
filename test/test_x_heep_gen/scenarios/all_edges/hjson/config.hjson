@@ -1,0 +1,93 @@
+{
+  // All edges populated - tests complete edge coverage
+  "physical_attributes": {
+    "floorplan_dimensions": { "width": 2000, "length": 2000 },
+    "edge_offset": { "bondpad": 25, "pad": 90 },
+    "spacing": { "bondpad": 30 },
+    "dimensions": {
+      "EDGE_PAD": { "width": 48 }
+    }
+  },
+  "pads": {
+    "clk": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 0, "cell": "EDGE_PAD", "orient": "r90", "bondpad": "EDGE_PAD" }
+    },
+    "rst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 1, "cell": "EDGE_PAD", "orient": "r90", "bondpad": "EDGE_PAD" }
+    },
+    "uart_rx": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 2, "cell": "EDGE_PAD", "orient": "r90", "bondpad": "EDGE_PAD" }
+    },
+    "uart_tx": {
+      "num": 1,
+      "type": "output",
+      "mapping": "right",
+      "layout_attributes": { "index": 3, "cell": "EDGE_PAD", "orient": "r90", "bondpad": "EDGE_PAD" }
+    },
+    "spi_sck": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 4, "cell": "EDGE_PAD", "orient": "r0", "bondpad": "EDGE_PAD" }
+    },
+    "spi_mosi": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 5, "cell": "EDGE_PAD", "orient": "r0", "bondpad": "EDGE_PAD" }
+    },
+    "spi_miso": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 6, "cell": "EDGE_PAD", "orient": "r0", "bondpad": "EDGE_PAD" }
+    },
+    "spi_cs": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 7, "cell": "EDGE_PAD", "orient": "r0", "bondpad": "EDGE_PAD" }
+    },
+    "gpio": {
+      "num": 8,
+      "num_offset": 0,
+      "type": "inout",
+      "mapping": "left",
+      "layout_attributes": { "index": 8, "cell": "EDGE_PAD", "orient": "mx90", "bondpad": "EDGE_PAD" }
+    },
+    "i2c_scl": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 9, "cell": "EDGE_PAD", "orient": "mx", "bondpad": "EDGE_PAD" }
+    },
+    "i2c_sda": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 10, "cell": "EDGE_PAD", "orient": "mx", "bondpad": "EDGE_PAD" }
+    },
+    "pwm_0": {
+      "num": 1,
+      "type": "output",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 11, "cell": "EDGE_PAD", "orient": "mx", "bondpad": "EDGE_PAD" }
+    },
+    "pwm_1": {
+      "num": 1,
+      "type": "output",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 12, "cell": "EDGE_PAD", "orient": "mx", "bondpad": "EDGE_PAD" }
+    }
+  }
+}

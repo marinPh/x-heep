@@ -1,0 +1,136 @@
+{
+  // Maximum pad count stress test
+  "physical_attributes": {
+    "floorplan_dimensions": { "width": 3000, "length": 3000 },
+    "edge_offset": { "bondpad": 35, "pad": 150 },
+    "spacing": { "bondpad": 40 },
+    "dimensions": {
+      "MAX_PAD": { "width": 50 }
+    }
+  },
+  "pads": {
+    "clk": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 0, "cell": "MAX_PAD", "orient": "r90", "bondpad": "MAX_PAD" }
+    },
+    "rst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 1, "cell": "MAX_PAD", "orient": "r90", "bondpad": "MAX_PAD" }
+    },
+    "gpio": {
+      "num": 32,
+      "num_offset": 0,
+      "type": "inout",
+      "mapping": "left",
+      "layout_attributes": { "index": 2, "cell": "MAX_PAD", "orient": "mx90", "bondpad": "MAX_PAD" }
+    },
+    "uart_rx": {
+      "num": 1,
+      "type": "input",
+      "mapping": "top",
+      "layout_attributes": { "index": 3, "cell": "MAX_PAD", "orient": "r0", "bondpad": "MAX_PAD" }
+    },
+    "uart_tx": {
+      "num": 1,
+      "type": "output",
+      "mapping": "top",
+      "layout_attributes": { "index": 4, "cell": "MAX_PAD", "orient": "r0", "bondpad": "MAX_PAD" }
+    },
+    "spi_sck": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 5, "cell": "MAX_PAD", "orient": "r0", "bondpad": "MAX_PAD" }
+    },
+    "spi_mosi": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 6, "cell": "MAX_PAD", "orient": "r0", "bondpad": "MAX_PAD" }
+    },
+    "spi_miso": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 7, "cell": "MAX_PAD", "orient": "r0", "bondpad": "MAX_PAD" }
+    },
+    "spi_cs": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 8, "cell": "MAX_PAD", "orient": "r0", "bondpad": "MAX_PAD" }
+    },
+    "i2c_scl": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 9, "cell": "MAX_PAD", "orient": "r0", "bondpad": "MAX_PAD" }
+    },
+    "i2c_sda": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 10, "cell": "MAX_PAD", "orient": "r0", "bondpad": "MAX_PAD" }
+    },
+    "jtag_tck": {
+      "num": 1,
+      "type": "input",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 11, "cell": "MAX_PAD", "orient": "mx", "bondpad": "MAX_PAD" }
+    },
+    "jtag_tms": {
+      "num": 1,
+      "type": "input",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 12, "cell": "MAX_PAD", "orient": "mx", "bondpad": "MAX_PAD" }
+    },
+    "jtag_tdi": {
+      "num": 1,
+      "type": "input",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 13, "cell": "MAX_PAD", "orient": "mx", "bondpad": "MAX_PAD" }
+    },
+    "jtag_tdo": {
+      "num": 1,
+      "type": "output",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 14, "cell": "MAX_PAD", "orient": "mx", "bondpad": "MAX_PAD" }
+    },
+    "jtag_trst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 15, "cell": "MAX_PAD", "orient": "mx", "bondpad": "MAX_PAD" }
+    },
+    "pwm_0": {
+      "num": 1,
+      "type": "output",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 16, "cell": "MAX_PAD", "orient": "mx", "bondpad": "MAX_PAD" }
+    },
+    "pwm_1": {
+      "num": 1,
+      "type": "output",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 17, "cell": "MAX_PAD", "orient": "mx", "bondpad": "MAX_PAD" }
+    },
+    "pwm_2": {
+      "num": 1,
+      "type": "output",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 18, "cell": "MAX_PAD", "orient": "mx", "bondpad": "MAX_PAD" }
+    },
+    "pwm_3": {
+      "num": 1,
+      "type": "output",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 19, "cell": "MAX_PAD", "orient": "mx", "bondpad": "MAX_PAD" }
+    }
+  }
+}

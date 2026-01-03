@@ -1,0 +1,112 @@
+{
+  // Standard ASIC configuration with common peripherals
+  "physical_attributes": {
+    "floorplan_dimensions": { "width": 2500, "length": 2500 },
+    "edge_offset": { "bondpad": 30, "pad": 100 },
+    "spacing": { "bondpad": 35 },
+    "dimensions": {
+      "ASIC_PAD": { "width": 60 }
+    }
+  },
+  "pads": {
+    "clk": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 0, "cell": "ASIC_PAD", "orient": "r90", "bondpad": "ASIC_PAD" }
+    },
+    "rst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 1, "cell": "ASIC_PAD", "orient": "r90", "bondpad": "ASIC_PAD" }
+    },
+    "jtag_tck": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 2, "cell": "ASIC_PAD", "orient": "r90", "bondpad": "ASIC_PAD" }
+    },
+    "jtag_tms": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 3, "cell": "ASIC_PAD", "orient": "r90", "bondpad": "ASIC_PAD" }
+    },
+    "jtag_tdi": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 4, "cell": "ASIC_PAD", "orient": "r90", "bondpad": "ASIC_PAD" }
+    },
+    "jtag_tdo": {
+      "num": 1,
+      "type": "output",
+      "mapping": "right",
+      "layout_attributes": { "index": 5, "cell": "ASIC_PAD", "orient": "r90", "bondpad": "ASIC_PAD" }
+    },
+    "jtag_trst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 6, "cell": "ASIC_PAD", "orient": "r90", "bondpad": "ASIC_PAD" }
+    },
+    "uart_rx": {
+      "num": 1,
+      "type": "input",
+      "mapping": "top",
+      "layout_attributes": { "index": 7, "cell": "ASIC_PAD", "orient": "r0", "bondpad": "ASIC_PAD" }
+    },
+    "uart_tx": {
+      "num": 1,
+      "type": "output",
+      "mapping": "top",
+      "layout_attributes": { "index": 8, "cell": "ASIC_PAD", "orient": "r0", "bondpad": "ASIC_PAD" }
+    },
+    "gpio": {
+      "num": 16,
+      "num_offset": 0,
+      "type": "inout",
+      "mapping": "left",
+      "layout_attributes": { "index": 9, "cell": "ASIC_PAD", "orient": "mx90", "bondpad": "ASIC_PAD" }
+    },
+    "i2c_scl": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 10, "cell": "ASIC_PAD", "orient": "mx", "bondpad": "ASIC_PAD" }
+    },
+    "i2c_sda": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 11, "cell": "ASIC_PAD", "orient": "mx", "bondpad": "ASIC_PAD" }
+    },
+    "spi_sck": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 12, "cell": "ASIC_PAD", "orient": "mx", "bondpad": "ASIC_PAD" }
+    },
+    "spi_mosi": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 13, "cell": "ASIC_PAD", "orient": "mx", "bondpad": "ASIC_PAD" }
+    },
+    "spi_miso": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 14, "cell": "ASIC_PAD", "orient": "mx", "bondpad": "ASIC_PAD" }
+    },
+    "spi_cs": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 15, "cell": "ASIC_PAD", "orient": "mx", "bondpad": "ASIC_PAD" }
+    }
+  }
+}

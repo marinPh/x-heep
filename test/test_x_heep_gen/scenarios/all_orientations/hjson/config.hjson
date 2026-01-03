@@ -1,0 +1,74 @@
+{
+  // All pad orientations test - r0, r90, mx, mx90
+  "physical_attributes": {
+    "floorplan_dimensions": { "width": 1400, "length": 1400 },
+    "edge_offset": { "bondpad": 20, "pad": 70 },
+    "spacing": { "bondpad": 25 },
+    "dimensions": {
+      "ORIENT_PAD": { "width": 45 }
+    }
+  },
+  "pads": {
+    "clk": {
+      "num": 1,
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 0, "cell": "ORIENT_PAD", "orient": "r90", "bondpad": "ORIENT_PAD" }
+    },
+    "rst": {
+      "num": 1,
+      "active": "low",
+      "type": "input",
+      "mapping": "right",
+      "layout_attributes": { "index": 1, "cell": "ORIENT_PAD", "orient": "r90", "bondpad": "ORIENT_PAD" }
+    },
+    "pad_r0_0": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 2, "cell": "ORIENT_PAD", "orient": "r0", "bondpad": "ORIENT_PAD" }
+    },
+    "pad_r0_1": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "top",
+      "layout_attributes": { "index": 3, "cell": "ORIENT_PAD", "orient": "r0", "bondpad": "ORIENT_PAD" }
+    },
+    "pad_r90_0": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "right",
+      "layout_attributes": { "index": 4, "cell": "ORIENT_PAD", "orient": "r90", "bondpad": "ORIENT_PAD" }
+    },
+    "pad_r90_1": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "right",
+      "layout_attributes": { "index": 5, "cell": "ORIENT_PAD", "orient": "r90", "bondpad": "ORIENT_PAD" }
+    },
+    "pad_mx_0": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 6, "cell": "ORIENT_PAD", "orient": "mx", "bondpad": "ORIENT_PAD" }
+    },
+    "pad_mx_1": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "bottom",
+      "layout_attributes": { "index": 7, "cell": "ORIENT_PAD", "orient": "mx", "bondpad": "ORIENT_PAD" }
+    },
+    "pad_mx90_0": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "left",
+      "layout_attributes": { "index": 8, "cell": "ORIENT_PAD", "orient": "mx90", "bondpad": "ORIENT_PAD" }
+    },
+    "pad_mx90_1": {
+      "num": 1,
+      "type": "inout",
+      "mapping": "left",
+      "layout_attributes": { "index": 9, "cell": "ORIENT_PAD", "orient": "mx90", "bondpad": "ORIENT_PAD" }
+    }
+  }
+}
