@@ -27,30 +27,22 @@ This script is also integrated in the CI workflow.
 
 The pad configuration framework includes two levels of testing: **unit tests** for isolated logic validation and **integration tests** for end-to-end equivalence verification.
 
-### Unit tests (fast, no subprocess execution)
+### Unit tests
 
-Unit tests validate the core logic of the pad configuration framework in isolation, without invoking `mcu-gen` or requiring golden files. These tests run in under 2 seconds and focus on three critical components:
+Unit tests validate the core logic of the pad configuration framework in isolation, without invoking `mcu-gen` or requiring golden files. These tests run quickly and focus on three critical components:
 
-**Run unit tests:**
-
-```bash
-make test_pads_unit
-```
-
-**What they test:**
-
-1. **JSON comparison logic** (`test_compare_json.py` - 15 tests)
+1. **JSON comparison logic** (`test_compare_json.py`)
    - Validates the comparison engine used by all integration tests
    - Tests value changes, type mismatches, nested structures, list modifications
    - Ensures accurate diff reporting with floating-point precision handling
 
-2. **Geometric positioning calculations** (`test_pad_positions.py` - 11 tests)
+2. **Geometric positioning calculations** (`test_pad_positions.py`)
    - Tests pad centering on chip edges
    - Validates spacing calculations between multiple pads
    - Checks bondpad offset and skip parameter computation
    - Ensures error detection when pads don't fit within floorplan constraints
 
-3. **PadRing orchestration** (`test_padring_build.py` - 9 tests)
+3. **PadRing orchestration** (`test_padring_build.py`)
    - Tests transformation from configuration objects to generation-ready pads
    - Validates RangePad expansion (e.g., `gpio[0:4]` → 5 individual pads)
    - Checks MultiplexedPad mux selector width calculation (e.g., 4 alternatives → 2 bits)
@@ -61,6 +53,12 @@ make test_pads_unit
 - For quick validation of logic changes
 - To test edge cases and error handling in isolation
 - Before running slower integration tests
+
+**Run unit tests:**
+
+```bash
+make test_pads_unit
+```
 
 ### Integration tests (HJSON to Python equivalence)
 
@@ -101,7 +99,7 @@ The integration test suite includes 9 scenarios covering diverse pad configurati
 - `all_edges`: Pads distributed across all 4 chip edges
 
 **When to use integration tests:**
-- To verify HJSON ↔ Python equivalence after configuration changes
+- To verify HJSON and Python equivalence after configuration changes
 - Before committing changes to pad configuration logic
 - To validate that generator outputs haven't regressed
 - To ensure RTL generation consistency across input formats
@@ -177,10 +175,7 @@ This workflow ensures the stability and integrity of the codebase by running a s
     *   **Environment**: Runs inside a `ubuntu-latest` VM.
     *   **Steps**:
         * call `make test_pads`.
-          * generate pads using the test `pad_cfg.hjson`
-          * verify if the output json matches the golden output
-            * if not store difference `/home/marin/ma3/x-heep/test/test_x_heep_gen/diff_output.txt`
-          * repeat for `pad_cfg.py`
+        * call `make test_pads_unit`.
 
 ### Release Workflows
 
