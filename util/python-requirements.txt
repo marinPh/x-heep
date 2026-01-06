@@ -7,6 +7,7 @@ jsonref==0.2
 black==24.8.0 
 deepdiff==8.4.2
 nbformat==5.10.4
+pytest==7.4.2
 
 # Development version with OT-specific changes
 git+https://github.com/davideschiavone/fusesoc.git@ot#egg=fusesoc >= 1.11.0
