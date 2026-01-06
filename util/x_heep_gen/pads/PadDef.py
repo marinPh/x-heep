@@ -615,7 +615,9 @@ class PadGroup:
 
         attributes = cfg.get("attributes", None)
 
-        attribute_bits = attributes.get("bits") if isinstance(attributes, dict) else None
+        attribute_bits = (
+            attributes.get("bits") if isinstance(attributes, dict) else None
+        )
 
         # ---- floorplan dimensions ----
         fp = pa.get("floorplan_dimensions")
