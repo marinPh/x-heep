@@ -615,6 +615,8 @@ class PadGroup:
 
         attributes = cfg.get("attributes", None)
 
+        attribute_bits = attributes.get("bits") if isinstance(attributes, dict) else None
+
         # ---- floorplan dimensions ----
         fp = pa.get("floorplan_dimensions")
         if fp is not None:
@@ -651,6 +653,7 @@ class PadGroup:
             cell_spacing=cell_spacing,
             fp_dim=fp_dim,
             pad_attribute=attributes,
+            bits=attribute_bits,
         )
         if pad_group is None:
             raise ValueError("PadGroup could not be created.")

@@ -70,7 +70,7 @@ module pad_control #(
 % if pad.constant_attribute == False:
   assign pad_attributes_o[${pad.localparam}] = reg2hw.pad_attribute_${pad.name.lower()}.q;
 % else:
-  assign pad_attributes_o[${pad.localparam}] = ${int(xheep.get_padring().pads_attributes['resval'], 16)};
+  assign pad_attributes_o[${pad.localparam}] = ${int(xheep.get_padring().pads_attributes['resval'], 16) if xheep.get_padring().pads_attributes['resval'] is not None else 0};
 % endif
 % endif
 % endfor
