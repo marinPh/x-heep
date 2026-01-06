@@ -9,7 +9,7 @@ from typing import Dict, Any
 import pytest
 
 # Add util/ to path for importing x_heep_gen modules
-repo_root_path = Path(__file__).parent.parent.parent
+repo_root_path = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(repo_root_path / "util"))
 
 
@@ -22,7 +22,7 @@ def test_dir() -> Path:
 @pytest.fixture(scope="session")
 def repo_root() -> Path:
     """Return the repository root directory."""
-    return Path(__file__).parent.parent.parent
+    return Path(__file__).parent.parent.parent.parent
 
 
 @pytest.fixture

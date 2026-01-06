@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 # Add util/ to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "util"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "util"))
 
 from x_heep_gen.pads.PadDef import (
     PadGroup,

@@ -55,9 +55,8 @@ class GoldenGenerator:
     def __init__(self, repo_root: Path, scenarios_dir: Path):
         self.repo_root = repo_root
         self.scenarios_dir = scenarios_dir
-        self.template_file = (
-            scenarios_dir.parent / "pads" / "output" / "kwargs_output.json.tpl"
-        )
+        # Reference template is in pads/output directory
+        self.template_file = scenarios_dir.parent / "output" / "kwargs_output.json.tpl"
         self.xheep_config_cache = repo_root / "build" / "xheep_config_cache.pickle"
         self.python_cmd = self._find_python()
 
@@ -382,7 +381,7 @@ def main():
 
     # Setup paths
     script_dir = Path(__file__).parent
-    repo_root = script_dir.parent.parent
+    repo_root = script_dir.parent.parent.parent
     scenarios_dir = script_dir / "scenarios"
 
     log_info("Starting golden reference generation")

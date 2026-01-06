@@ -25,32 +25,52 @@ This script is also integrated in the CI workflow.
 
 ## Pad configuration tests
 
-The pad configuration framework includes two levels of testing: **unit tests** for isolated logic validation and **integration tests** for end-to-end equivalence verification.
+The pad configuration framework includes two levels of testing: **unit tests** for isolated logic validation and **scenario-based integration tests** for end-to-end validation across multiple configurations.
 
-### Unit tests (fast, no subprocess execution)
+### Test directory structure
 
-Unit tests validate the core logic of the pad configuration framework in isolation, without invoking `mcu-gen` or requiring golden files. These tests run in under 2 seconds and focus on three critical components:
+All pad configuration tests are located in `test/test_x_heep_gen/pads/`:
 
-**Run unit tests:**
-
-```bash
-make test_pads_unit
+```text
+test/test_x_heep_gen/pads/
+├── unit/                           # Unit tests (fast, no mcu-gen)
+│   ├── test_compare_json.py        # JSON comparison logic
+│   ├── test_pad_positions.py       # Geometric positioning
+│   └── test_padring_build.py       # PadRing orchestration
+├── scenarios/                      # Integration test configurations
+│   ├── basic_pads/                 # Standard configuration
+│   ├── minimal_pads/               # Minimal viable setup
+│   ├── ultra_minimal/              # Absolute minimum (1 pad)
+│   ├── single_pad/                 # Edge case: exactly 1 pad
+│   ├── max_pads/                   # Maximum pad density
+│   ├── tight_spacing/              # Minimal pad spacing
+│   ├── all_edges/                  # All 4 chip edges used
+│   ├── all_orientations/           # All 8 pad orientations
+│   ├── max_mux/                    # Maximum mux complexity
+│   ├── asic_standard/              # Standard ASIC layout
+│   └── fpga_pynq/                  # FPGA-specific constraints
+├── test_scenarios.py               # Scenario test runner
+├── test_pad_integration.py         # Integration tests
+├── generate_goldens.py             # Golden reference generator
+└── conftest.py                     # Pytest configuration
 ```
 
-**What they test:**
+### Unit tests
 
-1. **JSON comparison logic** (`test_compare_json.py` - 15 tests)
+Unit tests validate the core logic of the pad configuration framework in isolation, without invoking `mcu-gen` or requiring golden files. These tests run quickly and focus on three critical components:
+
+1. **JSON comparison logic** (`unit/test_compare_json.py`)
    - Validates the comparison engine used by all integration tests
    - Tests value changes, type mismatches, nested structures, list modifications
    - Ensures accurate diff reporting with floating-point precision handling
 
-2. **Geometric positioning calculations** (`test_pad_positions.py` - 11 tests)
+2. **Geometric positioning calculations** (`unit/test_pad_positions.py`)
    - Tests pad centering on chip edges
    - Validates spacing calculations between multiple pads
    - Checks bondpad offset and skip parameter computation
    - Ensures error detection when pads don't fit within floorplan constraints
 
-3. **PadRing orchestration** (`test_padring_build.py` - 9 tests)
+3. **PadRing orchestration** (`unit/test_padring_build.py`)
    - Tests transformation from configuration objects to generation-ready pads
    - Validates RangePad expansion (e.g., `gpio[0:4]` → 5 individual pads)
    - Checks MultiplexedPad mux selector width calculation (e.g., 4 alternatives → 2 bits)
@@ -62,49 +82,86 @@ make test_pads_unit
 - To test edge cases and error handling in isolation
 - Before running slower integration tests
 
-### Integration tests (HJSON to Python equivalence)
-
-With the introduction of the Python-based pad configuration flow (`pad_cfg.py`), integration tests ensure that the two supported configuration methods remain functionally equivalent:
-
-- HJSON-based pad configuration (`pad_cfg.hjson`)
-- Python-based pad configuration (`pad_cfg.py`)
-
-**Run integration tests:**
+**Run unit tests:**
 
 ```bash
-make test_pads
+make test_pads_unit                              # Run all unit tests
+make test_pads_unit PYTEST_FLAGS="-k compare"    # Run specific tests
 ```
 
-The `test_pads` target validates pad configuration consistency by executing the generator sequence twice:
+### Scenario-based integration tests
 
-1. Once using the HJSON configuration (`pad_cfg.hjson`)
-2. Once using the Python configuration (`pad_cfg.py`)
-
-For each run:
-
-- `mcu-gen` is invoked to generate the MCU configuration
-- The cached generator state is then used to emit the keyword-argument JSON template output (`kwargs_output.json.tpl`)
-- A Python comparison script validates the generated output against a golden reference JSON
+The integration test framework validates that HJSON and Python pad configurations produce identical outputs. Each test scenario is automatically discovered from the `scenarios/` directory structure.
 
 **Test scenarios:**
 
-The integration test suite includes 9 scenarios covering diverse pad configurations:
+The integration test suite includes 11 scenarios covering diverse pad configurations:
 
-- `ultra_minimal`: Bare minimum configuration (1 pad)
-- `fpga_pynq`: FPGA-specific layout with IO constraints
-- `asic_standard`: Standard ASIC padring configuration
-- `max_mux`: Maximum multiplexing complexity (16 alternatives)
-- `all_orientations`: Tests all 8 pad orientations (R0, R90, R180, R270, MX, MY, MX90, MY90)
+- `basic_pads`: Standard reference configuration (default)
+- `minimal_pads`: Minimal viable pad setup
+- `ultra_minimal`: Absolute minimum configuration (1 pad)
 - `single_pad`: Edge case with exactly 1 pad
 - `max_pads`: Stress test with maximum pad density
 - `tight_spacing`: Minimal spacing between pads
 - `all_edges`: Pads distributed across all 4 chip edges
+- `all_orientations`: Tests all 8 pad orientations (R0, R90, R180, R270, MX, MY, MX90, MY90)
+- `max_mux`: Maximum multiplexing complexity (16 alternatives)
+- `asic_standard`: Standard ASIC padring configuration
+- `fpga_pynq`: FPGA-specific layout with IO constraints
+
+**Run integration tests:**
+
+```bash
+make test_pads                              # Run all scenarios
+make test_pads PYTEST_FLAGS="-k minimal"    # Run specific scenario
+make test_pads PYTEST_FLAGS="-k hjson"      # Test only hjson format
+make test_pads PYTEST_FLAGS="-n auto"       # Run in parallel (requires pytest-xdist)
+make test_pads_list                         # List discovered scenarios
+```
+
+**How scenario tests work:**
+
+For each scenario, the test runner:
+
+1. Discovers all scenario directories in `test/test_x_heep_gen/pads/scenarios/`
+2. For each format (HJSON and Python):
+   - Runs `mcu-gen` with the scenario configuration
+   - Generates `kwargs_output.json` from the template
+   - Compares output against golden reference
+3. Validates that HJSON and Python produce identical results (cross-format consistency)
+
+**Adding new test scenarios:**
+
+To add a new scenario, simply create a directory structure:
+
+```bash
+test/test_x_heep_gen/pads/scenarios/<scenario_name>/
+├── hjson/
+│   └── config.hjson              # HJSON pad configuration
+├── python/
+│   └── config.py                 # Python pad configuration
+└── golden/
+    └── kwargs_output.json        # Expected output (generate with generate_goldens.py)
+```
+
+The test framework automatically discovers and runs the new scenario.
+
+**Generating golden references:**
+
+```bash
+cd test/test_x_heep_gen/pads
+python3 generate_goldens.py --help              # Show all options
+python3 generate_goldens.py                     # Generate for all scenarios
+python3 generate_goldens.py --scenario basic    # Generate for specific scenario
+python3 generate_goldens.py --verify            # Verify after generation
+```
 
 **When to use integration tests:**
-- To verify HJSON ↔ Python equivalence after configuration changes
+- To verify HJSON and Python equivalence after configuration changes
 - Before committing changes to pad configuration logic
 - To validate that generator outputs haven't regressed
 - To ensure RTL generation consistency across input formats
+- When adding new pad configuration scenarios
 
 ## Github CIs
 
@@ -177,10 +234,7 @@ This workflow ensures the stability and integrity of the codebase by running a s
     *   **Environment**: Runs inside a `ubuntu-latest` VM.
     *   **Steps**:
         * call `make test_pads`.
-          * generate pads using the test `pad_cfg.hjson`
-          * verify if the output json matches the golden output
-            * if not store difference `/home/marin/ma3/x-heep/test/test_x_heep_gen/diff_output.txt`
-          * repeat for `pad_cfg.py`
+        * call `make test_pads_unit`.
 
 ### Release Workflows
 
