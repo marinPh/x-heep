@@ -33,22 +33,8 @@ All pad configuration tests are located in `test/test_x_heep_gen/pads/`:
 
 ```text
 test/test_x_heep_gen/pads/
-├── unit/                           # Unit tests (fast, no mcu-gen)
-│   ├── test_compare_json.py        # JSON comparison logic
-│   ├── test_pad_positions.py       # Geometric positioning
-│   └── test_padring_build.py       # PadRing orchestration
+├── unit/                           # Unit tests
 ├── scenarios/                      # Integration test configurations
-│   ├── basic_pads/                 # Standard configuration
-│   ├── minimal_pads/               # Minimal viable setup
-│   ├── ultra_minimal/              # Absolute minimum (1 pad)
-│   ├── single_pad/                 # Edge case: exactly 1 pad
-│   ├── max_pads/                   # Maximum pad density
-│   ├── tight_spacing/              # Minimal pad spacing
-│   ├── all_edges/                  # All 4 chip edges used
-│   ├── all_orientations/           # All 8 pad orientations
-│   ├── max_mux/                    # Maximum mux complexity
-│   ├── asic_standard/              # Standard ASIC layout
-│   └── fpga_pynq/                  # FPGA-specific constraints
 ├── test_scenarios.py               # Scenario test runner
 ├── test_pad_integration.py         # Integration tests
 ├── generate_goldens.py             # Golden reference generator

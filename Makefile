@@ -371,6 +371,7 @@ test_pads_list:
 .PHONY: test_pads_unit
 test_pads_unit:
 	$(PYTHON) -m pytest test/test_x_heep_gen/pads/unit/ -v $(PYTEST_FLAGS)
+
 ## Generate golden reference files for all pad configuration test scenarios
 ## This should be run from main branch to establish known-good golden references
 ## @param SCENARIO=<scenario_name> to generate only specific scenario (optional)
