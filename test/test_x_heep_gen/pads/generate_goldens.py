@@ -56,9 +56,7 @@ class GoldenGenerator:
         self.repo_root = repo_root
         self.scenarios_dir = scenarios_dir
         # Reference template is in pads/output directory
-        self.template_file = (
-            scenarios_dir.parent / "output" / "kwargs_output.json.tpl"
-        )
+        self.template_file = scenarios_dir.parent / "output" / "kwargs_output.json.tpl"
         self.xheep_config_cache = repo_root / "build" / "xheep_config_cache.pickle"
         self.python_cmd = self._find_python()
 
