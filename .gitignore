@@ -88,9 +88,6 @@ sw/device/lib/drivers/dma/dma_regs.md
 # Openroad
 flow/OpenROAD-flow-scripts
 
-#testing outputs for pads
-test/test_x_heep_gen/pads/output/kwargs_output.json
-test/test_x_heep_gen/diff_output.txt
 
 # Automatically generated docs
 /docs/source/Configuration/x_heep_gen
@@ -99,4 +96,3 @@ test/test_x_heep_gen/diff_output.txt
 .vscode
 .continue
 private/
-test/test_x_heep_gen/scenarios/**/output/kwargs_output.json

@@ -3,3 +3,9 @@ outputs/*
 
 # Python cache
 configs/__pycache__/*
+
+# Pads test outputs (generated files, not golden references)
+pads/scenarios/**/output/kwargs_output.json
+pads/output/kwargs_output.json
+test/test_x_heep_gen/pads/scenarios/**/output/kwargs_output.json
+

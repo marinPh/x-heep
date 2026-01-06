@@ -131,9 +131,9 @@ jobs:
         run: |
           make clean-all
           # Run the test script
-          make test_pads
-          make clean-all
           make test_pads_unit
+          make clean-all
+          make test_pads
 
   check-vendor:
     name: Vendor up-to-date
