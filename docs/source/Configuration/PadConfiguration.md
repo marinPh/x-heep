@@ -168,9 +168,9 @@ The Python configuration uses the same underlying objects as the HJSON loader:
 - `PadGroup`, `Dimension`, `Layout`
 - `PadRing`, `PadMapping`
 
-Python pad configuration is selected by passing a `.py` file to `mcu-gen`:
+Python pad configuration is selected by passing a `.py` file to `mcu-gen` through `PADS_CFG`:
 
-```
+```bash
 make mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.py
 ```
 
