@@ -8,6 +8,7 @@ from .peripherals.user_peripherals_domain import UserPeripheralDomain
 from .pads.PadRing import PadRing
 from .interrupts import InterruptManager
 
+
 class XHeep:
     """
     Represents the whole X-HEEP system.
@@ -39,7 +40,6 @@ class XHeep:
         self._interrupt_manager = InterruptManager()
 
         self._extensions = {}
-
 
     # ------------------------------------------------------------
     # CPU
@@ -195,7 +195,7 @@ class XHeep:
     # ------------------------------------------------------------
     # Interrupts
     # ------------------------------------------------------------
-    
+
     def get_interrupt_manager(self) -> InterruptManager:
         """
         Access the interrupt manager for this system.
