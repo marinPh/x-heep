@@ -12,19 +12,14 @@ import json
 import math
 import sys
 
-# Blacklist of apps to skip (must match test_apps.py)
-BLACKLIST = [
-    "example_spi_read",
-    "example_spidma_powergate",
-    "example_spi_write",
-    "example_dma_subaddressing",
-    "example_pdm2pcm",
-    "example_dma_slow_mem",
-    "example_matmul_quadrilatero"
-]
-
-# Whitelist of apps - if non-empty, only these are tested
-WHITELIST = []
+# Import BLACKLIST and WHITELIST from test_apps.py to avoid duplication
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../test/test_apps'))
+try:
+    from test_apps import BLACKLIST, WHITELIST
+except ImportError as e:
+    print(f"Error: Could not import from test_apps.py: {e}", file=sys.stderr)
+    print("Make sure test_apps.py is in test/test_apps/ directory", file=sys.stderr)
+    sys.exit(1)
 
 # Target number of apps per runner (for load balancing)
 TARGET_APPS_PER_RUNNER = 6
