@@ -148,7 +148,7 @@ def generate_xheep(args):
     # Here the xheep system is built, and the missing gaps are filled
     xheep.build()
     plic_used_n_interrupts = xheep.get_interrupt_manager().get_num_interrupts()
-    plit_n_interrupts = xheep.max_intrs
+    plit_n_interrupts = xheep.get_interrupt_manager().get_max_interrupts()
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")
 

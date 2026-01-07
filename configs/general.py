@@ -32,11 +32,8 @@ from x_heep_gen.peripherals.user_peripherals import (
     I2S,
     UART,
 )
-MAX_INTERRUPTS = 64
-
 def config():
     system = XHeep(BusType.NtoM )
-    system.set_max_intrs(MAX_INTERRUPTS)
     system.set_cpu(CPU("cv32e20"))
 
     memory_ss = MemorySS()
