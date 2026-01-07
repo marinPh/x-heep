@@ -677,6 +677,9 @@ class PadGroup:
             la = pad_info.get("layout_attributes", {})
             layout_index = la.get("index", 0)
             cell_name = la.get("cell")
+            constant_attribute = PadGroup._to_bool(
+                pad_info.get("constant_attribute", False)
+            )
 
             # Build layout from dimensions
             if cell_name in dimensions:
@@ -719,6 +722,7 @@ class PadGroup:
                 active=active,
                 driven_manually=driven_manually,
                 keep_internal=keep_internal,
+                constant_attribute=constant_attribute,
             )
 
             # ----------------- multiplexer case -----------------
