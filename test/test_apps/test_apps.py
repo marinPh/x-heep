@@ -443,11 +443,6 @@ def main():
         "--apps",
         help="Comma-separated list of specific apps to test. If not provided, all apps are tested.",
     )
-    parser.add_argument(
-        "--simulator-only",
-        action="store_true",
-        help="Skip building the simulator and only run simulations (useful when simulator is pre-built).",
-    )
     args = parser.parse_args()
 
     # Override the default list of compilers if specified
@@ -499,7 +494,7 @@ def main():
     # Get a list with all the applications we want to test
     app_list = get_apps("sw/applications", app_filter=app_filter)
 
-    if not args.compile_only and not args.simulator_only:
+    if not args.compile_only:
         for simulator in SIMULATORS:
             build_simulator(simulator, args.dry_run, verbose=not args.table)
 
