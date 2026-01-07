@@ -93,7 +93,7 @@
     interrupts: {
         used: ${plic_used_n_interrupts}
         total: ${plit_n_interrupts}
-        list: ${intr_manager.get_simple_interrupts()}
+        list: ${intr_manager.get_unpacked_interrupts()}
     }
 
     // Pad Configuration

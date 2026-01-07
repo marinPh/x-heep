@@ -101,7 +101,7 @@ class InterruptManager:
     def get_external_interrupts(self) -> Dict[str, Interrupt]:
         possible_ids = list(
             set(range(0, self._max_interrupts)).difference(
-                set(self.get_simple_interrupts().values())
+                set(self.get_unpacked_interrupts().values())
             )
         )
         result = {
@@ -150,7 +150,7 @@ class InterruptManager:
 
         return result
 
-    def get_simple_interrupts(self) -> Dict[str, int]:
+    def get_unpacked_interrupts(self) -> Dict[str, int]:
 
         temp = dict()
         for name, irq in self._interrupts.items():
