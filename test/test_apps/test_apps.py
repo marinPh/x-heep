@@ -262,14 +262,21 @@ def build_simulator(simulator, dry_run=False, verbose=True):
         )
 
 
-def get_apps(apps_dir):
+def get_apps(apps_dir, app_filter=None):
     """
-    Get all apps from apps_dir. If the WHITELIST contains any elements,
+    Get all apps from apps_dir. If app_filter is provided (list of app names),
+    only those apps are returned. If the WHITELIST contains any elements,
     it only obtains those apps. Skips the BLACKLIST apps.
 
     Returns the list of apps.
     """
-    if not WHITELIST:
+    if app_filter:
+        # Filter to only the specified apps
+        app_list = [
+            Application(app) for app in app_filter
+            if os.path.exists(os.path.join(apps_dir, app))
+        ]
+    elif not WHITELIST:
         app_list = [Application(app) for app in os.listdir(apps_dir)]
     else:
         app_list = [
@@ -432,6 +439,10 @@ def main():
         "--compiler-prefixes",
         help="Override default compiler prefixes. Can be a single prefix (shared among all the compilers) or a comma-separated list (a different prefix for each compiler).",
     )
+    parser.add_argument(
+        "--apps",
+        help="Comma-separated list of specific apps to test. If not provided, all apps are tested.",
+    )
     args = parser.parse_args()
 
     # Override the default list of compilers if specified
@@ -475,8 +486,13 @@ def main():
             )
             exit(1)
 
+    # Parse app filter if provided
+    app_filter = None
+    if args.apps:
+        app_filter = [app.strip() for app in args.apps.split(',')]
+
     # Get a list with all the applications we want to test
-    app_list = get_apps("sw/applications")
+    app_list = get_apps("sw/applications", app_filter=app_filter)
 
     if not args.compile_only:
         for simulator in SIMULATORS:
