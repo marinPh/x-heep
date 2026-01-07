@@ -136,10 +136,11 @@ The test framework automatically discovers and runs the new scenario.
 
 ```bash
 cd test/test_x_heep_gen/pads
-python3 generate_goldens.py --help              # Show all options
-python3 generate_goldens.py                     # Generate for all scenarios
-python3 generate_goldens.py --scenario basic    # Generate for specific scenario
-python3 generate_goldens.py --verify            # Verify after generation
+make golden                             # Generate all scenarios
+make golden SCENARIO=basic              # Generate a specific scenario
+make golden-from-main                   # Regenerate from main and verify
+make golden-verify                      # Verify existing goldens (dry-run)
+make golden-hjson                       # Generate using only HJSON configs
 ```
 
 **When to use integration tests:**
