@@ -79,7 +79,7 @@ class InterruptManager:
     # ================================================================
     # Query Methods
     # ================================================================
-    
+
     def get_max_interrupts(self) -> int:
         return self._max_interrupts
 
