@@ -79,6 +79,9 @@ class InterruptManager:
     # ================================================================
     # Query Methods
     # ================================================================
+    
+    def get_max_interrupts(self) -> int:
+        return self._max_interrupts
 
     def get_interrupts(self) -> Dict[str, Interrupt]:
 
@@ -193,14 +196,6 @@ class InterruptManager:
     # ================================================================
     # Configuration Methods
     # ================================================================
-
-    def set_max_intrs(self, max_interrupts: int):
-        """
-        Set the maximum number of interrupts supported.
-
-        :param int max_interrupts: Maximum number of interrupts
-        """
-        self._max_interrupts = max_interrupts
 
     def set_interrupts(self, interrupts: Dict[str, int]):
         """

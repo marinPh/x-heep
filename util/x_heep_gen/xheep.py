@@ -8,9 +8,6 @@ from .peripherals.user_peripherals_domain import UserPeripheralDomain
 from .pads.PadRing import PadRing
 from .interrupts import InterruptManager
 
-MAX_INTERRUPTS = 64
-
-
 class XHeep:
     """
     Represents the whole X-HEEP system.
@@ -24,7 +21,7 @@ class XHeep:
     IL_COMPATIBLE_BUS_TYPES = [BusType.NtoM]
     """Constant set of bus types that support interleaved memory banks"""
 
-    def __init__(self, bus_type: BusType, max_intrs: int = MAX_INTERRUPTS):
+    def __init__(self, bus_type: BusType):
         if not type(bus_type) is BusType:
             raise TypeError(
                 f"XHeep.bus_type should be of type BusType not {type(self._bus_type)}"
@@ -43,7 +40,6 @@ class XHeep:
 
         self._extensions = {}
 
-        self.max_intrs = max_intrs
 
     # ------------------------------------------------------------
     # CPU
@@ -199,21 +195,7 @@ class XHeep:
     # ------------------------------------------------------------
     # Interrupts
     # ------------------------------------------------------------
-
-    def set_max_intrs(self, max_intrs: int):
-        """
-        Sets the maximum number of interrupts for the system.
-
-        :param int max_intrs: The maximum number of interrupts.
-        :raise TypeError: when max_intrs is of incorrect type.
-        """
-        if not isinstance(max_intrs, int):
-            raise TypeError(
-                f"XHeep.max_intrs should be of type int not {type(self.max_intrs)}"
-            )
-        self.max_intrs = max_intrs
-        self._interrupt_manager.set_max_intrs(max_intrs)
-
+    
     def get_interrupt_manager(self) -> InterruptManager:
         """
         Access the interrupt manager for this system.
