@@ -129,12 +129,7 @@ extern "C" {
 
 #define QTY_INTR ${(intr_manager._max_interrupts)}
 % for key, value in intr_manager.get_simple_interrupts().items():
-% if key.upper() == 'I2C_INTR_HOST_TIMEOUT':
-// FIXME: temporary workaround for I2C timeout interrupt name change
-#define INTR_HOST_TIMEOUT ${value}
-% else:
 #define ${key.upper()} ${value}
-% endif
 % endfor
 % for key, intr_obj in external_interrupts.items():
 #define ${key.upper()} ${intr_obj.id}

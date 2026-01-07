@@ -64,7 +64,7 @@
 /**
  * Start and end ID of the I2C interrupt request lines
 */
-#define I2C_ID_END      INTR_HOST_TIMEOUT
+#define I2C_ID_END      I2C_INTR_HOST_TIMEOUT
 
 /**
  * ID of the SPI interrupt request line
