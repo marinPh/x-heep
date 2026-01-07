@@ -371,32 +371,6 @@ test_pads_list:
 .PHONY: test_pads_unit
 test_pads_unit:
 	$(PYTHON) -m pytest test/test_x_heep_gen/pads/unit/ -v $(PYTEST_FLAGS)
-## Generate golden reference files for all pad configuration test scenarios
-## This should be run from main branch to establish known-good golden references
-## @param SCENARIO=<scenario_name> to generate only specific scenario (optional)
-## Examples:
-##   make test_pads_golden                           # Generate all goldens from current state
-##   make test_pads_golden_from_main                 # Checkout main, generate, return to branch
-##   make test_pads_golden SCENARIO=minimal_pads     # Generate only minimal_pads scenario
-.PHONY: test_pads_golden
-test_pads_golden:
-	$(PYTHON) test/test_x_heep_gen/pads/generate_goldens.py $(if $(SCENARIO),--scenario $(SCENARIO))
-
-## Generate golden references from main branch (safe - returns to original branch)
-.PHONY: test_pads_golden_from_main
-test_pads_golden_from_main:
-	$(PYTHON) test/test_x_heep_gen/pads/generate_goldens.py --from-main --verify
-
-## Verify existing golden reference files are valid
-.PHONY: test_pads_golden_verify
-test_pads_golden_verify:
-	$(PYTHON) test/test_x_heep_gen/pads/generate_goldens.py --verify --dry-run
-
-## Generate golden references from hjson configs only (skip python configs)
-## Use this when Python config support is not yet available on current branch
-.PHONY: test_pads_golden_hjson
-test_pads_golden_hjson:
-	$(PYTHON) test/test_x_heep_gen/pads/generate_goldens.py --hjson-only $(if $(SCENARIO),--scenario $(SCENARIO))
 
 ## Builds the specified app, loads it into the programmer's flash and then opens picocom to see the output
 ## @param PROJECT=<folder_name_of_the_project_to_be_built>

@@ -136,7 +136,6 @@ class PadRing:
         are populated and ready for template consumption.
         """
         pads_attributes_bits = self.pad_group.bits
-
         if not pads_attributes_bits:
             self.pads_attributes = None
             pads_attributes_bits = "-1:0"

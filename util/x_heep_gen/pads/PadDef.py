@@ -615,6 +615,10 @@ class PadGroup:
 
         attributes = cfg.get("attributes", None)
 
+        attribute_bits = (
+            attributes.get("bits") if isinstance(attributes, dict) else None
+        )
+
         # ---- floorplan dimensions ----
         fp = pa.get("floorplan_dimensions")
         if fp is not None:
@@ -651,6 +655,7 @@ class PadGroup:
             cell_spacing=cell_spacing,
             fp_dim=fp_dim,
             pad_attribute=attributes,
+            bits=attribute_bits,
         )
         if pad_group is None:
             raise ValueError("PadGroup could not be created.")
@@ -672,6 +677,9 @@ class PadGroup:
             la = pad_info.get("layout_attributes", {})
             layout_index = la.get("index", 0)
             cell_name = la.get("cell")
+            constant_attribute = PadGroup._to_bool(
+                pad_info.get("constant_attribute", False)
+            )
 
             # Build layout from dimensions
             if cell_name in dimensions:
@@ -714,6 +722,7 @@ class PadGroup:
                 active=active,
                 driven_manually=driven_manually,
                 keep_internal=keep_internal,
+                constant_attribute=constant_attribute,
             )
 
             # ----------------- multiplexer case -----------------
