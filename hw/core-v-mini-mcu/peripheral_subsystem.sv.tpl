@@ -391,22 +391,22 @@ ${reg_to_tlul_inst('reg_to_tlul_i2c_i', 'i2c_tl_h2d', 'i2c_tl_d2h', 'I2C_IDX')}
   assign cio_scl_en_o = '0;
   assign cio_sda_o = '0;
   assign cio_sda_en_o = '0;
-  assign intr_fmt_watermark = '0;
-  assign intr_rx_watermark = '0;
-  assign intr_fmt_overflow = '0;
-  assign intr_rx_overflow = '0;
-  assign intr_nak = '0;
-  assign intr_scl_interference = '0;
-  assign intr_sda_interference = '0;
-  assign intr_stretch_timeout = '0;
-  assign intr_sda_unstable = '0;
-  assign intr_trans_complete = '0;
-  assign intr_tx_empty = '0;
-  assign intr_tx_nonempty = '0;
-  assign intr_tx_overflow = '0;
-  assign intr_acq_overflow = '0;
-  assign intr_ack_stop = '0;
-  assign intr_host_timeout = '0;
+  assign i2c_intr_fmt_watermark = '0;
+  assign i2c_intr_rx_watermark = '0;
+  assign i2c_intr_fmt_overflow = '0;
+  assign i2c_intr_rx_overflow = '0;
+  assign i2c_intr_nak = '0;
+  assign i2c_intr_scl_interference = '0;
+  assign i2c_intr_sda_interference = '0;
+  assign i2c_intr_stretch_timeout = '0;
+  assign i2c_intr_sda_unstable = '0;
+  assign i2c_intr_trans_complete = '0;
+  assign i2c_intr_tx_empty = '0;
+  assign i2c_intr_tx_nonempty = '0;
+  assign i2c_intr_tx_overflow = '0;
+  assign i2c_intr_acq_overflow = '0;
+  assign i2c_intr_ack_stop = '0;
+  assign i2c_intr_host_timeout = '0;
 % endif
 
 % if user_peripheral_domain.contains_peripheral('rv_timer'):
