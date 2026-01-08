@@ -73,8 +73,7 @@ class InterruptManager:
 
     def extend_interrupts(self, interrupts: Dict[str, Interrupt]):
         for name, irq in interrupts.items():
-            if name not in self._interrupts:
-                self._interrupts[name] = irq
+            self.add_interrupt(name, irq)
 
     # ================================================================
     # Query Methods
@@ -84,7 +83,6 @@ class InterruptManager:
         return self._max_interrupts
 
     def get_interrupts(self) -> Dict[str, Interrupt]:
-
         return deepcopy(self._interrupts)
 
     def get_num_interrupts(self) -> int:

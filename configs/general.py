@@ -85,7 +85,6 @@ def config():
     system.add_peripheral_domain(base_peripheral_domain)
     system.add_peripheral_domain(user_peripheral_domain)
 
-    base_intr = {"null_intr": Interrupt(0)}
-    system.get_interrupt_manager().extend_interrupts(base_intr)
+    system.get_interrupt_manager().add_interrupt("null_intr", Interrupt(0))
 
     return system
