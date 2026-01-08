@@ -79,25 +79,17 @@ jobs:
           path: ~/.ccache
           key: ccache-verilator-${{ github.run_id }}
           restore-keys: ccache-verilator-
-      - name: Configure ccache
+      - name: Configure ccache, generate MCU config, and build Verilator simulator
         shell: bash -l {0}
         run: |
           ccache --version
           ccache --max-size=2G
           ccache --zero-stats
-      - name: Generate MCU config
-        shell: bash -l {0}
-        run: |
           make mcu-gen X_HEEP_CFG=configs/ci.hjson
-      - name: Build Verilator simulator
-        shell: bash -l {0}
-        run: |
           export CC="ccache gcc"
           export CXX="ccache g++"
           make verilator-build
-      - name: Show ccache stats
-        shell: bash -l {0}
-        run: ccache --show-stats
+          ccache --show-stats
 
   compile-apps:
     name: Compile All Apps
@@ -125,22 +117,17 @@ jobs:
           echo "Cache key used: ccache-compile-${{ github.run_id }}"
           echo "CCCache directory: $(ls -lh ~/.ccache 2>/dev/null | head -5)"
           ccache --version
-      - name: Configure ccache
+      - name: Configure ccache and compile all apps with GCC and Clang
         shell: bash -l {0}
         run: |
           ccache --version
           ccache --max-size=2G
           ccache --zero-stats
-      - name: Compile all apps with GCC and Clang
-        shell: bash -l {0}
-        run: |
           export CC="ccache gcc"
           export CXX="ccache g++"
           make mcu-gen X_HEEP_CFG=configs/ci.hjson && \
           python3 test/test_apps/test_apps.py --compilers gcc,clang,gcc --compiler-paths /tools/riscv --compiler-prefixes riscv32-corev-,riscv32-unknown-,riscv32-unknown- --table --compile-only
-      - name: Show ccache stats
-        shell: bash -l {0}
-        run: ccache --show-stats
+          ccache --show-stats
         
   simulate-apps:
     name: Simulate Apps (Batch ${{ matrix.batch }})
@@ -171,34 +158,18 @@ jobs:
           path: ~/.ccache
           key: ccache-compile-${{ github.run_id }}
           restore-keys: ccache-compile-
-      - name: Verify cache restoration
+      - name: Verify cache restoration and simulate subset of apps
         shell: bash -l {0}
         run: |
-          echo "=== Cache Keys Used (Run ${{ github.run_id }}) ==="
-          echo "Verilator cache key: ccache-verilator-${{ github.run_id }}"
-          echo "Compile cache key:   ccache-compile-${{ github.run_id }}"
-          echo ""
-          echo "=== Restored Cache Size ==="
           du -sh ~/.ccache 2>/dev/null || echo "No cache directory (will create fresh)"
-          echo ""
-          echo "=== Simulating Apps (Batch ${{ matrix.batch }}) ==="
-          echo "Apps: ${{ matrix.apps }}"
-      - name: Configure ccache
-        shell: bash -l {0}
-        run: |
           ccache --version
           ccache --max-size=2G
           ccache --zero-stats
-      - name: Compile and simulate subset of apps
-        shell: bash -l {0}
-        run: |
           export CC="ccache gcc"
           export CXX="ccache g++"
           make mcu-gen X_HEEP_CFG=configs/ci.hjson && \
           python3 test/test_apps/test_apps.py --apps "${{ matrix.apps }}" --compilers gcc --compiler-paths /tools/riscv --compiler-prefixes riscv32-corev- --table
-      - name: Show ccache stats
-        shell: bash -l {0}
-        run: ccache --show-stats
+          ccache --show-stats
 
   lint:
     name: Lint Generated Files
