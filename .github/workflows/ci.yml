@@ -76,12 +76,13 @@ jobs:
       - name: Restore ccache
         uses: actions/cache@v4
         with:
-          path: ~/.ccache
-          key: ccache-verilator-${{ github.run_id }}
-          restore-keys: ccache-verilator-
+          path: ~/.ccache-verilator
+          key: ${{ runner.os }}-ccache-verilator-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-ccache-verilator-
       - name: Configure ccache, generate MCU config, and build Verilator simulator
         shell: bash -l {0}
         run: |
+          export CCACHE_DIR=~/.ccache-verilator
           ccache --version
           ccache --max-size=2G
           ccache --zero-stats
@@ -108,18 +109,13 @@ jobs:
       - name: Restore ccache
         uses: actions/cache@v4
         with:
-          path: ~/.ccache
-          key: ccache-compile-${{ github.run_id }}
-          restore-keys: ccache-compile-
-      - name: Verify compile cache key
-        shell: bash -l {0}
-        run: |
-          echo "Cache key used: ccache-compile-${{ github.run_id }}"
-          echo "CCCache directory: $(ls -lh ~/.ccache 2>/dev/null | head -5)"
-          ccache --version
+          path: ~/.ccache-compile
+          key: ${{ runner.os }}-ccache-compile-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-ccache-compile-
       - name: Configure ccache and compile all apps with GCC and Clang
         shell: bash -l {0}
         run: |
+          export CCACHE_DIR=~/.ccache-compile
           ccache --version
           ccache --max-size=2G
           ccache --zero-stats
@@ -149,19 +145,32 @@ jobs:
       - name: Restore verilator cache from build-verilator
         uses: actions/cache@v4
         with:
-          path: ~/.ccache
-          key: ccache-verilator-${{ github.run_id }}
-          restore-keys: ccache-verilator-
+          path: ~/.ccache-verilator
+          key: ${{ runner.os }}-ccache-verilator-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-ccache-verilator-
       - name: Restore compile cache from compile-apps
         uses: actions/cache@v4
         with:
-          path: ~/.ccache
-          key: ccache-compile-${{ github.run_id }}
-          restore-keys: ccache-compile-
-      - name: Verify cache restoration and simulate subset of apps
+          path: ~/.ccache-compile
+          key: ${{ runner.os }}-ccache-compile-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-ccache-compile-
+      - name: Merge caches and simulate subset of apps
         shell: bash -l {0}
         run: |
-          du -sh ~/.ccache 2>/dev/null || echo "No cache directory (will create fresh)"
+          # Merge both caches into a single directory for ccache to use
+          mkdir -p ~/.ccache
+          if [ -d ~/.ccache-verilator ]; then
+            echo "Merging verilator cache..."
+            cp -r ~/.ccache-verilator/* ~/.ccache/ 2>/dev/null || true
+          fi
+          if [ -d ~/.ccache-compile ]; then
+            echo "Merging compile cache..."
+            cp -r ~/.ccache-compile/* ~/.ccache/ 2>/dev/null || true
+          fi
+
+          du -sh ~/.ccache 2>/dev/null || echo "No cache directory"
+
+          export CCACHE_DIR=~/.ccache
           ccache --version
           ccache --max-size=2G
           ccache --zero-stats
