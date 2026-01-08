@@ -8,7 +8,6 @@ on:
 
 permissions:
   packages: read
-  actions: write  # Required for cache deletion
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -59,126 +58,94 @@ jobs:
           python3 .github/scripts/generate_test_matrix.py > matrix.json
           echo "matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
 
-  build-verilator:
-    name: Build Verilator Simulator
+  # 1. BUILD SIMULATOR (HW)
+  build-simulator:
+    name: Build Verilator
     runs-on: ubuntu-latest
-    needs: [determine-image-tag, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
+    needs: determine-image-tag
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Setup Project
-        uses: ./.github/actions/setup-project
-      - name: Install ccache
-        shell: bash -l {0}
-        run: apt-get update && apt-get install -y ccache
-      - name: Restore ccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache-verilator
-          key: ${{ runner.os }}-ccache-verilator-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-ccache-verilator-
-      - name: Configure ccache, generate MCU config, and build Verilator simulator
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-project
+      - name: Build Binary
         shell: bash -l {0}
         run: |
-          export CCACHE_DIR=~/.ccache-verilator
-          ccache --version
-          ccache --max-size=2G
-          ccache --zero-stats
           make mcu-gen X_HEEP_CFG=configs/ci.hjson
-          export CC="ccache gcc"
-          export CXX="ccache g++"
-          make verilator-build
-          ccache --show-stats
+          # Explicitly build the binary
+          fusesoc --cores-root . run --target=sim --tool=verilator --build openhwgroup.org:systems:core-v-mini-mcu
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sim-binary
+          path: build/openhwgroup.org_systems_core-v-mini-mcu_0/sim-verilator/Vtestharness
 
+  # 2. COMPILE APPS (SW)
   compile-apps:
-    name: Compile All Apps
+    name: Compile all Apps 
     runs-on: ubuntu-latest
-    needs: [determine-image-tag, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
+    needs: [determine-image-tag, generate-app-matrix, build-simulator, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
+    strategy:
+      fail-fast: false
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Setup Project
-        uses: ./.github/actions/setup-project
-      - name: Install ccache
-        shell: bash -l {0}
-        run: apt-get update && apt-get install -y ccache
-      - name: Restore ccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache-compile
-          key: ${{ runner.os }}-ccache-compile-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-ccache-compile-
-      - name: Configure ccache and compile all apps with GCC and Clang
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-project
+      - name: Compile Only
         shell: bash -l {0}
         run: |
-          export CCACHE_DIR=~/.ccache-compile
-          ccache --version
-          ccache --max-size=2G
-          ccache --zero-stats
-          export CC="ccache gcc"
-          export CXX="ccache g++"
-          make mcu-gen X_HEEP_CFG=configs/ci.hjson && \
-          python3 test/test_apps/test_apps.py --compilers gcc,clang,gcc --compiler-paths /tools/riscv --compiler-prefixes riscv32-corev-,riscv32-unknown-,riscv32-unknown- --table --compile-only
-          ccache --show-stats
-        
+          make mcu-gen X_HEEP_CFG=configs/ci.hjson
+          # Compiles to build/software/<app>/<compiler>/<app>.hex (Standard structure)
+          python3 test/test_apps/test_apps.py --compilers gcc --compile-only
+      
+      # Flatten the hex files for easier usage in the next step
+      - name: Prepare Artifacts
+        run: |
+          mkdir -p hex_artifacts
+          find build/software -name "*.hex" -exec cp {} hex_artifacts/ \;
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apps-hex-all
+          path: hex_artifacts/*.hex
+
+  # 3. RUN SIMULATION (Distributed)
   simulate-apps:
-    name: Simulate Apps (Batch ${{ matrix.batch }})
+    name: Simulate (Batch ${{ matrix.batch }})
     runs-on: ubuntu-latest
-    needs: [determine-image-tag, generate-app-matrix, build-verilator, compile-apps, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
+    needs: [determine-image-tag, generate-app-matrix, build-simulator, compile-apps, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
     strategy:
       matrix: ${{ fromJson(needs.generate-app-matrix.outputs.matrix) }}
       fail-fast: false
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Setup Project
-        uses: ./.github/actions/setup-project
-      - name: Install ccache
-        shell: bash -l {0}
-        run: apt-get update && apt-get install -y ccache
-      - name: Restore verilator cache from build-verilator
-        uses: actions/cache@v4
+      - uses: actions/checkout@v4 # Check out to get test_apps.py script
+      
+      # Download Binary
+      - uses: actions/download-artifact@v4
         with:
-          path: ~/.ccache-verilator
-          key: ${{ runner.os }}-ccache-verilator-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-ccache-verilator-
-      - name: Restore compile cache from compile-apps
-        uses: actions/cache@v4
+          name: sim-binary
+          path: ./sim_bin
+          
+      # Download Hex Files
+      - uses: actions/download-artifact@v4
         with:
-          path: ~/.ccache-compile
-          key: ${{ runner.os }}-ccache-compile-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-ccache-compile-
-      - name: Merge caches and simulate subset of apps
+          name: apps-hex-${{ matrix.batch }}
+          path: ./hex_bin
+
+      - name: Run Simulation
         shell: bash -l {0}
         run: |
-          # Merge both caches into a single directory for ccache to use
-          mkdir -p ~/.ccache
-          if [ -d ~/.ccache-verilator ]; then
-            echo "Merging verilator cache..."
-            cp -r ~/.ccache-verilator/* ~/.ccache/ 2>/dev/null || true
-          fi
-          if [ -d ~/.ccache-compile ]; then
-            echo "Merging compile cache..."
-            cp -r ~/.ccache-compile/* ~/.ccache/ 2>/dev/null || true
-          fi
-
-          du -sh ~/.ccache 2>/dev/null || echo "No cache directory"
-
-          export CCACHE_DIR=~/.ccache
-          ccache --version
-          ccache --max-size=2G
-          ccache --zero-stats
-          export CC="ccache gcc"
-          export CXX="ccache g++"
-          make mcu-gen X_HEEP_CFG=configs/ci.hjson && \
-          python3 test/test_apps/test_apps.py --apps "${{ matrix.apps }}" --compilers gcc --compiler-paths /tools/riscv --compiler-prefixes riscv32-corev- --table
-          ccache --show-stats
+          chmod +x ./sim_bin/Vtestharness
+          
+          # Run your script in "Execution Mode"
+          # It skips 'make' and calls Vtestharness directly with hex files
+          python3 test/test_apps/test_apps.py \
+            --apps "${{ matrix.apps }}" \
+            --simulator-bin ./sim_bin/Vtestharness \
+            --hex-dir ./hex_bin \
+            --table
 
   lint:
     name: Lint Generated Files
@@ -268,28 +235,3 @@ jobs:
             util/c_gen.py
             test/test_x_heep_gen
           version: "~= 24.8.0"
-
-  cleanup-cache:
-    name: Clean Up Run Caches
-    runs-on: ubuntu-latest
-    if: always()  # Run even if previous jobs fail
-    needs: [compile-apps, simulate-apps]
-    steps:
-      - name: Delete current run's caches
-        run: |
-          echo "Cleaning up caches from current run (${{ github.run_id }})..."
-
-          # Get list of all caches
-          CACHES=$(gh actions-cache list -R ${{ github.repository }} --json key | jq -r '.[] | .key')
-
-          CURRENT_RUN_ID="${{ github.run_id }}"
-
-          # Delete caches for current run only (intra-run only, fresh each run)
-          for CACHE_KEY in $CACHES; do
-            if [[ $CACHE_KEY == *"$CURRENT_RUN_ID" ]]; then
-              echo "Deleting cache: $CACHE_KEY"
-              gh actions-cache delete "$CACHE_KEY" -R ${{ github.repository }} --confirm || true
-            fi
-          done
-
-          echo "Cache cleanup completed"
