@@ -157,8 +157,6 @@ def generate_xheep(args):
 
     # Here the xheep system is built, and the missing gaps are filled
     xheep.build()
-    plic_used_n_interrupts = xheep.get_interrupt_manager().get_num_interrupts()
-    plit_n_interrupts = xheep.get_interrupt_manager().get_max_interrupts()
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")
 
@@ -185,8 +183,6 @@ def generate_xheep(args):
         "flash_mem_size_address": flash_mem_size_address,
         "stack_size": stack_size,
         "heap_size": heap_size,
-        "plic_used_n_interrupts": plic_used_n_interrupts,
-        "plit_n_interrupts": plit_n_interrupts,
     }
 
     return kwargs
