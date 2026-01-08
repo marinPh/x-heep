@@ -91,8 +91,8 @@
 
     // Interrupt Configuration
     interrupts: {
-        used: ${plic_used_n_interrupts}
-        total: ${plit_n_interrupts}
+        used: ${intr_manager.get_num_interrupts()}
+        total: ${intr_manager.get_max_interrupts()}
         list: ${intr_manager.get_unpacked_interrupts()}
     }
 
