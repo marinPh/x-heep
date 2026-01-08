@@ -83,7 +83,7 @@ jobs:
   compile-apps:
     name: Compile all Apps 
     runs-on: ubuntu-latest
-    needs: [determine-image-tag, generate-app-matrix, build-simulator, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
+    needs: [determine-image-tag, generate-app-matrix, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
     strategy:
       fail-fast: false
     container:
