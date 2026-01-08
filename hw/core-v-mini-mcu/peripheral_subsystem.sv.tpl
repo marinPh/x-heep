@@ -161,8 +161,8 @@ module peripheral_subsystem
   // Assign internal interrupts
 % for name, irq in intrs:
 % if name == "null_intr":
-  assign intr_vector[${irq.id}] = 1'b0;  // ID [0] is a special case and must be tied to zero. ;
-% elif irq.num>1:
+  assign intr_vector[${irq.id}] = 1'b0;  // ID [0] is a special case and must be tied to zero
+% elif irq.num > 1:
   assign intr_vector[${irq.id+irq.num-1}:${irq.id}] = ${name};
 % elif not name.startswith('EXT_INTR'): 
   assign intr_vector[${irq.id}] = ${name};
