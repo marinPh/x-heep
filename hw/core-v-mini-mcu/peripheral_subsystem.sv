@@ -151,7 +151,7 @@ module peripheral_subsystem
   assign unused_irq_id = irq_id;
 
   // Assign internal interrupts
-  assign intr_vector[0] = 1'b0;  // ID [0] is a special case and must be tied to zero. ;
+  assign intr_vector[0] = 1'b0;  // ID [0] is a special case and must be tied to zero
   assign intr_vector[1] = uart_intr_tx_watermark;
   assign intr_vector[2] = uart_intr_rx_watermark;
   assign intr_vector[3] = uart_intr_tx_empty;
