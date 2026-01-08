@@ -8,9 +8,7 @@
     dma = base_peripheral_domain.get_dma()
     memory_ss = xheep.memory_ss()
     intr_manager = xheep.get_interrupt_manager()
-    possible_ids = list(set(range(0, intr_manager._max_interrupts)).difference(set(intr_manager.get_unpacked_interrupts().values())))
     external_interrupts = intr_manager.get_external_interrupts()
-    external_domains = len(external_interrupts)
 %>
 
 #ifndef COREV_MINI_MCU_H_
@@ -127,7 +125,7 @@ extern "C" {
 #define FLASH_MEM_END_ADDRESS (FLASH_MEM_START_ADDRESS + FLASH_MEM_SIZE)
 
 
-#define QTY_INTR ${(intr_manager._max_interrupts)}
+#define QTY_INTR ${(intr_manager.get_max_interrupts())}
 % for key, value in intr_manager.get_unpacked_interrupts().items():
 #define ${key.upper()} ${value}
 % endfor
