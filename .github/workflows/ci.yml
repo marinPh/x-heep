@@ -70,6 +70,9 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Project
         uses: ./.github/actions/setup-project
+      - name: Install ccache
+        shell: bash -l {0}
+        run: apt-get update && apt-get install -y ccache
       - name: Restore ccache
         uses: actions/cache@v4
         with:
@@ -107,6 +110,9 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Project
         uses: ./.github/actions/setup-project
+      - name: Install ccache
+        shell: bash -l {0}
+        run: apt-get update && apt-get install -y ccache
       - name: Restore ccache
         uses: actions/cache@v4
         with:
@@ -150,6 +156,9 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Project
         uses: ./.github/actions/setup-project
+      - name: Install ccache
+        shell: bash -l {0}
+        run: apt-get update && apt-get install -y ccache
       - name: Restore verilator cache from build-verilator
         uses: actions/cache@v4
         with:
