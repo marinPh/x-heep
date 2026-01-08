@@ -139,7 +139,7 @@ def generate_xheep(args):
 
     debug_size_address = string2int(config["debug"]["length"])
 
-    # FIXME: couldnt that simple be a peripheral or a super object that is simple adress map ?
+    # FIXME: Change these to a peripheral or an address map python class?
     ext_slave_start_address = string2int(config["ext_slaves"]["address"])
     ext_slave_size_address = string2int(config["ext_slaves"]["length"])
 
