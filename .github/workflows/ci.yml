@@ -59,7 +59,7 @@ jobs:
           echo "matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
 
   compile-apps:
-    name: Compile Apps (Batch ${{ matrix.batch }})
+    name: Compile Apps all
     runs-on: ubuntu-latest
     needs: [determine-image-tag, generate-app-matrix, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
     strategy:
@@ -76,7 +76,7 @@ jobs:
         shell: bash -l {0}
         run: |
           make mcu-gen X_HEEP_CFG=configs/ci.hjson && \
-          python3 test/test_apps/test_apps.py --apps "${{ matrix.apps }}" --compilers gcc,clang,gcc --compiler-paths /tools/riscv --compiler-prefixes riscv32-corev-,riscv32-unknown-,riscv32-unknown- --table --compile-only
+          python3 test/test_apps/test_apps.py --apps --compilers gcc,clang,gcc --compiler-paths /tools/riscv --compiler-prefixes riscv32-corev-,riscv32-unknown-,riscv32-unknown- --table --compile-only
 
   simulate-apps:
     name: Simulate Apps (Batch ${{ matrix.batch }})
