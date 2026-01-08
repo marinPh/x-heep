@@ -12,8 +12,6 @@ class InterruptManager:
     def __init__(self):
         """
         Initialize the InterruptManager.
-
-        :param int max_interrupts: Maximum number of interrupts supported
         """
         self._interrupts: Dict[str, Interrupt] = {}
         self._max_interrupts = DEFAULT_MAX_INTERRUPTS
