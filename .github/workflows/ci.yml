@@ -155,9 +155,7 @@ jobs:
           # Run simulations - simulator and apps already built/compiled!
           python3 test/test_apps/test_apps.py \
             --apps "${{ matrix.apps }}" \
-            --compilers gcc \
-            --simulator-bin build/openhwgroup.org_systems_core-v-mini-mcu_*/sim-verilator/Vtestharness \
-            --hex-dir sw/build \
+            --run-only \
             --table
 
   lint:
