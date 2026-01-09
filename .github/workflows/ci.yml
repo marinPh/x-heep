@@ -77,7 +77,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: sim-binary
-          path: build/openhwgroup.org_systems_core-v-mini-mcu_0/sim-verilator/Vtestharness
+          path: build/
 
   # 2. COMPILE APPS (SW)
   compile-apps:
@@ -98,16 +98,10 @@ jobs:
           # Compiles to build/software/<app>/<compiler>/<app>.hex (Standard structure)
           python3 test/test_apps/test_apps.py --compilers gcc --compile-only
       
-      # Flatten the hex files for easier usage in the next step
-      - name: Prepare Artifacts
-        run: |
-          mkdir -p hex_artifacts
-          find build/software -name "*.hex" -exec cp {} hex_artifacts/ \;
-      
       - uses: actions/upload-artifact@v4
         with:
           name: apps-hex-all
-          path: hex_artifacts/*.hex
+          path: software/build/
 
   # 3. RUN SIMULATION (Distributed)
   simulate-apps:
