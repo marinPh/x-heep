@@ -122,6 +122,14 @@ jobs:
           name: verilator-sim-${{ github.run_id }}
           path: build/
 
+      # Restore executable permissions (artifacts don't preserve them)
+      - name: Restore executable permissions
+        shell: bash -l {0}
+        run: |
+          echo "=== Restoring executable permissions ==="
+          chmod +x build/*/sim-verilator/Vtestharness
+          ls -lh build/*/sim-verilator/Vtestharness
+
       - name: Verify artifacts
         shell: bash -l {0}
         run: |
