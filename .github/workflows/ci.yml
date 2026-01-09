@@ -186,6 +186,7 @@ jobs:
       - name: Mark Repository as Safe
         run: |
           git config --global --add safe.directory /workspace/x-heep
+          git config --global --add safe.directory /__w/x-heep/x-heep
       - name: Check generated file consistency
         shell: bash -l {0}
         run: |
