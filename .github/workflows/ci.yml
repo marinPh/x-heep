@@ -156,8 +156,8 @@ jobs:
           python3 test/test_apps/test_apps.py \
             --apps "${{ matrix.apps }}" \
             --compilers gcc \
-            --compiler-paths /tools/riscv \
-            --compiler-prefixes riscv32-corev- \
+            --simulator-bin build/openhwgroup.org_systems_core-v-mini-mcu_*/sim-verilator/Vtestharness \
+            --hex-dir sw/build \
             --table
 
   lint:
