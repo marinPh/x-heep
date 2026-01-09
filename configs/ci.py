@@ -34,13 +34,14 @@ from x_heep_gen.peripherals.user_peripherals import (
 
 
 def config():
-    system = XHeep(BusType.onetoM)
+    system = XHeep(BusType.NtoM)
     system.set_cpu(CPU("cv32e20"))
 
     memory_ss = MemorySS()
-    memory_ss.add_ram_banks([32] * 2)
-    memory_ss.add_linker_section(LinkerSection.by_size("code", 0, 0x00000E800))
-    memory_ss.add_linker_section(LinkerSection("data", 0x00000E800, None))
+    memory_ss.add_ram_banks([32] * 6)
+    memory_ss.add_ram_banks_il(4, 16, "data_interleaved")  # the name is used by example_matadd_interleaved as .xheep_data_interleaved
+    memory_ss.add_linker_section(LinkerSection.by_size("code", 0, 0x000018000))
+    memory_ss.add_linker_section(LinkerSection("data", 0x000018000, None))
     system.set_memory_ss(memory_ss)
 
     # Peripheral domains initialization
@@ -76,6 +77,7 @@ def config():
     user_peripheral_domain.add_peripheral(I2C(0x00030000))
     user_peripheral_domain.add_peripheral(RV_timer(0x00040000))
     user_peripheral_domain.add_peripheral(SPI2(0x00050000))
+    user_peripheral_domain.add_peripheral(PDM2PCM(0x00060000, cic_only=True))
     user_peripheral_domain.add_peripheral(I2S(0x00070000))
     user_peripheral_domain.add_peripheral(UART(0x00080000))
 
