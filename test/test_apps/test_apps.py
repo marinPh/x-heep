@@ -182,7 +182,7 @@ def run_app(an_app, simulator, args, dry_run=False, verbose=True): # Note: added
     if verbose:
         print(BColors.OKBLUE + f"Running {an_app.name}..." + BColors.ENDC, flush=True)
 
-    if args.simulator_bin:
+    if args.simulator_bin is not None and args.simulator_bin:
 
         hex_path = os.path.join(args.hex_dir, f"{an_app.name}.hex")
         
@@ -577,7 +577,7 @@ def main():
                                 flush=True,
                             )
                     else:
-                        simulation_result = run_app(an_app, simulator, args.dry_run, verbose=not args.table)
+                        simulation_result = run_app(an_app, simulator, args,args.dry_run, verbose=not args.table)
                         an_app.add_simulation_result(simulator, simulation_result)
             
             # Print table row if table mode is enabled

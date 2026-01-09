@@ -65,8 +65,11 @@ jobs:
     needs: [determine-image-tag, generate-app-matrix, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
+      options: --workdir /workspace/x-heep
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: .
       - uses: ./.github/actions/setup-project
       - name: Build Binary
         shell: bash -l {0}
@@ -76,32 +79,39 @@ jobs:
           fusesoc --cores-root . run --target=sim --tool=verilator --build openhwgroup.org:systems:core-v-mini-mcu
       - uses: actions/upload-artifact@v4
         with:
-          name: sim-binary
+          name: verilator-sim-${{ github.run_id }}
           path: build/
+          retention-days: 1
+          if-no-files-found: error
 
   # 2. COMPILE APPS (SW)
   compile-apps:
-    name: Compile all Apps 
+    name: Compile all Apps
     runs-on: ubuntu-latest
     needs: [determine-image-tag, generate-app-matrix, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
     strategy:
       fail-fast: false
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
+      options: --workdir /workspace/x-heep
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: .
       - uses: ./.github/actions/setup-project
       - name: Compile Only
         shell: bash -l {0}
         run: |
           make mcu-gen X_HEEP_CFG=configs/ci.hjson
-          # Compiles to build/software/<app>/<compiler>/<app>.hex (Standard structure)
+          # Compiles to sw/build/ directory
           python3 test/test_apps/test_apps.py --compilers gcc --compile-only
-      
+
       - uses: actions/upload-artifact@v4
         with:
-          name: apps-hex-all
-          path: software/build/
+          name: compiled-apps-${{ github.run_id }}
+          path: sw/build/
+          retention-days: 1
+          if-no-files-found: error
 
   # 3. RUN SIMULATION (Distributed)
   simulate-apps:
@@ -113,32 +123,50 @@ jobs:
       fail-fast: false
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
+      options: --workdir /workspace/x-heep
     steps:
-      - uses: actions/checkout@v4 # Check out to get test_apps.py script
-      
-      # Download Binary
+      - uses: actions/checkout@v4
+        with:
+          path: .
+
+      - uses: ./.github/actions/setup-project
+
+      # Download simulator build
       - uses: actions/download-artifact@v4
         with:
-          name: sim-binary
-          path: ./sim_bin
-          
-      # Download Hex Files
+          name: verilator-sim-${{ github.run_id }}
+          path: build/
+
+      # Download compiled apps
       - uses: actions/download-artifact@v4
         with:
-          name: apps-hex-${{ matrix.batch }}
-          path: ./hex_bin
+          name: compiled-apps-${{ github.run_id }}
+          path: sw/build/
+
+      - name: Verify artifacts
+        shell: bash -l {0}
+        run: |
+          echo "=== Working directory ==="
+          pwd
+          echo "=== Simulator build ==="
+          ls -lh build/openhwgroup.org_systems_core-v-mini-mcu_*/sim-verilator/ 2>/dev/null || echo "Simulator directory not found"
+          echo "=== Compiled apps ==="
+          ls -lh sw/build/*.hex 2>/dev/null || ls -lh sw/build/ || echo "Apps not found"
+          echo "=== Checking hardcoded paths ==="
+          grep "^/" build/*/sim-verilator/*.vc 2>/dev/null | head -3 || echo "No absolute paths found"
 
       - name: Run Simulation
         shell: bash -l {0}
         run: |
-          chmod +x ./sim_bin/Vtestharness
-          
-          # Run your script in "Execution Mode"
-          # It skips 'make' and calls Vtestharness directly with hex files
+          # Regenerate MCU config (needed for headers/linker scripts)
+          make mcu-gen X_HEEP_CFG=configs/ci.hjson
+
+          # Run simulations - simulator and apps already built/compiled!
           python3 test/test_apps/test_apps.py \
             --apps "${{ matrix.apps }}" \
-            --simulator-bin ./sim_bin/Vtestharness \
-            --hex-dir ./hex_bin \
+            --compilers gcc \
+            --compiler-paths /tools/riscv \
+            --compiler-prefixes riscv32-corev- \
             --table
 
   lint:
@@ -147,14 +175,17 @@ jobs:
     needs: determine-image-tag
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
+      options: --workdir /workspace/x-heep
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: .
       - name: Setup Project
         uses: ./.github/actions/setup-project
       - name: Mark Repository as Safe
         run: |
-          git config --global --add safe.directory $GITHUB_WORKSPACE
+          git config --global --add safe.directory /workspace/x-heep
       - name: Check generated file consistency
         shell: bash -l {0}
         run: |
@@ -167,9 +198,12 @@ jobs:
     needs: determine-image-tag
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
+      options: --workdir /workspace/x-heep
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: .
       - name: Setup Project
         uses: ./.github/actions/setup-project
       - name: Configure the job container and simulate all apps
@@ -185,9 +219,12 @@ jobs:
     needs: determine-image-tag
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
+      options: --workdir /workspace/x-heep
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: .
       - name: Setup Project
         uses: ./.github/actions/setup-project
       - name: Configure the job container and simulate all apps
