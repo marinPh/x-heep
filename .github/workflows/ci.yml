@@ -65,18 +65,15 @@ jobs:
     needs: [determine-image-tag, generate-app-matrix, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
-      options: --workdir /workspace/x-heep
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: .
       - uses: ./.github/actions/setup-project
       - name: Build Binary
         shell: bash -l {0}
         run: |
           make mcu-gen X_HEEP_CFG=configs/ci.hjson
           # Explicitly build the binary
-          fusesoc --cores-root . run --target=sim --tool=verilator --build openhwgroup.org:systems:core-v-mini-mcu
+          MAKEFLAGS="-j$$(nproc)" fusesoc --cores-root . run --target=sim --tool=verilator --build openhwgroup.org:systems:core-v-mini-mcu
       - uses: actions/upload-artifact@v4
         with:
           name: verilator-sim-${{ github.run_id }}
@@ -93,11 +90,8 @@ jobs:
       fail-fast: false
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
-      options: --workdir /workspace/x-heep
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: .
       - uses: ./.github/actions/setup-project
       - name: Compile Only
         shell: bash -l {0}
@@ -123,11 +117,8 @@ jobs:
       fail-fast: false
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
-      options: --workdir /workspace/x-heep
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: .
 
       - uses: ./.github/actions/setup-project
 
@@ -175,17 +166,13 @@ jobs:
     needs: determine-image-tag
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
-      options: --workdir /workspace/x-heep
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: .
       - name: Setup Project
         uses: ./.github/actions/setup-project
       - name: Mark Repository as Safe
         run: |
-          git config --global --add safe.directory /workspace/x-heep
           git config --global --add safe.directory /__w/x-heep/x-heep
       - name: Check generated file consistency
         shell: bash -l {0}
@@ -199,12 +186,9 @@ jobs:
     needs: determine-image-tag
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
-      options: --workdir /workspace/x-heep
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: .
       - name: Setup Project
         uses: ./.github/actions/setup-project
       - name: Configure the job container and simulate all apps
@@ -220,12 +204,9 @@ jobs:
     needs: determine-image-tag
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
-      options: --workdir /workspace/x-heep
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: .
       - name: Setup Project
         uses: ./.github/actions/setup-project
       - name: Configure the job container and simulate all apps
