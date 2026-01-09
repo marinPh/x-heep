@@ -504,12 +504,12 @@ class PadGroup:
 
     def get_pads(self) -> List[PadDef]:
         """
-        Get all pads sorted by layout_index.
+        Get all pads.
 
-        :return: Sorted list of all pads
+        :return: List of all pads
         :rtype: List[PadDef]
         """
-        return sorted(self.pads, key=lambda pad: pad.layout_index)
+        return self.pads
 
     def add_layout(self, padDef: PadDef) -> None:
         """Add dimensions from a PadDef's layout to the dimensions dictionary."""
