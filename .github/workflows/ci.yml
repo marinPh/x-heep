@@ -73,7 +73,7 @@ jobs:
         run: |
           make mcu-gen X_HEEP_CFG=configs/ci.hjson
           # Explicitly build the binary
-          MAKEFLAGS="-j$$(nproc)" fusesoc --cores-root . run --target=sim --tool=verilator --build openhwgroup.org:systems:core-v-mini-mcu
+          make verilator-build
       - uses: actions/upload-artifact@v4
         with:
           name: verilator-sim-${{ github.run_id }}
