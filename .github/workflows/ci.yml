@@ -100,12 +100,6 @@ jobs:
           # Compiles to sw/build/ directory
           python3 test/test_apps/test_apps.py --compilers gcc --compile-only
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: compiled-apps-${{ github.run_id }}
-          path: sw/build/
-          retention-days: 1
-          if-no-files-found: error
 
   # 3. RUN SIMULATION (Distributed)
   simulate-apps:
@@ -128,12 +122,6 @@ jobs:
           name: verilator-sim-${{ github.run_id }}
           path: build/
 
-      # Download compiled apps
-      - uses: actions/download-artifact@v4
-        with:
-          name: compiled-apps-${{ github.run_id }}
-          path: sw/build/
-
       - name: Verify artifacts
         shell: bash -l {0}
         run: |
@@ -141,10 +129,24 @@ jobs:
           pwd
           echo "=== Simulator build ==="
           ls -lh build/openhwgroup.org_systems_core-v-mini-mcu_*/sim-verilator/ 2>/dev/null || echo "Simulator directory not found"
-          echo "=== Compiled apps ==="
-          ls -lh sw/build/*.hex 2>/dev/null || ls -lh sw/build/ || echo "Apps not found"
-          echo "=== Checking hardcoded paths ==="
-          grep "^/" build/*/sim-verilator/*.vc 2>/dev/null | head -3 || echo "No absolute paths found"
+          echo "=== Verifying simulator binary ==="
+          # Use glob expansion instead of find (more portable)
+          SIM_BIN=$(ls build/*/sim-verilator/Vtestharness 2>/dev/null | head -1)
+          if [ -n "$SIM_BIN" ] && [ -f "$SIM_BIN" ]; then
+            ls -lh "$SIM_BIN"
+            echo "✓ Simulator binary found: $SIM_BIN"
+            if [ ! -x "$SIM_BIN" ]; then
+              echo "ERROR: Simulator binary is not executable!"
+              echo "This means GitHub Actions artifact didn't preserve permissions."
+              exit 1
+            fi
+            echo "✓ Simulator binary is executable"
+          else
+            echo "ERROR: Simulator binary (Vtestharness) not found in artifact!"
+            echo "Expected location: build/openhwgroup.org_systems_core-v-mini-mcu_*/sim-verilator/Vtestharness"
+            ls -R build/ || true
+            exit 1
+          fi
 
       - name: Run Simulation
         shell: bash -l {0}
@@ -152,10 +154,11 @@ jobs:
           # Regenerate MCU config (needed for headers/linker scripts)
           make mcu-gen X_HEEP_CFG=configs/ci.hjson
 
-          # Run simulations - simulator and apps already built/compiled!
+          # Compile and run simulations for this batch (simulator already built)
           python3 test/test_apps/test_apps.py \
             --apps "${{ matrix.apps }}" \
-            --run-only \
+            --compilers gcc \
+            --skip-build-sim \
             --table
 
   lint:

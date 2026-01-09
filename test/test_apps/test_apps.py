@@ -436,6 +436,9 @@ def main():
         "--run-only", action="store_true", help="Only run pre-compiled applications (skip building simulator and compiling apps)"
     )
     parser.add_argument(
+        "--skip-build-sim", action="store_true", help="Skip building the simulator (use pre-built simulator artifact)"
+    )
+    parser.add_argument(
         "--dry-run", action="store_true", help="Print the commands that would be run without executing them"
     )
     # ... existing args ...
@@ -517,7 +520,7 @@ def main():
     # Get a list with all the applications we want to test
     app_list = get_apps("sw/applications", app_filter=app_filter)
 
-    if not args.compile_only and not args.run_only:
+    if not args.compile_only and not args.run_only and not args.skip_build_sim:
         for simulator in SIMULATORS:
             build_simulator(simulator, args.dry_run, verbose=not args.table)
 
@@ -550,25 +553,20 @@ def main():
         if not in_list(an_app.name, BLACKLIST):
             # Compile the app with every compiler, leaving gcc for last
             #   so the simulation is done with gcc
-            if args.run_only:
-                # Skip compilation, assume apps are pre-compiled
-                for compiler in compilers:
-                    an_app.set_compilation_status(compiler, True)
-            else:
-                for (compiler_path, compiler_prefix, compiler) in zip(compiler_paths, compiler_prefixes, compilers):
-                    if in_list(an_app.name, CLANG_BLACKLIST) and compiler == "clang":
-                        if not args.table:
-                            print(
-                                BColors.WARNING
-                                + f"Skipping compiling {an_app.name} with {compiler}..."
-                                + BColors.ENDC,
-                                flush=True,
-                            )
-                        an_app.set_compilation_status(compiler, None)  # Mark as skipped
-                    else:
-                        compilation_result = compile_app(an_app, compiler_path, compiler_prefix, compiler, "on_chip", args.dry_run, verbose=not args.table)
-                        an_app.set_compilation_status(compiler, compilation_result)
 
+            for (compiler_path, compiler_prefix, compiler) in zip(compiler_paths, compiler_prefixes, compilers):
+                if in_list(an_app.name, CLANG_BLACKLIST) and compiler == "clang":
+                    if not args.table:
+                        print(
+                            BColors.WARNING
+                            + f"Skipping compiling {an_app.name} with {compiler}..."
+                            + BColors.ENDC,
+                            flush=True,
+                        )
+                    an_app.set_compilation_status(compiler, None)  # Mark as skipped
+                else:
+                    compilation_result = compile_app(an_app, compiler_path, compiler_prefix, compiler, "on_chip", args.dry_run, verbose=not args.table)
+                    an_app.set_compilation_status(compiler, compilation_result)
             # Run the app with every simulator if the compilation was successful
             if not args.compile_only and an_app.compilation_succeeded:
                 for simulator in SIMULATORS:
@@ -585,7 +583,7 @@ def main():
                                 flush=True,
                             )
                     else:
-                        simulation_result = run_app(an_app, simulator, args,args.dry_run, verbose=not args.table)
+                        simulation_result = run_app(an_app, simulator, args, args.dry_run, verbose=not args.table)
                         an_app.add_simulation_result(simulator, simulation_result)
             
             # Print table row if table mode is enabled
