@@ -409,7 +409,7 @@ targets:
           - '-LDFLAGS "-pthread -lutil -lelf"'
           - "-Wall"
         make_options:
-          - '-j$(nproc)'
+          - '-j$(shell nproc)'
 
   sim_sc:
     <<: *default_target
