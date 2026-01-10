@@ -174,7 +174,7 @@ def compile_app(an_app, compiler_path, compiler_prefix, compiler, linker, dry_ru
         return True
 
 
-def run_app(an_app, simulator, args, dry_run=False, verbose=True): # Note: added args param
+def run_app(an_app, simulator, args, dry_run=False, verbose=True):
     """
     Runs an_app. If args.simulator_bin is set, runs binary directly.
     Otherwise, runs via make.
