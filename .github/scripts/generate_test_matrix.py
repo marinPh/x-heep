@@ -76,17 +76,26 @@ def split_into_batches(apps, target_per_batch):
     return batches
 
 
-def generate_matrix(batches):
+def generate_matrix(batches, simulators=None):
     """
     Generate GitHub Actions matrix format from app batches.
     Returns a dict with 'include' key containing batch configurations.
+
+    Args:
+        batches: List of app batches
+        simulators: List of simulators to test (default: ["verilator"])
     """
+    if simulators is None:
+        simulators = ["verilator"]
+
     matrix = {
         "include": [
             {
+                "simulator": simulator,
                 "batch": str(i + 1),
                 "apps": ",".join(batch)
             }
+            for simulator in simulators
             for i, batch in enumerate(batches) if batch
         ]
     }
@@ -96,6 +105,10 @@ def generate_matrix(batches):
 def main():
     """Main entry point."""
     apps_dir = "sw/applications"
+
+    # Configure simulators to test
+    # To add more simulators, update this list: ["verilator", "questasim", "vcs"]
+    simulators = ["verilator"]
 
     # Get all testable apps
     apps = get_apps(apps_dir)
@@ -107,8 +120,8 @@ def main():
     # Split into batches
     batches = split_into_batches(apps, TARGET_APPS_PER_RUNNER)
 
-    # Generate matrix
-    matrix = generate_matrix(batches)
+    # Generate matrix (cross-product of simulators × batches)
+    matrix = generate_matrix(batches, simulators)
 
     # Output as JSON
     print(json.dumps(matrix))
