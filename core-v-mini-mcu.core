@@ -397,6 +397,7 @@ targets:
         mode: cc
         verilator_options:
           - '--cc'
+          - '--threads $(shell nproc)'
           - '--trace'
           - '--trace-fst'
           - '--trace-structs'
@@ -405,7 +406,7 @@ targets:
           - '--x-assign unique'
           - '--x-initial unique'
           - '--exe tb_top.cpp'
-          - '-CFLAGS "-Wall -fpermissive"'
+          - '-CFLAGS "-Wall -fpermissive -O2"'
           - '-LDFLAGS "-pthread -lutil -lelf"'
           - "-Wall"
         make_options:
