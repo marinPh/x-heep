@@ -14,18 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Artifact retention
+  # Artifact retention (can be used in steps context)
   ARTIFACT_RETENTION_DAYS: 1
 
-  # Job timeouts
-  BUILD_TIMEOUT_MINUTES: 20
-  SIMULATION_TIMEOUT_MINUTES: 30
-
-  # Test matrix configuration
-  APPS_PER_RUNNER: 6
-
-  # Simulator configuration (easily add more in future: '["verilator", "questasim"]')
-  ENABLED_SIMULATORS: '["verilator"]'
+  # Note: Job timeouts and matrix values must be hard-coded below
+  # due to GitHub Actions limitations (env not available in job-level contexts)
 
 jobs:
   determine-image-tag:
@@ -77,12 +70,13 @@ jobs:
     name: Build ${{ matrix.simulator }}
     runs-on: ubuntu-latest
     needs: [determine-image-tag, generate-app-matrix, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
-    timeout-minutes: ${{ fromJson(env.BUILD_TIMEOUT_MINUTES) }}
+    timeout-minutes: 20  # Verilator build typically takes ~10 min
 
     strategy:
       fail-fast: false
       matrix:
-        simulator: ${{ fromJson(env.ENABLED_SIMULATORS) }}
+        # To add more simulators: ["verilator", "questasim", "vcs", "xcelium"]
+        simulator: ["verilator"]
 
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
@@ -102,7 +96,7 @@ jobs:
         with:
           name: ${{ matrix.simulator }}-sim-${{ github.run_id }}
           path: build/
-          retention-days: ${{ fromJson(env.ARTIFACT_RETENTION_DAYS) }}
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
           if-no-files-found: error
 
   # 2. COMPILE APPS (SW)
@@ -130,12 +124,13 @@ jobs:
     name: Simulate (${{ matrix.simulator }}, Batch ${{ matrix.batch }})
     runs-on: ubuntu-latest
     needs: [determine-image-tag, generate-app-matrix, build-simulator, compile-apps, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
-    timeout-minutes: ${{ fromJson(env.SIMULATION_TIMEOUT_MINUTES) }}
+    timeout-minutes: 30  # 6 apps × ~3-5 min each + margin
 
     strategy:
       fail-fast: false
       matrix:
-        simulator: ${{ fromJson(env.ENABLED_SIMULATORS) }}
+        # To add more simulators: ["verilator", "questasim"]
+        simulator: ["verilator"]
         include: ${{ fromJson(needs.generate-app-matrix.outputs.matrix).include }}
 
     container:
