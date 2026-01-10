@@ -13,6 +13,20 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  # Artifact retention
+  ARTIFACT_RETENTION_DAYS: 1
+
+  # Job timeouts
+  BUILD_TIMEOUT_MINUTES: 20
+  SIMULATION_TIMEOUT_MINUTES: 30
+
+  # Test matrix configuration
+  APPS_PER_RUNNER: 6
+
+  # Simulator configuration (easily add more in future: '["verilator", "questasim"]')
+  ENABLED_SIMULATORS: '["verilator"]'
+
 jobs:
   determine-image-tag:
     name: Determine Image Tag
@@ -60,25 +74,35 @@ jobs:
 
   # 1. BUILD SIMULATOR (HW)
   build-simulator:
-    name: Build Verilator
+    name: Build ${{ matrix.simulator }}
     runs-on: ubuntu-latest
     needs: [determine-image-tag, generate-app-matrix, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
+    timeout-minutes: ${{ fromJson(env.BUILD_TIMEOUT_MINUTES) }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        simulator: ${{ fromJson(env.ENABLED_SIMULATORS) }}
+
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
-      - name: Build Binary
+
+      - name: Build ${{ matrix.simulator }}
         shell: bash -l {0}
         run: |
           make mcu-gen X_HEEP_CFG=configs/ci.hjson
-          # Explicitly build the binary
-          make verilator-build
+          # Build the simulator
+          make ${{ matrix.simulator }}-build
+
       - uses: actions/upload-artifact@v4
         with:
-          name: verilator-sim-${{ github.run_id }}
+          name: ${{ matrix.simulator }}-sim-${{ github.run_id }}
           path: build/
-          retention-days: 1
+          retention-days: ${{ fromJson(env.ARTIFACT_RETENTION_DAYS) }}
           if-no-files-found: error
 
   # 2. COMPILE APPS (SW)
@@ -103,14 +127,20 @@ jobs:
 
   # 3. RUN SIMULATION (Distributed)
   simulate-apps:
-    name: Simulate (Batch ${{ matrix.batch }})
+    name: Simulate (${{ matrix.simulator }}, Batch ${{ matrix.batch }})
     runs-on: ubuntu-latest
     needs: [determine-image-tag, generate-app-matrix, build-simulator, compile-apps, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
+    timeout-minutes: ${{ fromJson(env.SIMULATION_TIMEOUT_MINUTES) }}
+
     strategy:
-      matrix: ${{ fromJson(needs.generate-app-matrix.outputs.matrix) }}
       fail-fast: false
+      matrix:
+        simulator: ${{ fromJson(env.ENABLED_SIMULATORS) }}
+        include: ${{ fromJson(needs.generate-app-matrix.outputs.matrix).include }}
+
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -119,16 +149,16 @@ jobs:
       # Download simulator build
       - uses: actions/download-artifact@v4
         with:
-          name: verilator-sim-${{ github.run_id }}
+          name: ${{ matrix.simulator }}-sim-${{ github.run_id }}
           path: build/
 
       # Restore executable permissions (artifacts don't preserve them)
       - name: Restore executable permissions
         shell: bash -l {0}
         run: |
-          echo "=== Restoring executable permissions ==="
-          chmod +x build/*/sim-verilator/Vtestharness
-          ls -lh build/*/sim-verilator/Vtestharness
+          echo "=== Restoring executable permissions for ${{ matrix.simulator }} ==="
+          chmod +x build/*/sim-${{ matrix.simulator }}/Vtestharness
+          ls -lh build/*/sim-${{ matrix.simulator }}/Vtestharness
 
       - name: Verify artifacts
         shell: bash -l {0}
@@ -136,10 +166,10 @@ jobs:
           echo "=== Working directory ==="
           pwd
           echo "=== Simulator build ==="
-          ls -lh build/openhwgroup.org_systems_core-v-mini-mcu_*/sim-verilator/ 2>/dev/null || echo "Simulator directory not found"
-          echo "=== Verifying simulator binary ==="
+          ls -lh build/openhwgroup.org_systems_core-v-mini-mcu_*/sim-${{ matrix.simulator }}/ 2>/dev/null || echo "Simulator directory not found"
+          echo "=== Verifying ${{ matrix.simulator }} simulator binary ==="
           # Use glob expansion instead of find (more portable)
-          SIM_BIN=$(ls build/*/sim-verilator/Vtestharness 2>/dev/null | head -1)
+          SIM_BIN=$(ls build/*/sim-${{ matrix.simulator }}/Vtestharness 2>/dev/null | head -1)
           if [ -n "$SIM_BIN" ] && [ -f "$SIM_BIN" ]; then
             ls -lh "$SIM_BIN"
             echo "✓ Simulator binary found: $SIM_BIN"
@@ -151,7 +181,7 @@ jobs:
             echo "✓ Simulator binary is executable"
           else
             echo "ERROR: Simulator binary (Vtestharness) not found in artifact!"
-            echo "Expected location: build/openhwgroup.org_systems_core-v-mini-mcu_*/sim-verilator/Vtestharness"
+            echo "Expected location: build/openhwgroup.org_systems_core-v-mini-mcu_*/sim-${{ matrix.simulator }}/Vtestharness"
             ls -R build/ || true
             exit 1
           fi
@@ -167,7 +197,14 @@ jobs:
             --apps "${{ matrix.apps }}" \
             --compilers gcc \
             --skip-build-sim \
-            --table
+            --table | tee results.log
+
+          # Add results to GitHub job summary
+          echo "## Simulation Results: ${{ matrix.simulator }} (Batch ${{ matrix.batch }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat results.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
   lint:
     name: Lint Generated Files
