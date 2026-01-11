@@ -406,7 +406,7 @@ targets:
           - '--x-assign unique'
           - '--x-initial unique'
           - '--exe tb_top.cpp'
-          - '-CFLAGS "-Wall -fpermissive -O2"'
+          - '-CFLAGS "-Wall -fpermissive"'
           - '-LDFLAGS "-pthread -lutil -lelf"'
           - "-Wall"
         make_options:
