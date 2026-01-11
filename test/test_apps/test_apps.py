@@ -137,7 +137,7 @@ def compile_app(an_app, compiler_path, compiler_prefix, compiler, linker, dry_ru
             flush=True,
         )
     try:
-        compile_command = ["make", "app", f"PROJECT={an_app.name}", f"-j{os.cpu_count()}"]
+        compile_command = ["make", "app", f"PROJECT={an_app.name}"]
         os.environ["RISCV_XHEEP"] = compiler_path
         if compiler_prefix:
             compile_command.append(f"COMPILER_PREFIX={compiler_prefix}")
@@ -145,6 +145,7 @@ def compile_app(an_app, compiler_path, compiler_prefix, compiler, linker, dry_ru
             compile_command.append(f"COMPILER={compiler}")
         if linker:
             compile_command.append(f"LINKER={linker}")
+        compile_command.append(f"-j{os.cpu_count()}")
 
         if dry_run:
             if verbose:

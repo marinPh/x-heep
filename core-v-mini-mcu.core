@@ -397,7 +397,6 @@ targets:
         mode: cc
         verilator_options:
           - '--cc'
-          - '--threads $(shell nproc)'
           - '--trace'
           - '--trace-fst'
           - '--trace-structs'
