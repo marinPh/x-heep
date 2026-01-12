@@ -89,8 +89,8 @@ def config() -> PadRing:
         active="low",
     )
     pad_group.add_pad(rst)
-    
-        # -------------------------------------------------------------------------
+
+    # -------------------------------------------------------------------------
     # Multiplexed pads
     # -------------------------------------------------------------------------
 
@@ -153,7 +153,7 @@ def config() -> PadRing:
         orient=Orientation.MX90,
     )
     pad_group.add_pad(jtag_tdo)
-    
+
     # -------------------------------------------------------------------------
     # Range pad for "gpio" (num: 14, num_offset: 0 -> gpio_0 .. gpio_13)
     # -------------------------------------------------------------------------
@@ -244,8 +244,6 @@ def config() -> PadRing:
     )
     pad_group.add_pad(exit_valid)
 
-
-
     # "pdm2pcm_pdm": mapping="top", cell=PAD3, orient="r0",
     # mux: { "pdm2pcm_pdm": "inout", "gpio_18": "inout" }
     alt_pdm2pcm = SinglePad(
@@ -285,5 +283,5 @@ def config() -> PadRing:
     # -------------------------------------------------------------------------
 
     pad_ring = PadRing(pad_group)
-    
+
     return pad_ring

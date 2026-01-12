@@ -161,13 +161,15 @@ class Layout:
         bond_pad: Optional bond pad dimensions
         cell_pad: Optional cell pad dimensions
         offset: Optional offset from edge in micrometers
-        skip: Optional spacing to next pad in micrometers
+        skip: Optional spacing to next pad cell in micrometers
+        bp_spacing: Optional spacing to next bondpad in micrometers
     """
 
     bond_pad: Optional[Dimension] = None
     cell_pad: Optional[Dimension] = None
     offset: Optional[float] = None
     skip: Optional[float] = None
+    bp_spacing: Optional[float] = None
 
     def copy(self) -> Layout:
         """
@@ -181,6 +183,7 @@ class Layout:
             cell_pad=self.cell_pad,
             offset=self.offset,
             skip=self.skip,
+            bp_spacing=self.bp_spacing,
         )
 
 
@@ -375,12 +378,33 @@ class PadGroup:
     pad_attribute: Optional[Dict[str, Any]] = None
     # could be a better type than str
     bits: Optional[str] = None
+    pad_edge_offsets: Optional[Dict[PadMapping, float]] = None
+    bondpad_edge_offsets: Optional[Dict[PadMapping, float]] = None
+    bp_spacings: Optional[Dict[PadMapping, float]] = None
 
     # internal state – user CANNOT pass these in __init__
     pads: List[PadDef] = field(default_factory=list, init=False)
     dimensions: Dict[str, Dimension] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
+        # Normalize per-side dictionaries: convert string keys to PadMapping enum keys
+        def _normalize_side_dict(d):
+            if d is None:
+                return None
+            normalized = {}
+            for key, value in d.items():
+                if isinstance(key, str):
+                    # Convert string to PadMapping enum
+                    normalized[PadMapping(key.lower())] = value
+                elif isinstance(key, PadMapping):
+                    normalized[key] = value
+                else:
+                    raise ValidationError(f"Invalid side key type: {type(key)}")
+            return normalized if normalized else None
+
+        self.pad_edge_offsets = _normalize_side_dict(self.pad_edge_offsets)
+        self.bondpad_edge_offsets = _normalize_side_dict(self.bondpad_edge_offsets)
+        self.bp_spacings = _normalize_side_dict(self.bp_spacings)
 
         # --- check global physical fields ---
         global_missing = (
@@ -413,6 +437,101 @@ class PadGroup:
             self.cell_spacing = None
             # (optional) also wipe physical_properties
             self.physical_properties = {}
+
+    def get_pad_edge_offset(self, side) -> float:
+        """
+        Get pad edge offset for a specific side.
+
+        :param side: Side of the die (PadMapping enum or string)
+        :return: Pad edge offset for the specified side
+        :rtype: float
+        :raises ValidationError: If no offset is defined (global or per-side)
+
+        If per-side offset is defined for the requested side, returns that value.
+        Otherwise, returns the global pad_edge_offset.
+        """
+        # Convert to PadMapping key
+        if isinstance(side, PadMapping):
+            side_key = side
+        else:
+            side_key = PadMapping(str(side).lower())
+
+        # Check per-side override first
+        if self.pad_edge_offsets and side_key in self.pad_edge_offsets:
+            return float(self.pad_edge_offsets[side_key])
+
+        # Fall back to global value
+        if self.pad_edge_offset is not None:
+            return float(self.pad_edge_offset)
+
+        # No offset defined
+        raise ValidationError(
+            f"PadGroup '{self.name}': no pad_edge_offset defined for side '{side_key}'"
+        )
+
+    def get_bondpad_edge_offset(self, side) -> float:
+        """
+        Get bondpad edge offset for a specific side.
+
+        :param side: Side of the die (PadMapping enum or string)
+        :return: Bondpad edge offset for the specified side
+        :rtype: float
+        :raises ValidationError: If no offset is defined (global or per-side)
+
+        If per-side offset is defined for the requested side, returns that value.
+        Otherwise, returns the global bondpad_edge_offset.
+        """
+
+        # Convert to PadMapping key
+        if isinstance(side, PadMapping):
+            side_key = side
+        else:
+            side_key = PadMapping(str(side).lower())
+
+        # Check per-side override first
+        if self.bondpad_edge_offsets and side_key in self.bondpad_edge_offsets:
+            return float(self.bondpad_edge_offsets[side_key])
+
+        # Fall back to global value
+        if self.bondpad_edge_offset is not None:
+            return float(self.bondpad_edge_offset)
+
+        # No offset defined
+        raise ValidationError(
+            f"PadGroup '{self.name}': no bondpad_edge_offset defined for side '{side_key}'"
+        )
+
+    def get_bp_spacing(self, side) -> float:
+        """
+        Get bondpad spacing for a specific side.
+
+        :param side: Side of the die (PadMapping enum or string)
+        :return: Bondpad spacing for the specified side
+        :rtype: float
+        :raises ValidationError: If no spacing is defined (global or per-side)
+
+        If per-side spacing is defined for the requested side, returns that value.
+        Otherwise, returns the global bp_spacing.
+        """
+
+        # Convert to PadMapping key
+        if isinstance(side, PadMapping):
+            side_key = side
+        else:
+            side_key = PadMapping(str(side).lower())
+
+        # Check per-side override first
+        if self.bp_spacings and side_key in self.bp_spacings:
+            return float(self.bp_spacings[side_key])
+
+        # Fall back to global value
+        if self.bp_spacing is not None:
+            return float(self.bp_spacing)
+
+        # No spacing defined
+        raise ValidationError(
+            f"PadGroup '{self.name}': no bp_spacing defined for side '{side_key}'"
+        )
 
     def add_pad(self, pad: PadDef) -> None:
         """
@@ -490,6 +609,31 @@ class PadGroup:
 
         if self.cell_spacing is not None:
             pa["spacing"]["cell"] = self.cell_spacing
+
+        # Add per-side edge offsets if defined
+        if self.pad_edge_offsets or self.bondpad_edge_offsets:
+            edge_offset_per_side = {}
+            for side in PadMapping:
+                side_str = side.value
+                side_offsets = {}
+                if self.pad_edge_offsets and side in self.pad_edge_offsets:
+                    side_offsets["pad"] = self.pad_edge_offsets[side]
+                if self.bondpad_edge_offsets and side in self.bondpad_edge_offsets:
+                    side_offsets["bondpad"] = self.bondpad_edge_offsets[side]
+                if side_offsets:
+                    edge_offset_per_side[side_str] = side_offsets
+            if edge_offset_per_side:
+                pa["edge_offset_per_side"] = edge_offset_per_side
+
+        # Add per-side spacing if defined
+        if self.bp_spacings:
+            spacing_per_side = {}
+            for side in PadMapping:
+                side_str = side.value
+                if side in self.bp_spacings:
+                    spacing_per_side[side_str] = {"bondpad": self.bp_spacings[side]}
+            if spacing_per_side:
+                pa["spacing_per_side"] = spacing_per_side
 
         return pa
 
@@ -631,10 +775,40 @@ class PadGroup:
         pad_edge_offset = edge_offset.get("pad")
         bondpad_edge_offset = edge_offset.get("bondpad")
 
+        # ---- per-side edge offsets (optional overrides) ----
+        edge_offset_per_side = pa.get("edge_offset_per_side", {})
+        pad_edge_offsets = {}
+        bondpad_edge_offsets = {}
+
+        for side in PadMapping:
+            side_str = side.value  # Get string value ("top", "bottom", etc.)
+            side_config = edge_offset_per_side.get(side_str, {})
+            if "pad" in side_config:
+                pad_edge_offsets[side] = side_config["pad"]
+            if "bondpad" in side_config:
+                bondpad_edge_offsets[side] = side_config["bondpad"]
+
+        # Only set if any per-side values were specified
+        pad_edge_offsets = pad_edge_offsets if pad_edge_offsets else None
+        bondpad_edge_offsets = bondpad_edge_offsets if bondpad_edge_offsets else None
+
         # ---- spacing ----
         spacing = pa.get("spacing", {})
         bp_spacing = spacing.get("bondpad")
         cell_spacing = spacing.get("cell")
+
+        # ---- per-side spacing (optional overrides) ----
+        spacing_per_side = pa.get("spacing_per_side", {})
+        bp_spacings = {}
+
+        for side in PadMapping:
+            side_str = side.value  # Get string value ("top", "bottom", etc.)
+            side_config = spacing_per_side.get(side_str, {})
+            if "bondpad" in side_config:
+                bp_spacings[side] = side_config["bondpad"]
+
+        # Only set if any per-side values were specified
+        bp_spacings = bp_spacings if bp_spacings else None
 
         # ---- dimensions from "dimensions" ----
         dims = pa.get("dimensions")
@@ -651,7 +825,10 @@ class PadGroup:
             name=name,
             pad_edge_offset=pad_edge_offset,
             bondpad_edge_offset=bondpad_edge_offset,
+            pad_edge_offsets=pad_edge_offsets,
+            bondpad_edge_offsets=bondpad_edge_offsets,
             bp_spacing=bp_spacing,
+            bp_spacings=bp_spacings,
             cell_spacing=cell_spacing,
             fp_dim=fp_dim,
             pad_attribute=attributes,
