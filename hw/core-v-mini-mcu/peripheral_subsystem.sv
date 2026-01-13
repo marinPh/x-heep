@@ -117,7 +117,7 @@ module peripheral_subsystem
 
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [8-1:0] gpio_int_unused;
+  logic [7:0] gpio_int_unused;
 
   logic uart_intr_tx_watermark;
   logic uart_intr_rx_watermark;

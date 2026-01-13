@@ -143,7 +143,7 @@ module peripheral_subsystem
 
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [${intr_manager.get_interrupts()["gpio_intr"].start_seq}-1:0] gpio_int_unused;
+  logic [${intr_manager.get_interrupts()["gpio_intr"].start_seq-1}:0] gpio_int_unused;
 
 % for name, irq in intrs:
   % if name != "null_intr":
