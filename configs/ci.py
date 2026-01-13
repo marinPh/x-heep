@@ -1,17 +1,8 @@
-# Copyright 2025 EPFL.
-# Solderpad Hardware License, Version 0.51, see LICENSE for details.
-# SPDX-License-Identifier: SHL-0.51
-#
-# X-HEEP general configuration. Python version of general.hjson.
-#
-# For detailed documentation and usage instructions, please refer to docs/source/Configuration
-
 from x_heep_gen.xheep import XHeep
 from x_heep_gen.cpu.cpu import CPU
 from x_heep_gen.bus_type import BusType
 from x_heep_gen.memory_ss.memory_ss import MemorySS
 from x_heep_gen.memory_ss.linker_section import LinkerSection
-from x_heep_gen.peripherals.abstractions import Interrupt
 from x_heep_gen.peripherals.base_peripherals import (
     SOC_ctrl,
     Bootrom,
@@ -43,17 +34,17 @@ from x_heep_gen.peripherals.user_peripherals import (
 
 
 def config():
-    system = XHeep(BusType.onetoM)
+    system = XHeep(BusType.NtoM)
     system.set_cpu(CPU("cv32e20"))
 
     memory_ss = MemorySS()
-    memory_ss.add_ram_banks([32] * 2)
-    memory_ss.add_linker_section(LinkerSection.by_size("code", 0, 0x00000E800))
-    memory_ss.add_linker_section(LinkerSection("data", 0x00000E800, None))
+    memory_ss.add_ram_banks([32] * 6)
+    memory_ss.add_ram_banks_il(4, 16, "data_interleaved")  # the name is used by example_matadd_interleaved as .xheep_data_interleaved
+    memory_ss.add_linker_section(LinkerSection.by_size("code", 0, 0x000018000))
+    memory_ss.add_linker_section(LinkerSection("data", 0x000018000, None))
     system.set_memory_ss(memory_ss)
 
     # Peripheral domains initialization
-
     base_peripheral_domain = BasePeripheralDomain()
     user_peripheral_domain = UserPeripheralDomain()
 
@@ -86,13 +77,12 @@ def config():
     user_peripheral_domain.add_peripheral(I2C(0x00030000))
     user_peripheral_domain.add_peripheral(RV_timer(0x00040000))
     user_peripheral_domain.add_peripheral(SPI2(0x00050000))
+    user_peripheral_domain.add_peripheral(PDM2PCM(0x00060000, cic_only=True))
     user_peripheral_domain.add_peripheral(I2S(0x00070000))
     user_peripheral_domain.add_peripheral(UART(0x00080000))
 
     # Add the peripheral domains to the system
     system.add_peripheral_domain(base_peripheral_domain)
     system.add_peripheral_domain(user_peripheral_domain)
-
-    system.get_interrupt_manager().add_interrupt("null_intr", Interrupt(0))
 
     return system

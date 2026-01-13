@@ -350,7 +350,7 @@ gdb_connect:
 ## Run the tests for X-HEEP. Cleans and rebuilds all the project.
 .PHONY: test
 test:
-	$(MAKE) mcu-gen X_HEEP_CFG=configs/ci.hjson
+	$(MAKE) mcu-gen X_HEEP_CFG=configs/python_unsupported.hjson PYTHON_X_HEEP_CFG=configs/ci.py PADS_CFG=configs/pad_cfg.py
 	$(RM) test/*.log
 	python3 test/test_apps/test_apps.py $(TEST_FLAGS) 2>&1 | tee test/test_apps/test_apps.log
 	@echo "You can also find the output in test/test_apps/test_apps.log"

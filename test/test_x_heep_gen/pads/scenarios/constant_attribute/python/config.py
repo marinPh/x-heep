@@ -90,6 +90,40 @@ def config() -> PadRing:
     )
     pad_group.add_pad(rst)
 
+    # -------------------------------------------------------------------------
+    # Multiplexed pads
+    # -------------------------------------------------------------------------
+
+    # "pdm2pcm_clk": mapping="right", cell=PAD3, orient="r90",
+    # mux: { "pdm2pcm_clk": "inout", "gpio_19": "inout" }
+    alt_pdm2pcm_clk = SinglePad(
+        name="pdm2pcm_clk",
+        type=PadType.INOUT,
+        mapping=PadMapping.RIGHT,
+        layout=pad3_layout,
+        orient=Orientation.R90,
+    )
+
+    alt_gpio_19 = SinglePad(
+        name="gpio_19",
+        type=PadType.INOUT,
+        mapping=PadMapping.RIGHT,
+        layout=pad3_layout,
+        orient=Orientation.R90,
+    )
+
+    pdm2pcm_clk = MultiplexedPad(
+        name="pdm2pcm_clk",
+        layout_index=2,
+        type=PadType.INOUT,
+        mapping=PadMapping.RIGHT,
+        layout=pad3_layout,
+        orient=Orientation.R90,
+        alts=[("pdm2pcm_clk", alt_pdm2pcm_clk), ("gpio_19", alt_gpio_19)],
+    )
+
+    pad_group.add_pad(pdm2pcm_clk)
+
     # "boot_select": mapping="right", cell=PAD4, orient="mx90"
     boot_select = SinglePad(
         name="boot_select",
@@ -119,6 +153,21 @@ def config() -> PadRing:
         orient=Orientation.MX90,
     )
     pad_group.add_pad(jtag_tdo)
+
+    # -------------------------------------------------------------------------
+    # Range pad for "gpio" (num: 14, num_offset: 0 -> gpio_0 .. gpio_13)
+    # -------------------------------------------------------------------------
+
+    gpio_range = RangePad(
+        name="gpio",
+        layout_index=6,
+        type=PadType.INOUT,
+        mapping=PadMapping.LEFT,
+        layout=pad3_layout,
+        num=14,  # 14 pads -> 0..13
+        orient=Orientation.MX90,
+    )
+    pad_group.add_pad(gpio_range)
 
     # "execute_from_flash": mapping="bottom", cell=PAD4, orient="mx"
     execute_from_flash = SinglePad(
@@ -195,40 +244,6 @@ def config() -> PadRing:
     )
     pad_group.add_pad(exit_valid)
 
-    # -------------------------------------------------------------------------
-    # Multiplexed pads
-    # -------------------------------------------------------------------------
-
-    # "pdm2pcm_clk": mapping="right", cell=PAD3, orient="r90",
-    # mux: { "pdm2pcm_clk": "inout", "gpio_19": "inout" }
-    alt_pdm2pcm_clk = SinglePad(
-        name="pdm2pcm_clk",
-        type=PadType.INOUT,
-        mapping=PadMapping.RIGHT,
-        layout=pad3_layout,
-        orient=Orientation.R90,
-    )
-
-    alt_gpio_19 = SinglePad(
-        name="gpio_19",
-        type=PadType.INOUT,
-        mapping=PadMapping.RIGHT,
-        layout=pad3_layout,
-        orient=Orientation.R90,
-    )
-
-    pdm2pcm_clk = MultiplexedPad(
-        name="pdm2pcm_clk",
-        layout_index=2,
-        type=PadType.INOUT,
-        mapping=PadMapping.RIGHT,
-        layout=pad3_layout,
-        orient=Orientation.R90,
-        alts=[("pdm2pcm_clk", alt_pdm2pcm_clk), ("gpio_19", alt_gpio_19)],
-    )
-
-    pad_group.add_pad(pdm2pcm_clk)
-
     # "pdm2pcm_pdm": mapping="top", cell=PAD3, orient="r0",
     # mux: { "pdm2pcm_pdm": "inout", "gpio_18": "inout" }
     alt_pdm2pcm = SinglePad(
@@ -261,25 +276,12 @@ def config() -> PadRing:
     )
 
     pad_group.add_pad(pdm2pcm_pdm)
-
-    # -------------------------------------------------------------------------
-    # Range pad for "gpio" (num: 14, num_offset: 0 -> gpio_0 .. gpio_13)
-    # -------------------------------------------------------------------------
-
-    gpio_range = RangePad(
-        name="gpio",
-        layout_index=6,
-        type=PadType.INOUT,
-        mapping=PadMapping.LEFT,
-        layout=pad3_layout,
-        num=14,  # 14 pads -> 0..13
-        orient=Orientation.MX90,
-    )
-    pad_group.add_pad(gpio_range)
     # RangePad.add_pad() will expand to gpio_0 ... gpio_13 and assign indices
 
     # -------------------------------------------------------------------------
     # Wrap everything in a PadRing
     # -------------------------------------------------------------------------
+
     pad_ring = PadRing(pad_group)
+
     return pad_ring

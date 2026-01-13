@@ -360,15 +360,129 @@ def build_mux_list(
     return mux_list
 
 
-def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
-    """Calculate the `offset` and `skip` attributes of the pads such that the bondpads are centered on each side and the pads are aligned with their respective bondpads.
-    Perform checks to make sure the pads can all fit on the requested side without violating design constraints or exceeding layout margins.
+def _get_effective_bp_spacing(pad: Optional[PadDef], default_spacing: float) -> float:
     """
-    # FIXME: what do we give if no pad on this side
-    if len(pad_list) == 0:
+    Resolve bondpad spacing using three-level hierarchy.
+
+    Priority (highest to lowest):
+        1. Per-pad: pad.layout.bp_spacing
+        2. Per-side/Global: default_spacing (already resolved by caller)
+
+    :param pad: Pad to get spacing from (None for first pad)
+    :param float default_spacing: Default spacing (per-side or global)
+    :return: Effective bondpad spacing
+    :rtype: float
+    """
+    if pad is not None and pad.layout.bp_spacing is not None:
+        return float(pad.layout.bp_spacing)
+    return default_spacing
+
+
+def _calculate_total_bondpad_space(
+    pad_list: List[PadDef], default_spacing: float
+) -> float:
+    """
+    Calculate total space occupied by bondpads including spacing.
+
+    :param pad_list: List of pads on this side
+    :param float default_spacing: Default bondpad spacing
+    :return: Total space in micrometers
+    :rtype: float
+    """
+    # Sum bondpad widths
+    widths = np.array(
+        [pad.layout.bond_pad.width for pad in pad_list if pad.layout is not None]
+    )
+    total_space = float(np.sum(widths))
+
+    # Add spacing between bondpads (n-1 gaps for n pads)
+    # Use pad[i+1].bp_spacing for the gap before pad i+1 (consistent with skip convention)
+    for i in range(1, len(pad_list)):
+        spacing = _get_effective_bp_spacing(pad_list[i], default_spacing)
+        total_space += spacing
+
+    return total_space
+
+
+def _calculate_first_pad_offset(
+    bp_offset: float,
+    edge_to_pad: float,
+    edge_to_bp: float,
+    bp_width: float,
+    pad_width: float,
+) -> float:
+    """
+    Calculate offset for first pad to align with bondpad.
+
+    :param float bp_offset: Bondpad offset from edge
+    :param float edge_to_pad: Distance from edge to pad cells
+    :param float edge_to_bp: Distance from edge to bondpads
+    :param float bp_width: Bondpad width
+    :param float pad_width: Pad cell width
+    :return: Calculated offset
+    :rtype: float
+    """
+    return bp_offset - (edge_to_pad - edge_to_bp) + (bp_width / 2) - (pad_width / 2)
+
+
+def _calculate_pad_skip(
+    last_bp_width: float,
+    bp_width: float,
+    bp_spacing: float,
+    last_pad_width: float,
+    pad_width: float,
+) -> float:
+    """
+    Calculate skip between two pads based on bondpad and cell dimensions.
+
+    :param float last_bp_width: Previous bondpad width
+    :param float bp_width: Current bondpad width
+    :param float bp_spacing: Spacing between bondpads
+    :param float last_pad_width: Previous pad cell width
+    :param float pad_width: Current pad cell width
+    :return: Calculated skip value
+    :rtype: float
+    """
+    return (
+        (last_bp_width + bp_width) / 2 + bp_spacing - (last_pad_width + pad_width) / 2
+    )
+
+
+def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
+    """
+    Calculate pad positions (offset and skip) such that bondpads are centered on each die side.
+
+    This function:
+        1. Validates physical attributes and configuration
+        2. Calculates total space required for bondpads (including spacing)
+        3. Centers bondpads on the die edge
+        4. Aligns pad cells with their corresponding bondpads
+        5. Calculates skip values for relative positioning
+
+    Bondpad spacing hierarchy (highest to lowest priority):
+        1. Per-pad: pad.layout.bp_spacing (spacing from this bondpad to next)
+        2. Per-side: pad_group.get_bp_spacing(side)
+        3. Global: pad_group.bp_spacing
+
+    Positioning modes:
+        - Auto mode: First pad gets offset, subsequent pads get skip (relative positioning)
+        - Manual offset mode: Explicit offset provided (absolute positioning)
+        - Mixed mode: Some pads with offset, some with skip
+
+    :param PadGroup pad_group: Pad configuration with physical attributes
+    :param List[PadDef] pad_list: List of pads to position on one die side
+    :return: Bondpad offset from edge (for centering)
+    :rtype: float
+    :raises ValidationError: If physical attributes are missing or invalid
+    :raises ValueError: If pads don't fit on the specified side
+    """
+    # Early return for empty list
+    if not pad_list:
         return 0.0
 
-    # Ensure the physical attributes were properly set in the pad config file
+    # -------------------------------------------------------------------------
+    # 1. Validate and extract physical attributes
+    # -------------------------------------------------------------------------
     try:
         fp = pad_group.fp_dim
         if fp is None:
@@ -376,79 +490,80 @@ def set_pad_positions(pad_group: PadGroup, pad_list: List[PadDef]):
 
         fp_length = float(fp.length) if fp.length is not None else float(fp.width)
         fp_width = float(fp.width)
-        edge_to_bp = float(pad_group.bondpad_edge_offset)
-        edge_to_pad = float(pad_group.pad_edge_offset)
-        bp_spacing = float(pad_group.bp_spacing)
     except (AttributeError, TypeError, ValueError) as e:
         raise ValidationError(
             "Please set all mandatory physical_attributes in PadGroup"
         ) from e
 
-    # Determine which dimension we are dealing with
     side = pad_list[0].mapping
 
+    # Get per-side edge offsets
+    try:
+        edge_to_bp = pad_group.get_bondpad_edge_offset(side)
+        edge_to_pad = pad_group.get_pad_edge_offset(side)
+        default_bp_spacing = pad_group.get_bp_spacing(side)
+    except ValidationError as e:
+        raise ValidationError(
+            f"Physical attributes not properly defined for side '{side}': {e}"
+        ) from e
+
+    # Determine side length
     if side in (PadMapping.TOP, PadMapping.BOTTOM):
         side_length = fp_width
     elif side in (PadMapping.LEFT, PadMapping.RIGHT):
         side_length = fp_length
     else:
-        print("ERROR: Invalid pad mapping {0}".format(side))
-        raise ValueError("Invalid pad mapping")
+        raise ValueError(f"Invalid pad mapping: {side}")
 
-    # Calculate space occupied by bondpads on the designated side of the chip
-    # Simple correction to consider only pads that have bondpads defined
-    widths = np.array(
-        [pad.layout.bond_pad.width for pad in pad_list if pad.layout is not None]
-    )
-    bp_space = float(np.sum(widths))
-    bp_space += bp_spacing * (len(pad_list) - 1)
-    # Check if the bondpads are able to fit on the side
-    extra_space = side_length - bp_space - 2 * edge_to_bp
+    # -------------------------------------------------------------------------
+    # 2. Calculate total space and check fit
+    # -------------------------------------------------------------------------
+    total_bp_space = _calculate_total_bondpad_space(pad_list, default_bp_spacing)
+    extra_space = side_length - total_bp_space - 2 * edge_to_bp
 
     if extra_space < 0:
-        print(
-            "ERROR: Bondpads cannot fit on side {0}. Either reduce bondpad spacing or move some pads to another side".format(
-                side
-            )
+        raise ValueError(
+            f"Bondpads cannot fit on side {side}. "
+            f"Required: {total_bp_space + 2 * edge_to_bp:.1f}μm, "
+            f"Available: {side_length:.1f}μm. "
+            f"Either reduce bondpad spacing or move some pads to another side."
         )
-        raise ValueError("Bondpads cannot fit on side {0}".format(side))
 
-    # Calculate distance from edge to first bondpad (i.e. bondpad offset) to center the pads
+    # Bondpad offset from edge (for centering)
     bp_offset = extra_space / 2
 
-    # Calculate skip parameter between one pad and the next to center the pads
+    # -------------------------------------------------------------------------
+    # 3. Calculate positions for each pad
+    # -------------------------------------------------------------------------
     for i, pad in enumerate(pad_list):
-
-        # Get bondpad width from physical attributes
-        bp_cell = pad.layout.bond_pad
-        bp_width = bp_cell.width
-
-        if i > 0:
-            last_bp_cell = pad_list[i - 1].layout
-            last_bp_width = last_bp_cell.bond_pad.width
-
-        # Get pad cell width using helper function
+        # Extract dimensions
+        bp_width = pad.layout.bond_pad.width
         pad_width = _get_pad_cell_width(pad)
 
-        # Get previous pad width if not first pad
+        # Get previous pad dimensions (for skip calculation)
         if i > 0:
-            last_pad_width = _get_pad_cell_width(pad_list[i - 1])
-        if (i == 0) and (pad.layout.offset is None):
-            # First pad: set offset to align with bondpad
-            pad.layout.offset = (
-                bp_offset
-                - (edge_to_pad - edge_to_bp)
-                + (bp_width / 2)
-                - (pad_width / 2)
+            prev_pad = pad_list[i - 1]
+            prev_bp_width = prev_pad.layout.bond_pad.width
+            prev_pad_width = _get_pad_cell_width(prev_pad)
+        else:
+            prev_pad = None
+            prev_bp_width = 0.0
+            prev_pad_width = 0.0
+
+        # Set first pad offset if not manually specified
+        if i == 0 and pad.layout.offset is None:
+            pad.layout.offset = _calculate_first_pad_offset(
+                bp_offset, edge_to_pad, edge_to_bp, bp_width, pad_width
             )
 
-        # If the layout/skip of the pads is not predefined, calculate automatically
-        if (pad.layout.skip is None) and (pad.layout.offset is None):
-            pad.layout.skip = (
-                (last_bp_width + bp_width) / 2
-                + bp_spacing
-                - (last_pad_width + pad_width) / 2
+        # Calculate skip if not manually specified
+        # Note: Skip not calculated if offset is manual (absolute positioning mode)
+        if pad.layout.skip is None and pad.layout.offset is None:
+            bp_spacing = _get_effective_bp_spacing(pad, default_bp_spacing)
+            pad.layout.skip = _calculate_pad_skip(
+                prev_bp_width, bp_width, bp_spacing, prev_pad_width, pad_width
             )
+
     return bp_offset
 
 

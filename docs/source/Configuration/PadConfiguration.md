@@ -1,8 +1,10 @@
 # Pad Configuration
-The pads of the design can be configured using `.hjson` files, which are then read by `mcu-gen` and template files to generate the pad ring RTL and back-end pad IO of the design.
-An example pad configuration file is `pad_cfg.hjson`.
+The pads of the design can be configured using `.hjson` files and `.py` files, which are then read by `mcu-gen` and template files to generate the pad ring RTL and back-end pad IO of the design.
+Example pad configuration files are `pad_cfg.hjson` and `pad_cfg.py`.
 
-## Basic pad configuration
+The goal of both files is to describe your desired pad configuration. The legacy format uses HJSON, while the Python format uses `PadDef` subclass instances (`SinglePad`, `RangePad`, `MultiplexedPad`) that are added to a `PadGroup` and wrapped in a `PadRing` to build, integrate, and validate the pad ring for X-HEEP.
+
+## Basic pad configuration (Legacy)
 Each pad of the design is defined as an object in the `pads` list. For example,
 ```
 clk: {
@@ -12,7 +14,7 @@ clk: {
 ```
 defines a single input pad named `clk`.
 
-### Mandatory pad attributes 
+### Mandatory pad attributes
 Pad objects must contain the following mandatory attributes:
 * `num`: The number of pads to be defined.
 * `type`: The type of pad.
@@ -104,7 +106,7 @@ An optional dictionary called `physical_attributes` can be added in order to tri
     * `insert_cell_name_here`: Not the actual name of the attribute, but a placeholder for a bondpad name (ex. PAD...)
         * `width`: Width in um
 
-The names of the cells in the `dimensions` field should exactly match those of the `layout_attributes`:`cell` or `layout_attributes`:`bondpad` parameter of each cell. Similarly, each `cell` or `bondpad` name defined among all of the pads should have dimensions associated in order for the pad offset calculation to work correctly. The width of the cell can be found in the LEF file of th pads/bondpads. 
+The names of the cells in the `dimensions` field should exactly match those of the `layout_attributes`:`cell` or `layout_attributes`:`bondpad` parameter of each cell. Similarly, each `cell` or `bondpad` name defined among all of the pads should have dimensions associated in order for the pad offset calculation to work correctly. The width of the cell can be found in the LEF file of the pads/bondpads. 
 
 Here is an example of the `physical_attributes` definition:
 ```
@@ -153,68 +155,41 @@ The automatic pad placement calculates the pad `offset` and `skip` parameters su
 
 Furthermore, `mcu-gen` displays an error message if the number of pads on a given side and the bondpad spacing cause the bondpads to overflow past the I/O boundary on a given side. A solution could be to move pads to a different side, or reduce the bondpad spacing parameter. However, make sure that the bondpad spacing does not exceed the minimum possible spacing defined by the packaging provider.
 
-## Python-based Pad Configuration (`pad_cfg.py`)
+## Python Configuration (`pad_cfg.py`)
 
-In addition to `.hjson` files, pads can be configured directly in Python using an object-oriented API.  
-This is useful when:
+Use Python for object oriented pad configuration with loops, conditionals, and type safety.
 
-- You want to reuse patterns (loops, functions, conditionals).
-- You prefer type-checked / IDE-friendly configuration.
-- You want a single source of truth in Python without editing HJSON.
-
-The Python configuration uses the same underlying objects as the HJSON loader:
-
-- `SinglePad`, `MultiplexedPad`, `RangePad`
-- `PadGroup`, `Dimension`, `Layout`
-- `PadRing`, `PadMapping`
-
-Python pad configuration is selected by passing a `.py` file to `mcu-gen` through `PADS_CFG`:
-
+**Usage:**
 ```bash
-make mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=test/test_x_heep_gen/pads/pad_cfg.py
+make mcu-gen X_HEEP_CFG=configs/ci.hjson PADS_CFG=pad_cfg.py
 ```
 
-`pad_cfg.py` must expose either:
+**Required:** Your `pad_cfg.py` must define a `config()` function returning a `PadRing`:
+```python
+def config() -> PadRing:
+    pad_group = PadGroup(name="x_heep_system")
+    # Add pads...
+    return PadRing(pad_group)
+```
 
-* A `config() -> PadRing` function **(pure Python config)**, or
-* A helper that builds a `PadGroup` from an HJSON-like dictionary (e.g. `build_pad_group(cfg)`).
+### Python Classes
 
-### Object model (Python)
+**Pad types:**
+- `SinglePad(name, type, ...)` — Single pad
+- `RangePad(name, type, num, offset, ...)` — Multiple pads (generates `name_0`, `name_1`, ...)
+- `MultiplexedPad(name, type, alts=[...])` — Multiplexed pads
 
-The main Python classes correspond closely to the HJSON structure:
+**Physical layout:**
+- `Dimension(width, name, length)` — Pad/bondpad dimensions
+- `Layout(bond_pad, cell_pad, offset, skip)` — Per-pad layout attributes
 
-* **`Dimension`**
-  Represents width/length information (used for physical pad/bondpad sizes).
+**Container:**
+- `PadGroup(name)` — Add pads with `.add_pad()`, set physical attributes
+- `PadRing(pad_group)` — Wrapper for `mcu-gen`
 
-* **`Layout`**
-  Groups the per-cell physical info:
-
-  * `name`: technology cell name (`PAD1`, `PAD2`, …).
-  * `bond_pad`: `Dimension` for the bondpad.
-  * `cell_pad`: `Dimension` for the pad cell.
-  * `offset`, `skip`: optional layout overrides (same meaning as the HJSON fields).
-
-* **`PadDef` and its subclasses**
-
-  * `SinglePad` — equivalent to a single, non-multiplexed pad.
-  * `RangePad` — equivalent to `num > 1` / `num_offset` in HJSON, generates `pad_name_0..N`.
-  * `MultiplexedPad` — equivalent to `mux` in HJSON, with an `alts` list of `(alt_name, PadDef)`.
-
-* **`PadGroup`**
-
-  * Holds all pads and physical attributes for the design.
-  * Encodes `physical_attributes` (floorplan, spacing, dimensions).
-  * Responsible for adding pads and ensuring consistency.
-
-* **`PadRing`**
-
-  * Wraps a `PadGroup`.
-  * Will be used by `mcu-gen` and templates to build the final pad ring.
-
-* **`PadMapping`**
-
-  * Enum encoding pad side: `TOP`, `RIGHT`, `BOTTOM`, `LEFT`.
-  * Mirrors the HJSON `mapping` attribute.
+**Enums:**
+- `PadType`: `INPUT`, `OUTPUT`, `INOUT`, `BYPASS_INPUT`, `BYPASS_OUTPUT`, `BYPASS_INOUT`, `SUPPLY`
+- `PadMapping`: `TOP`, `RIGHT`, `BOTTOM`, `LEFT`
 
 ### Mapping HJSON → Python
 
@@ -227,52 +202,29 @@ The key field mappings are:
 | `num`, `num_offset`             | `RangePad(num=..., offset=...)`                             |
 | `mux`                           | `MultiplexedPad(alts=[("sig", SinglePad(...)), ...])`       |
 | `layout_attributes.index`       | `layout_index=<int>`                                        |
-| `layout_attributes.cell`        | `layout=Layout(name="PAD1", ...)`                           |
+| `layout_attributes.cell`        | `layout=Layout(cell_pad=Dimension(name="PAD1", width=...))`  |
 | `layout_attributes.bondpad`     | carried by `Layout.bond_pad`                                |
 | `layout_attributes.orient`      | `orient="R0"/"R90"/"MX"/"MX90"` (uppercased)                |
 | `layout_attributes.offset/skip` | `Layout.offset`, `Layout.skip`                              |
 | `physical_attributes.*`         | constructor args of `PadGroup` (`fp_dim`, offsets, spacing) |
 
-## Example: Pure Python configuration (`config() -> PadRing`)
+### Example
 
-A Python pad config file can directly construct the pads and return a `PadRing`. An example is shown
-in [configs/pad_cfg.py](https://github.com/x-heep/x-heep/blob/main/configs/pad_cfg.py).
+See [configs/pad_cfg.py](https://github.com/x-heep/x-heep/blob/main/configs/pad_cfg.py) for a complete example.
 
-
-`mcu-gen` will call `config()` to obtain the `PadRing` and continue exactly as with the HJSON-driven path.
-
-## Example: Using the OOP loader with HJSON (`build_pad_group`)
-
-If you still want to start from a HJSON configuration but use the new classes, you can rely on the OOP loader helpers. A simplified version (as in your OOP `pad_cfg.py`) looks like:
-
+**Basic pattern:**
 ```python
-@dataclass(frozen=False)
-class PadGroup:
-    ...
-    def get_physical_attributes(self): ...
-    def get_multiplexed_pads(self) -> List[MultiplexedPad]: ...
-    def get_pads(self) -> List[PadDef]: ...
-    ...
+from x_heep_gen.pads.PadDef import SinglePad, RangePad, PadGroup, PadType
+from x_heep_gen.pads.PadRing import PadRing
 
-    @staticmethod
-    def _build_layouts(dimensions: Mapping[str, Mapping[str, Any]]) -> Dict[str, Layout]:
-        # Build Layout objects from the 'dimensions' subsection
-        ...
+def config() -> PadRing:
+    pad_group = PadGroup(name="x_heep_system")
 
-    @staticmethod
-    def build_pad_group(cfg: Mapping[str, Any], name: str = "x_heep_top") -> PadGroup:
-        # 1. Parse cfg["physical_attributes"] into Dimension, spacing, offsets
-        # 2. Build Layout objects from cfg["physical_attributes"]["dimensions"]
-        # 3. Construct a PadGroup with those physical parameters
-        # 4. Iterate over cfg["pads"] and create SinglePad, RangePad, or MultiplexedPad
-        #    instances, depending on "num" and "mux"
-        # 5. Add them to the PadGroup and return it
-        ...
+    # Single pad
+    pad_group.add_pad(SinglePad(name="clk", type=PadType.INPUT))
+
+    # Multiple pads (gpio_0, gpio_1, ..., gpio_13)
+    pad_group.add_pad(RangePad(name="gpio", type=PadType.INOUT, num=14, offset=0))
+
+    return PadRing(pad_group)
 ```
-
-This gives you two equivalent flows:
-
-* **Pure Python config**: write all pads in `pad_cfg.py` using `SinglePad`/`RangePad`/`MultiplexedPad` and return a `PadRing`.
-* **HJSON + loader**: use `build_pad_group(cfg)` to convert existing HJSON structures into the same `PadGroup`/`PadDef` objects.
-
-In both cases, the downstream generator and templates see the same `PadRing` and `Pad` data, so the generated RTL and `.io` integration remain identical.
