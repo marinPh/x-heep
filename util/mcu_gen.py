@@ -138,8 +138,6 @@ def generate_xheep(args):
         exit("debug start address must be greater than 0x10000")
 
     debug_size_address = string2int(config["debug"]["length"])
-
-    # FIXME: Change these to a peripheral or an address map python class?
     ext_slave_start_address = string2int(config["ext_slaves"]["address"])
     ext_slave_size_address = string2int(config["ext_slaves"]["length"])
 
@@ -151,6 +149,8 @@ def generate_xheep(args):
 
     # Here the xheep system is built, and the missing gaps are filled
     xheep.build()
+    pad_ring = PadRing(pad_cfg)
+    xheep.set_padring(pad_ring)
     if not xheep.validate():
         raise RuntimeError("There are errors when configuring X-HEEP")
 

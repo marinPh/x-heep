@@ -16,7 +16,6 @@ from .memory_ss.linker_section import LinkerSection
 from .xheep import BusType, XHeep
 from .peripherals.base_peripherals_domain import BasePeripheralDomain
 from .peripherals.user_peripherals_domain import UserPeripheralDomain
-from .pads.PadDef import PadGroup
 from .peripherals.base_peripherals import (
     SOC_ctrl,
     Bootrom,
