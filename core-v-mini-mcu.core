@@ -408,6 +408,8 @@ targets:
           - '-CFLAGS "-Wall -fpermissive"'
           - '-LDFLAGS "-pthread -lutil -lelf"'
           - "-Wall"
+        make_options:
+          - '-j$(shell nproc)'
 
   sim_sc:
     <<: *default_target
