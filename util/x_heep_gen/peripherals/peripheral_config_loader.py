@@ -1,7 +1,8 @@
-import os
-import sys
+# Copyright 2026 EPFL
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+
 import hjson
-from jsonref import JsonRef
 
 # Import peripheral domain classes
 from .base_peripherals_domain import BasePeripheralDomain
@@ -199,20 +200,13 @@ def _load_domain_peripherals(
     system.add_peripheral_domain(domain)
 
 
-def load_peripherals_config(system, config_path: str):
+def load_peripherals_config(system, config: hjson.OrderedDict):
+    """
+    Load peripheral configurations from HJSON and add them to the system.
 
-    if not os.path.exists(config_path):
-        raise ValueError(
-            f"Peripherals configuration file {config_path} does not exist."
-        )
-
-    with open(config_path, "r") as file:
-        try:
-            srcfull = file.read()
-            config = hjson.loads(srcfull, use_decimal=True)
-            config = JsonRef.replace_refs(config)
-        except ValueError:
-            raise SystemExit(sys.exc_info()[1])
+    :param System system: The system to which peripherals will be added
+    :param hjson.OrderedDict config: The HJSON configuration dictionary
+    """
 
     # Define peripheral factory maps
     # Base peripherals are always-on peripherals in the AO (Always On) domain

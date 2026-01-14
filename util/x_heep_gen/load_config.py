@@ -199,6 +199,7 @@ def load_cfg_hjson(src: str) -> XHeep:
     :raise RuntimeError: when and invalid configuration is passed or when the sanity checks failed
     """
     config = hjson.loads(src, parse_int=int, object_pairs_hook=hjson.OrderedDict)
+
     mem_config = None
     bus_config = None
     linker_config = None
@@ -242,6 +243,8 @@ def load_cfg_hjson(src: str) -> XHeep:
         else:
             cpu = CPU(cpu_config)
         system.set_cpu(cpu)
+    
+    load_peripherals_config(system, config)
 
     return system
 
