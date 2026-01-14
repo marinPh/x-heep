@@ -137,7 +137,7 @@ jobs:
         uses: ./.github/actions/setup-project
       - name: Compile and simulate all apps
       # Download simulator build
-      - uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.simulator }}-sim-${{ github.run_id }}
           path: build/
