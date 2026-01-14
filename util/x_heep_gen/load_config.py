@@ -243,7 +243,7 @@ def load_cfg_hjson(src: str) -> XHeep:
         else:
             cpu = CPU(cpu_config)
         system.set_cpu(cpu)
-    
+
     load_peripherals_config(system, config)
 
     return system
