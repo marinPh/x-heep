@@ -65,13 +65,10 @@ jobs:
           python3 .github/scripts/generate_test_matrix.py > matrix.json
           echo "matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
 
-  # 1. BUILD SIMULATOR (HW)
   build-simulator:
     name: Build ${{ matrix.simulator }}
     runs-on: ubuntu-latest
     needs: [determine-image-tag, generate-app-matrix, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
-    timeout-minutes: 20  # Verilator build typically takes ~10 min
-
     strategy:
       fail-fast: false
       matrix:
@@ -99,33 +96,31 @@ jobs:
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
           if-no-files-found: error
 
-  # 2. COMPILE APPS (SW)
+
   compile-apps:
     name: Compile all Apps
     runs-on: ubuntu-latest
-    needs: [determine-image-tag, generate-app-matrix, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
+    needs: [determine-image-tag, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
     strategy:
       fail-fast: false
     container:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-project
+      - name: Setup Project
+        uses: ./.github/actions/setup-project
       - name: Compile Only
         shell: bash -l {0}
         run: |
           make mcu-gen X_HEEP_CFG=configs/ci.hjson
           # Compiles to sw/build/ directory
-          python3 test/test_apps/test_apps.py --compilers gcc --compile-only
+          python3 test/test_apps/test_apps.py --compilers gcc,clang,gcc --compiler-paths /tools/riscv --compiler-prefixes riscv32-corev-,riscv32-unknown-,riscv32-unknown- --table --compile-only --compile-only
 
 
-  # 3. RUN SIMULATION (Distributed)
+  
   simulate-apps:
     name: Simulate (${{ matrix.simulator }}, Batch ${{ matrix.batch }})
     runs-on: ubuntu-latest
     needs: [determine-image-tag, generate-app-matrix, build-simulator, compile-apps, lint, gen-peripherals, gen-pads, check-vendor, black-formatter]
-    timeout-minutes: 30  # 6 apps × ~3-5 min each + margin
-
     strategy:
       fail-fast: false
       matrix:
@@ -136,10 +131,11 @@ jobs:
       image: ghcr.io/x-heep/x-heep/x-heep-toolchain:${{ needs.determine-image-tag.outputs.tag }}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/setup-project
-
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Project
+        uses: ./.github/actions/setup-project
+      - name: Compile and simulate all apps
       # Download simulator build
       - uses: actions/download-artifact@v4
         with:
@@ -187,11 +183,13 @@ jobs:
           make mcu-gen X_HEEP_CFG=configs/ci.hjson
 
           # Compile and run simulations for this batch (simulator already built)
-          python3 test/test_apps/test_apps.py \
-            --apps "${{ matrix.apps }}" \
-            --compilers gcc \
+          make mcu-gen X_HEEP_CFG=configs/ci.hjson && \
+          python3 test/test_apps/test_apps.py --apps "${{ matrix.apps }}" \
             --skip-build-sim \
-            --table | tee results.log
+            --compilers gcc \
+            --compiler-paths /tools/riscv \ 
+            --compiler-prefixes riscv32-corev- --table
+
 
           # Add results to GitHub job summary
           echo "## Simulation Results: ${{ matrix.simulator }} (Batch ${{ matrix.batch }})" >> $GITHUB_STEP_SUMMARY
@@ -213,7 +211,7 @@ jobs:
         uses: ./.github/actions/setup-project
       - name: Mark Repository as Safe
         run: |
-          git config --global --add safe.directory /__w/x-heep/x-heep
+          git config --global --add safe.directory $GITHUB_WORKSPACE
       - name: Check generated file consistency
         shell: bash -l {0}
         run: |

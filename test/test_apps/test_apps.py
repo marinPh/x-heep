@@ -175,71 +175,60 @@ def compile_app(an_app, compiler_path, compiler_prefix, compiler, linker, dry_ru
         return True
 
 
-def run_app(an_app, simulator, args, dry_run=False, verbose=True):
+def run_app(an_app, simulator, dry_run=False, verbose=True):
     """
-    Runs an_app. If args.simulator_bin is set, runs binary directly.
-    Otherwise, runs via make.
+    Runs an_app with the simulator. Checks if it times out. Outputs if
+    it finishes with errors or without.
+
+    Returns the SimResult for the simulation of an_app.
     """
     if verbose:
-        print(BColors.OKBLUE + f"Running {an_app.name}..." + BColors.ENDC, flush=True)
-
-    if args.simulator_bin is not None and args.simulator_bin:
-
-        hex_path = os.path.join(args.hex_dir, f"{an_app.name}.hex")
-        
-        if not os.path.exists(hex_path):
-             print(BColors.FAIL + f"Hex file not found: {hex_path}" + BColors.ENDC)
-             return SimResult.FAILED
-
-        cmd = ["make",f"{simulator}-run-app", an_app.name]
-        
-        if dry_run:
-            print(BColors.OKCYAN + f"[DRY RUN] {' '.join(cmd)}" + BColors.ENDC)
-            return SimResult.PASSED
-
-        try:
-            # Run the binary directly
-            run_output = subprocess.run(
-                cmd,
-                capture_output=True,
-                timeout=SIM_TIMEOUT_S,
-                check=False 
-            )
-        except subprocess.TimeoutExpired:
-            print(BColors.FAIL + f"Timeout." + BColors.ENDC)
-            return SimResult.TIMED_OUT
+        print(
+            BColors.OKBLUE + f"Running {an_app.name} with {simulator}..." + BColors.ENDC,
+            flush=True,
+        )
     
-    else:
-        if dry_run:
-            if verbose:
-                print(BColors.OKCYAN + f"[DRY RUN] make {simulator}-run" + BColors.ENDC, flush=True)
-            return SimResult.PASSED
-        
-        try:
-            run_output = subprocess.run(
-                ["make", f"{simulator}-run"],
-                capture_output=True,
-                timeout=SIM_TIMEOUT_S,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            print(BColors.FAIL + f"Timeout." + BColors.ENDC)
-            return SimResult.TIMED_OUT
-
-    # --- COMMON RESULT PARSING ---
-    # This part remains exactly the same as your original script
-    match = re.search(
-        ERROR_PATTERN_DICT[simulator], str(run_output.stdout.decode("utf-8"))
-    )
-    if match and match.group(1) == "0":
+    if dry_run:
         if verbose:
-            print(BColors.OKGREEN + f"Success." + BColors.ENDC, flush=True)
+            print(BColors.OKCYAN + f"[DRY RUN] make {simulator}-run" + BColors.ENDC, flush=True)
         return SimResult.PASSED
+    
+    try:
+        run_output = subprocess.run(
+            ["make", f"{simulator}-run"],
+            capture_output=True,
+            timeout=SIM_TIMEOUT_S,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        print(
+            BColors.FAIL
+            + f"Simulation of {an_app.name} with {simulator} timed out."
+            + BColors.ENDC,
+            flush=True,
+        )
+        return SimResult.TIMED_OUT
     else:
-        print(BColors.FAIL + f"Failed." + BColors.ENDC)
-        # Print stdout for debugging
-        print(run_output.stdout.decode("utf-8")) 
-        return SimResult.FAILED
+        match = re.search(
+            ERROR_PATTERN_DICT[simulator], str(run_output.stdout.decode("utf-8"))
+        )
+        if match and match.group(1) == "0":
+            if verbose:
+                print(
+                    BColors.OKGREEN
+                    + f"Ran {an_app.name} with {simulator} successfully."
+                    + BColors.ENDC,
+                    flush=True,
+                )
+            return SimResult.PASSED
+        else:
+            print(
+                BColors.FAIL
+                + f"Simulation of {an_app.name} with {simulator} failed."
+                + BColors.ENDC
+            )
+            print(BColors.FAIL + str(run_output.stdout.decode("utf-8")) + BColors.ENDC)
+            return SimResult.FAILED
 
 
 def build_simulator(simulator, dry_run=False, verbose=True):
