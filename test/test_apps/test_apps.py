@@ -573,7 +573,7 @@ def main():
                                 flush=True,
                             )
                     else:
-                        simulation_result = run_app(an_app, simulator, args, args.dry_run, verbose=not args.table)
+                        simulation_result = run_app(an_app, simulator, args.dry_run, verbose=not args.table)
                         an_app.add_simulation_result(simulator, simulation_result)
             
             # Print table row if table mode is enabled
