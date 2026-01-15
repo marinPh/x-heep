@@ -20,6 +20,10 @@ from .PadDef import PadType, PadMapping, Orientation
 
 # Pad type configuration for signal generation
 #
+# DEPRECATED: This configuration is now duplicated in pad_ring.sv.tpl.
+# The template-based generation is preferred. This Python-side configuration
+# is kept for backward compatibility but may be removed in a future release.
+#
 # Configuration for generating pad cell instances by type.
 #
 # Maps pad types (input/output/inout) to their:
@@ -71,6 +75,9 @@ PAD_TYPE_CONFIG = {
 def _build_pad_connections(connections: List[Tuple[str, str]]) -> str:
     """
     Build connection string from list of (port, signal) tuples.
+
+    DEPRECATED: This function is now replaced by template-based generation
+    in pad_ring.sv.tpl. Kept for backward compatibility.
 
     :param connections: List of (port_name, signal_name) tuples
     :return: Formatted connection string
@@ -131,6 +138,10 @@ class Pad:
         """
         Generate pad ring instance and interface strings.
 
+        DEPRECATED: This method is now replaced by template-based generation
+        in pad_ring.sv.tpl using Mako <%def> blocks (gen_pad_io_interface,
+        gen_pad_ctrl_interface, gen_pad_instance). Kept for backward compatibility.
+
         Populates:
             - interface: Top-level IO interface
             - pad_ring_io_interface: Pad ring IO
@@ -188,43 +199,36 @@ class Pad:
         """
         Generate core_v_mini_mcu interface signals.
 
+        DEPRECATED: This method is now replaced by template-based generation
+        in core_v_mini_mcu.sv.tpl using Mako <%def> block (create_core_v_mini_mcu_ctrl).
+        Kept for backward compatibility.
+
         Populates core_v_mini_mcu_interface based on pad type and drive signals.
         """
+        for i, pad_type in enumerate(self.pad_type_drive):
+            if self.driven_manually[i]:
+                continue
 
-        cnt = len(self.pad_type_drive)
+            sig = self.signal_name_drive[i]
+            base_type = pad_type.replace("bypass_", "")
 
-        for i in range(cnt):
-            if self.driven_manually[i] == False:
-                if (
-                    self.pad_type_drive[i] == "input"
-                    or self.pad_type_drive[i] == "bypass_input"
-                ):
-                    self.core_v_mini_mcu_interface += (
-                        "    input logic " + self.signal_name_drive[i] + "i,\n"
-                    )
-                if (
-                    self.pad_type_drive[i] == "output"
-                    or self.pad_type_drive[i] == "bypass_output"
-                ):
-                    self.core_v_mini_mcu_interface += (
-                        "    output logic " + self.signal_name_drive[i] + "o,\n"
-                    )
-                if (
-                    self.pad_type_drive[i] == "inout"
-                    or self.pad_type_drive[i] == "bypass_inout"
-                ):
-                    self.core_v_mini_mcu_interface += (
-                        "    output logic " + self.signal_name_drive[i] + "o,\n"
-                    )
-                    self.core_v_mini_mcu_interface += (
-                        "    input logic " + self.signal_name_drive[i] + "i,\n"
-                    )
-                    self.core_v_mini_mcu_interface += (
-                        "    output logic " + self.signal_name_drive[i] + "oe_o,\n"
-                    )
+            if base_type == "input":
+                self.core_v_mini_mcu_interface += f"    input logic {sig}i,\n"
+            elif base_type == "output":
+                self.core_v_mini_mcu_interface += f"    output logic {sig}o,\n"
+            elif base_type == "inout":
+                self.core_v_mini_mcu_interface += f"    output logic {sig}o,\n"
+                self.core_v_mini_mcu_interface += f"    input logic {sig}i,\n"
+                self.core_v_mini_mcu_interface += f"    output logic {sig}oe_o,\n"
 
     def create_internal_signals(self):
-        """Generate internal signal declarations for pad connections."""
+        """
+        Generate internal signal declarations for pad connections.
+
+        DEPRECATED: This method is now replaced by template-based generation
+        in x_heep_system.sv.tpl using Mako <%def> block (gen_internal_signals).
+        Kept for backward compatibility.
+        """
         cnt = len(self.pad_type_drive)
 
         for i in range(cnt):
@@ -247,6 +251,10 @@ class Pad:
     def create_multiplexers(self):
         """
         Generate mux selection logic for multiplexed pads.
+
+        DEPRECATED: This method is now replaced by template-based generation
+        in x_heep_system.sv.tpl using Mako <%def> block (gen_multiplexer).
+        Kept for backward compatibility.
 
         Creates mux_process with case statement for selecting between
         multiple pad functions.
@@ -326,6 +334,13 @@ class Pad:
             self.mux_process += "   endcase\n" + "  end\n"
 
     def create_constant_driver_assign(self):
+        """
+        Generate constant driver assignments for input/output pads.
+
+        DEPRECATED: This method is now replaced by template-based generation
+        in x_heep_system.sv.tpl using Mako <%def> block (gen_constant_driver_assign).
+        Kept for backward compatibility.
+        """
         cnt = len(self.pad_type_drive)
 
         for i in range(cnt):
@@ -350,7 +365,13 @@ class Pad:
                     )
 
     def create_core_v_mini_mcu_bonding(self):
+        """
+        Generate bonding connections to core_v_mini_mcu.
 
+        DEPRECATED: This method is now replaced by template-based generation
+        in x_heep_system.sv.tpl using Mako <%def> block (gen_core_v_mini_mcu_bonding).
+        Kept for backward compatibility.
+        """
         cnt = len(self.pad_type_drive)
 
         for i in range(cnt):
@@ -405,7 +426,13 @@ class Pad:
                     )
 
     def create_pad_ring_bonding(self):
+        """
+        Generate pad ring bonding connections and x_heep_system interface.
 
+        DEPRECATED: This method is now replaced by template-based generation
+        in x_heep_system.sv.tpl using Mako <%def> blocks (gen_pad_ring_bonding,
+        gen_x_heep_system_interface). Kept for backward compatibility.
+        """
         if self.is_muxed:
             append_name = "_muxed"
         else:

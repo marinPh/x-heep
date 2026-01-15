@@ -1,11 +1,34 @@
 // Copyright 2022 OpenHW Group
 // Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
 // SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
-
 <%
   dma = xheep.get_base_peripheral_domain().get_dma()
   memory_ss = xheep.memory_ss()
-%>
+%>\
+
+<%def name="create_core_v_mini_mcu_ctrl(pad)">\
+<%
+    result = ""
+    for i, pad_type in enumerate(pad.pad_type_drive):
+        if pad.driven_manually[i]:
+            continue
+
+        sig = pad.signal_name_drive[i]
+        base_type = pad_type.replace("bypass_", "")
+
+        if base_type == "input":
+            result += f"    input logic {sig}i,\n"
+        elif base_type == "output":
+            result += f"    output logic {sig}o,\n"
+        elif base_type == "inout":
+            result += f"    output logic {sig}o,\n"
+            result += f"    input logic {sig}i,\n"
+            result += f"    output logic {sig}oe_o,\n"
+    # Remove trailing newline to avoid double line breaks
+    result = result.rstrip('\n')
+%>\
+${result}
+</%def>\
 
 module core_v_mini_mcu
   import obi_pkg::*;
@@ -30,7 +53,7 @@ module core_v_mini_mcu
     input logic rst_ni,
 
 % for pad in xheep.get_padring().pad_list:
-${pad.core_v_mini_mcu_interface}
+${create_core_v_mini_mcu_ctrl(pad)}
 % endfor
 
     // IDs

@@ -57,9 +57,9 @@ LINKER   ?= on_chip
 TARGET   	?= sim
 
 # Mcu-gen configuration files
-X_HEEP_CFG ?= configs/general.hjson
-PADS_CFG ?= configs/pad_cfg.hjson
-PYTHON_X_HEEP_CFG ?=
+X_HEEP_CFG ?= configs/python_unsupported.hjson
+PADS_CFG ?= configs/pad_cfg.py
+PYTHON_X_HEEP_CFG ?= configs/general.py
 # Cached mcu-gen xheep configuration
 XHEEP_CONFIG_CACHE ?= $(BUILD_DIR)/xheep_config_cache.pickle
 

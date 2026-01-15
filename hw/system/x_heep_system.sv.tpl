@@ -1,6 +1,133 @@
 // Copyright 2022 OpenHW Group
 // Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
 // SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+<%def name="gen_internal_signals(pad)">\
+<%
+    result = ""
+    cnt = len(pad.pad_type_drive)
+    for i in range(cnt):
+        in_sig = pad.signal_name_drive[i] + "in_x"
+        out_sig = pad.signal_name_drive[i] + "out_x"
+        oe_sig = pad.signal_name_drive[i] + "oe_x"
+        if not pad.skip_declaration[i]:
+            result += f"  logic {in_sig},{out_sig},{oe_sig};\n"
+    if cnt > 1:
+        pad_in_muxed = pad.signal_name + "in_x_muxed"
+        pad_out_muxed = pad.signal_name + "out_x_muxed"
+        pad_oe_muxed = pad.signal_name + "oe_x_muxed"
+        result += f"  logic {pad_in_muxed},{pad_out_muxed},{pad_oe_muxed};\n"
+    result = result.rstrip('\n')
+%>\
+${result}
+</%def>\
+<%def name="gen_multiplexer(pad)">\
+<%
+    result = ""
+    cnt = len(pad.pad_type_drive)
+    if cnt > 1:
+        in_signals = [pad.signal_name_drive[i] + "in_x" for i in range(cnt)]
+        out_signals = [pad.signal_name_drive[i] + "out_x" for i in range(cnt)]
+        oe_signals = [pad.signal_name_drive[i] + "oe_x" for i in range(cnt)]
+        pad_in_muxed = pad.signal_name + "in_x_muxed"
+        pad_out_muxed = pad.signal_name + "out_x_muxed"
+        pad_oe_muxed = pad.signal_name + "oe_x_muxed"
+        result += "  always_comb\n  begin\n"
+        for i in range(cnt):
+            result += f"   {in_signals[i]}=1'b0;\n"
+        result += f"   unique case(pad_muxes[core_v_mini_mcu_pkg::{pad.localparam}])\n"
+        for i in range(cnt):
+            result += f"    {i}: begin\n"
+            result += f"      {pad_out_muxed} = {out_signals[i]};\n"
+            result += f"      {pad_oe_muxed} = {oe_signals[i]};\n"
+            result += f"      {in_signals[i]} = {pad_in_muxed};\n"
+            result += f"    end\n"
+        result += f"    default: begin\n"
+        result += f"      {pad_out_muxed} = {out_signals[0]};\n"
+        result += f"      {pad_oe_muxed} = {oe_signals[0]};\n"
+        result += f"      {in_signals[0]} = {pad_in_muxed};\n"
+        result += f"    end\n"
+        result += "   endcase\n  end\n"
+    result = result.rstrip('\n')
+%>\
+${result}
+</%def>\
+<%def name="gen_constant_driver_assign(pad)">\
+<%
+    result = ""
+    cnt = len(pad.pad_type_drive)
+    for i in range(cnt):
+        if not pad.skip_declaration[i]:
+            out_sig = pad.signal_name_drive[i] + "out_x"
+            oe_sig = pad.signal_name_drive[i] + "oe_x"
+            if pad.pad_type_drive[i] in ("input", "bypass_input"):
+                result += f"  assign {out_sig} = 1'b0;\n"
+                result += f"  assign {oe_sig} = 1'b0;\n"
+            elif pad.pad_type_drive[i] in ("output", "bypass_output"):
+                result += f"  assign {oe_sig} = 1'b1;\n"
+    result = result.rstrip('\n')
+%>\
+${result}
+</%def>\
+<%def name="gen_core_v_mini_mcu_bonding(pad)">\
+<%
+    result = ""
+    cnt = len(pad.pad_type_drive)
+    for i in range(cnt):
+        if not pad.driven_manually[i]:
+            sig = pad.signal_name_drive[i]
+            in_sig = sig + "in_x"
+            out_sig = sig + "out_x"
+            oe_sig = sig + "oe_x"
+            if pad.pad_type_drive[i] in ("input", "bypass_input"):
+                result += f"    .{sig}i({in_sig}),\n"
+            elif pad.pad_type_drive[i] in ("output", "bypass_output"):
+                result += f"    .{sig}o({out_sig}),\n"
+            elif pad.pad_type_drive[i] in ("inout", "bypass_inout"):
+                result += f"    .{sig}i({in_sig}),\n"
+                result += f"    .{sig}o({out_sig}),\n"
+                result += f"    .{sig}oe_o({oe_sig}),\n"
+    result = result.rstrip('\n')
+%>\
+${result}
+</%def>\
+<%def name="gen_pad_ring_bonding(pad)">\
+<%
+    result = ""
+    append_name = "_muxed" if pad.is_muxed else ""
+    if pad.pad_type == "input":
+        in_internal = pad.signal_name + "in_x" + append_name
+        result += f"    .{pad.io_interface}({pad.signal_name}i),\n"
+        result += f"    .{pad.signal_name}o({in_internal}),"
+    elif pad.pad_type == "output":
+        out_internal = pad.signal_name + "out_x" + append_name
+        result += f"    .{pad.io_interface}({pad.signal_name}o),\n"
+        result += f"    .{pad.signal_name}i({out_internal}),"
+    elif pad.pad_type == "inout":
+        in_internal = pad.signal_name + "in_x" + append_name
+        out_internal = pad.signal_name + "out_x" + append_name
+        oe_internal = pad.signal_name + "oe_x" + append_name
+        result += f"    .{pad.io_interface}({pad.signal_name}io),\n"
+        result += f"    .{pad.signal_name}o({in_internal}),\n"
+        result += f"    .{pad.signal_name}i({out_internal}),\n"
+        result += f"    .{pad.signal_name}oe_i({oe_internal}),"
+%>\
+${result}
+</%def>\
+<%def name="gen_x_heep_system_interface(pad, is_last=False)">\
+<%
+    if pad.pad_type == "input":
+        sig = f"    inout wire {pad.signal_name}i"
+    elif pad.pad_type == "output":
+        sig = f"    inout wire {pad.signal_name}o"
+    elif pad.pad_type == "inout":
+        sig = f"    inout wire {pad.signal_name}io"
+    else:
+        sig = ""
+    if sig and not is_last:
+        sig += ","
+%>\
+${sig}
+</%def>\
 
 module x_heep_system
   import obi_pkg::*;
@@ -50,10 +177,10 @@ module x_heep_system
 
     input reg_req_t  [AO_SPC_NUM_RND:0] ext_ao_peripheral_req_i,
     output reg_rsp_t [AO_SPC_NUM_RND:0] ext_ao_peripheral_resp_o,
-    
+
     output reg_req_t ext_peripheral_slave_req_o,
     input  reg_rsp_t ext_peripheral_slave_resp_i,
-    
+
     // PM signals
     output logic cpu_subsystem_powergate_switch_no,
     input  logic cpu_subsystem_powergate_switch_ack_ni,
@@ -85,8 +212,12 @@ module x_heep_system
     // External SPC interface
     output logic [core_v_mini_mcu_pkg::DMA_CH_NUM-1:0] dma_done_o,
 
-% for pad in xheep.get_padring().total_pad_list:
-${pad.x_heep_system_interface}
+<%
+    total_pad_list = xheep.get_padring().total_pad_list
+    last_idx = len(total_pad_list) - 1
+%>\
+% for idx, pad in enumerate(total_pad_list):
+${gen_x_heep_system_interface(pad, is_last=(idx == last_idx))}
 % endfor
 );
 
@@ -117,7 +248,7 @@ ${pad.x_heep_system_interface}
 
   //input, output pins from core_v_mini_mcu
 % for pad in xheep.get_padring().total_pad_list:
-${pad.internal_signals}
+${gen_internal_signals(pad)}\
 % endfor
 
   core_v_mini_mcu #(
@@ -132,7 +263,7 @@ ${pad.internal_signals}
 
     .rst_ni(rst_ngen),
 % for pad in xheep.get_padring().pad_list:
-${pad.core_v_mini_mcu_bonding}
+${gen_core_v_mini_mcu_bonding(pad)}\
 % endfor
 
     .hart_id_i,
@@ -190,7 +321,7 @@ ${pad.core_v_mini_mcu_bonding}
 
   pad_ring pad_ring_i (
 % for pad in xheep.get_padring().total_pad_list:
-${pad.pad_ring_bonding_bonding}
+${gen_pad_ring_bonding(pad)}
 % endfor
 % if xheep.get_padring().pads_attributes != None:
     .pad_attributes_i(pad_attributes)
@@ -199,9 +330,15 @@ ${pad.pad_ring_bonding_bonding}
 % endif
   );
 
-${xheep.get_padring().pad_constant_driver_assign}
+  // Constant driver assignments
+% for pad in xheep.get_padring().total_pad_list:
+${gen_constant_driver_assign(pad)}\
+% endfor
 
-${xheep.get_padring().pad_mux_process}
+  // Mux processes
+% for pad in xheep.get_padring().total_pad_list:
+${gen_multiplexer(pad)}\
+% endfor
 
   pad_control #(
       .reg_req_t(reg_pkg::reg_req_t),

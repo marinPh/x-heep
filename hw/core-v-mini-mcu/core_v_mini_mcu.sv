@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
 
 
-
 module core_v_mini_mcu
   import obi_pkg::*;
   import reg_pkg::*;
@@ -29,6 +28,7 @@ module core_v_mini_mcu
     input logic clk_i,
 
 
+
     input logic boot_select_i,
 
     input logic execute_from_flash_i,
@@ -41,9 +41,9 @@ module core_v_mini_mcu
 
     input logic jtag_tdi_i,
 
-    output logic jtag_tdo_o,
-
     input logic uart_rx_i,
+
+    output logic jtag_tdo_o,
 
     output logic uart_tx_o,
 
