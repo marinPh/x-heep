@@ -148,12 +148,18 @@ def generate_xheep(args):
     heap_size = string2int(config["linker_script"]["heap_size"])
 
     xheep.master_registry.register_fixed_masters()
+    xheep.ports.add_slave(
+        name="DEBUG",
+        start=int(debug_start_address, 16),
+        size=int(debug_size_address, 16),
+        owner=None,
+    )
 
-    xheep.set_debug_flash_addresses(
-        int(debug_start_address, 16),
-        int(debug_size_address, 16),
-        int(flash_mem_start_address, 16),
-        int(flash_mem_size_address, 16),
+    xheep.ports.add_slave(
+        name="FLASH_MEM",
+        start=int(flash_mem_start_address, 16),
+        size=int(flash_mem_size_address, 16),
+        owner=None,
     )
 
     xheep.master_registry.register_fixed_masters()
