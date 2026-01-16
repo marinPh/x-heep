@@ -83,8 +83,12 @@ def parse_master_ports(config_dict, peripheral=None, system=None):
             # Add spec to peripheral's master_specs list
             peripheral.master_specs.append(normalized_spec)
         elif system is not None:
-            # Register global master via registry factory
-            system.master_registry.register_from_spec(normalized_spec, owner=None)
+            # Register global master
+            system.ports.add_master(
+                name=normalized_spec["name"],
+                port_type=normalized_spec["type"],
+                owner_port_index=normalized_spec["index"]
+            )
         else:
             print("Warning: parse_master_ports called without peripheral or system")
 

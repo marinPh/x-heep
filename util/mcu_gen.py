@@ -137,13 +137,6 @@ def generate_xheep(args):
     stack_size = string2int(config["linker_script"]["stack_size"])
     heap_size = string2int(config["linker_script"]["heap_size"])
 
-    xheep.set_debug_flash_addresses(
-        int(debug_start_address, 16),
-        int(debug_size_address, 16),
-        int(flash_mem_start_address, 16),
-        int(flash_mem_size_address, 16),
-    )
-
     xheep.master_registry.register_fixed_masters()
 
     xheep.set_debug_flash_addresses(

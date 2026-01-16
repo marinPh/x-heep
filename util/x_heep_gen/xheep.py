@@ -8,6 +8,10 @@ from .peripherals.user_peripherals_domain import UserPeripheralDomain
 from .pads.PadRing import PadRing
 from .system.master_registry import MasterRegistry
 from .system.slave_registry import SlaveRegistry
+from .system.port_manager import PortManager
+
+# Default ERROR address (only slave that's always required)
+DEFAULT_ERROR_ADDRESS = 0xBADACCE5
 
 
 class XHeep:
@@ -51,6 +55,9 @@ class XHeep:
         # Slave port registry (configuration time)
         self.slave_registry = SlaveRegistry()
         self._template_slaves_registered = False
+
+        # Unified port manager facade (user-friendly API)
+        self.ports = PortManager(self.master_registry, self.slave_registry)
 
     # ------------------------------------------------------------
     # CPU
@@ -202,56 +209,7 @@ class XHeep:
 
     def get_padring(self):
         return self._padring
-
-    # ------------------------------------------------------------
-    # Master Ports
-    # ------------------------------------------------------------
-
-    def add_global_master_port(self, name: str, port_type: str = "custom"):
-        """
-        Add a global master port (not owned by any peripheral).
-
-        This is for master ports that exist independently of peripherals,
-        such as external AXI masters or custom interfaces.
-
-        :param str name: Name of the master port (e.g., "EXT_AXI_MASTER")
-        :param str port_type: Type identifier (e.g., "axi", "custom"), default "custom"
-        """
-        spec = {"name": name, "type": port_type, "index": 0}
-        self.master_registry.register_from_spec(spec, owner=None)
-
-    # ------------------------------------------------------------
-    # DEBUG and FLASH
-    # ------------------------------------------------------------
-
-    def set_debug_flash_addresses(
-        self,
-        debug_start: int,
-        debug_size: int,
-        flash_start: int,
-        flash_size: int,
-    ):
-        """
-        Sets the debug and flash addresses in the slave registry.
-
-        :param int debug_start: Debug module start address
-        :param int debug_size: Debug module size
-        :param int flash_start: Flash memory start
-        :param int flash_size: Flash memory size
-        """
-        # TODO: should be used by tpls
-        self.debug_start = debug_start
-        self.debug_size = debug_size
-        self.flash_start = flash_start
-        self.flash_size = flash_size
-
-        self.register_template_slaves(
-            debug_start=debug_start,
-            debug_size=debug_size,
-            flash_start=flash_start,
-            flash_size=flash_size,
-        )
-
+    
     # ------------------------------------------------------------
     # Extensions
     # ------------------------------------------------------------
@@ -279,60 +237,63 @@ class XHeep:
     # Build and Validate
     # ------------------------------------------------------------
 
+    def _auto_register_system_slaves(self):
+        """
+        Automatically register system slaves based on configuration.
+
+        Called automatically during build() if slaves haven't been manually registered.
+        Registers:
+        - ERROR slave (always required - special case)
+        - RAM banks (from memory_ss configuration)
+        - AO_PERIPHERAL domain (from base_peripheral_domain)
+        - PERIPHERAL domain (from user_peripheral_domain)
+        """
+        # ERROR slave (always required, always at index 0)
+        self.ports.add_slave("ERROR", start=DEFAULT_ERROR_ADDRESS, size=0x1)
+
+        # RAM banks (from memory subsystem configuration)
+        if self._memory_ss:
+            self.slave_registry.register_ram_banks(self._memory_ss)
+
+        # AO_PERIPHERAL domain (from base peripheral domain)
+        if self._base_peripheral_domain:
+            self.ports.add_slave(
+                "AO_PERIPHERAL",
+                start=self._base_peripheral_domain.get_start_address(),
+                size=self._base_peripheral_domain.get_length()
+            )
+
+        # PERIPHERAL domain (from user peripheral domain)
+        if self._user_peripheral_domain:
+            self.ports.add_slave(
+                "PERIPHERAL",
+                start=self._user_peripheral_domain.get_start_address(),
+                size=self._user_peripheral_domain.get_length()
+            )
+
+        self.slave_registry._is_configured = True
+
     def build(self):
         """
         Makes the system ready to be used.
         """
+        # Auto-register system slaves if not manually registered
+        if not self.slave_registry._is_configured:
+            self._auto_register_system_slaves()
 
+        # Build subsystems
         if self.memory_ss():
             self.memory_ss().build()
         if self.are_base_peripherals_configured():
             self._base_peripheral_domain.build()
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.build()
+
+        # Build registries
         if self.master_registry._is_configured:
             self.master_registry.build()
         if self.slave_registry._is_configured:
             self.slave_registry.build()
-
-    def register_template_slaves(
-        self,
-        debug_start: int,
-        debug_size: int,
-        flash_start: int,
-        flash_size: int,
-    ):
-        """
-        Register fixed slaves from configuration-time address constants.
-
-        Called before build() so templates can rely on the registry contents
-        instead of mutating it themselves. RAM banks are registered here too.
-
-        :param int debug_start: Debug module start address
-        :param int debug_size: Debug module size
-        :param int flash_start: Flash memory start
-        :param int flash_size: Flash memory size
-        """
-        if self._template_slaves_registered:
-            return
-
-        if self._base_peripheral_domain and self._user_peripheral_domain:
-            self.slave_registry.register_fixed_slaves(
-                memory_ss=self._memory_ss,
-                debug_start=debug_start,
-                debug_size=debug_size,
-                ao_peripheral_start=self._base_peripheral_domain.get_start_address(),
-                ao_peripheral_size=self._base_peripheral_domain.get_length(),
-                peripheral_start=self._user_peripheral_domain.get_start_address(),
-                peripheral_size=self._user_peripheral_domain.get_length(),
-                flash_start=flash_start,
-                flash_size=flash_size,
-            )
-
-            # Register RAM banks
-            if self._memory_ss:
-                self.slave_registry.register_ram_banks(self._memory_ss)
-            self._template_slaves_registered = True
 
     def validate(self) -> bool:
         """

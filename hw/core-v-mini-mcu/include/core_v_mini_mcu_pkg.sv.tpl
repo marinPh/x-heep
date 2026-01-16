@@ -18,11 +18,9 @@
   base_peripheral_domain = xheep.get_base_peripheral_domain()
   dma = base_peripheral_domain.get_dma()
   memory_ss = xheep.memory_ss()
-  registry = xheep.master_registry
 
-  # Get DMA master index map from registry (removes template duplication)
-  dma_master_idx_map = registry.get_dma_master_index_map(dma)
-  slave_registry = xheep.slave_registry
+  # Get DMA master index map
+  dma_master_idx_map = xheep.ports.master_registry.get_dma_master_index_map(dma)
 %>
 
 package core_v_mini_mcu_pkg;
@@ -46,9 +44,9 @@ package core_v_mini_mcu_pkg;
 
   localparam bus_type_e BusType = ${xheep.bus_type().value};
 
-  // Master port indices (auto-generated from registry)
-  localparam SYSTEM_XBAR_NMASTER = ${registry.get_total_count()};
-% for master in registry.get_all():
+  // Master port indices (auto-generated)
+  localparam SYSTEM_XBAR_NMASTER = ${xheep.ports.num_masters()};
+% for master in xheep.ports.masters():
   localparam logic [31:0] ${master.name}_IDX = 32'd${master.index};
 % endfor
 
@@ -65,7 +63,7 @@ package core_v_mini_mcu_pkg;
   //must be power of two
   localparam int unsigned MEM_SIZE = 32'h${f'{memory_ss.ram_size_address():08X}'};
 
-  localparam SYSTEM_XBAR_NSLAVE = ${slave_registry.get_total_count()};
+  localparam SYSTEM_XBAR_NSLAVE = ${xheep.ports.num_slaves()};
 
   // all slaves ->
 
@@ -96,7 +94,7 @@ package core_v_mini_mcu_pkg;
 % endfor
 
 <%
-  debug_slave = slave_registry.get_by_name("DEBUG")
+  debug_slave = xheep.ports.slave("DEBUG")
 %>
   localparam logic[31:0] DEBUG_START_ADDRESS = 32'h${f'{debug_slave.start_address:08X}'};
   localparam logic[31:0] DEBUG_SIZE = 32'h${f'{debug_slave.size:08X}'};
@@ -104,9 +102,9 @@ package core_v_mini_mcu_pkg;
   localparam logic[31:0] DEBUG_IDX = 32'd${debug_slave.index};
 
 <%
-  ao_peripheral_slave = slave_registry.get_by_name("AO_PERIPHERAL")
-  peripheral_slave = slave_registry.get_by_name("PERIPHERAL")
-  flash_slave = slave_registry.get_by_name("FLASH_MEM")
+  ao_peripheral_slave = xheep.ports.slave("AO_PERIPHERAL")
+  peripheral_slave = xheep.ports.slave("PERIPHERAL")
+  flash_slave = xheep.ports.slave("FLASH_MEM")
 %>
   localparam logic[31:0] AO_PERIPHERAL_START_ADDRESS = 32'h${f'{ao_peripheral_slave.start_address:08X}'};
   localparam logic[31:0] AO_PERIPHERAL_SIZE = 32'h${f'{ao_peripheral_slave.size:08X}'};
@@ -124,7 +122,7 @@ package core_v_mini_mcu_pkg;
   localparam logic[31:0] FLASH_MEM_IDX = 32'd${flash_slave.index};
 
   localparam addr_map_rule_t [SYSTEM_XBAR_NSLAVE-1:0] XBAR_ADDR_RULES = '{
-% for slave in slave_registry.get_all():
+% for slave in xheep.ports.slaves():
       '{ idx: ${slave.name}_IDX, start_addr: ${slave.name}_START_ADDRESS, end_addr: ${slave.name}_END_ADDRESS }${"," if not loop.last else ""}
 % endfor
   };

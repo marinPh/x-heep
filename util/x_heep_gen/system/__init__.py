@@ -5,5 +5,13 @@ from .master_port import MasterPort
 from .master_registry import MasterRegistry
 from .slave_port import SlavePort
 from .slave_registry import SlaveRegistry
+from .port_manager import PortManager
 
-__all__ = ["PortRegistry", "MasterPort", "MasterRegistry", "SlavePort", "SlaveRegistry"]
+__all__ = [
+    "PortRegistry",
+    "MasterPort",
+    "MasterRegistry",
+    "SlavePort",
+    "SlaveRegistry",
+    "PortManager",
+]
