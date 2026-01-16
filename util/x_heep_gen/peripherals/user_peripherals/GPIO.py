@@ -8,3 +8,4 @@ class GPIO(UserPeripheral):
     """
 
     _name = "gpio"
+    _pins = [f"gpio_{i}" for i in range(32)]  # gpio_0 through gpio_31

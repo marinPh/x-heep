@@ -21,6 +21,7 @@ class Peripheral(ABC):
     _length: int = int("0x00010000", 16)  # default length of 64KB
     _name: str
     _address: int = None
+    _pins: List[str] = []  # Pin names this peripheral provides
 
     def __init__(self, offset=None, length=None):
         """
@@ -63,6 +64,13 @@ class Peripheral(ABC):
         :rtype: str
         """
         return self._name
+
+    def get_pins(self) -> List[str]:
+        """
+        :return: List of pin names this peripheral provides.
+        :rtype: List[str]
+        """
+        return self._pins.copy()
 
 
 class BasePeripheral(Peripheral, ABC):

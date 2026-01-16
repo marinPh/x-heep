@@ -10,6 +10,7 @@ class PDM2PCM(UserPeripheral):
     """
 
     _name = "pdm2pcm"
+    _pins = ["pdm2pcm_pdm", "pdm2pcm_clk"]
 
     def __init__(self, address: int = None, length: int = None, cic_only: bool = True):
         """

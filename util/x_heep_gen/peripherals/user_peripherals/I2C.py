@@ -7,3 +7,4 @@ class I2C(UserPeripheral):
     """
 
     _name = "i2c"
+    _pins = ["i2c_scl", "i2c_sda"]

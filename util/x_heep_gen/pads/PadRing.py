@@ -125,12 +125,9 @@ class PadRing:
         """
         Build Pad objects from PadGroup configuration.
 
-        This is the main method that performs the transformation from
-        configuration to generation objects. It:
-            1. Processes physical layout if defined
-            2. Builds Pad objects from PadDef instances
-            3. Separates pads by side (top/bottom/left/right)
-            4. Calculates offsets and indices
+        This supports two modes:
+        1. Old model: Build from PadDef instances in pad_group
+        2. New model: Use already-built Pad objects from generate_padlist()
 
         After calling build(), the pad_list and related attributes
         are populated and ready for template consumption.
@@ -140,60 +137,92 @@ class PadRing:
             self.pads_attributes = None
             pads_attributes_bits = "-1:0"
 
-        # Read HJSON description of External Pads
+        # Check if pads are already built (new pin-based model)
+        # In the new model, pads are generated via generate_padlist() and added to pad_group
+        from .pin import Pad as PinPad
+        pads_from_pins = [p for p in self.pad_group.pads if isinstance(p, PinPad)]
 
-        pad_objs: List[Pad] = []
-        external_pad_list = []
+        if pads_from_pins:
+            # New pin-based model: pads are already built
+            pad_objs = pads_from_pins
+            external_pad_list = []
+            pad_constant_driver_assign = ""
+            pad_mux_process = ""
+            bondpad_offsets = None
 
-        pad_constant_driver_assign = ""
-        pad_mux_process = ""
-        bondpad_offsets = None
-        if self.pad_group.fp_dim is not None:
-            bondpad_offsets = prepare_pads_for_layout(self.pad_group)
+            # Separate by side
+            pad_lists = separate_and_sort_pads(pad_objs, sort_by_layout_index=False)
+            top_pad_list = pad_lists[PadMapping.TOP]
+            bottom_pad_list = pad_lists[PadMapping.BOTTOM]
+            left_pad_list = pad_lists[PadMapping.LEFT]
+            right_pad_list = pad_lists[PadMapping.RIGHT]
 
-        pad_muxed_list = self.pad_group.get_multiplexed_pads()
-        (
-            pad_objs,
-            muxed,
-            pad_constant_driver_assign,
-            pad_mux_process,
-        ) = build_pads_from_block(
-            pad_group=self.pad_group,
-            pads_attributes_present=(self.pad_group.bits is not None),
-            pads_attributes_bits=pads_attributes_bits,
-            default_constant_attribute=False,
-            always_emit_ring=False,  # respect keep_internal for internal pads
-        )
+            # Calculate statistics
+            total_pad = len(pad_objs)
+            pad_muxed_list = [p for p in pad_objs if p.is_muxed]
+            total_pad_muxed = len(pad_muxed_list)
 
-        # external pads (continue indexing, always emit ring)
-        # merge, totals
-        total_pad = len(pad_objs)
-        total_pad_muxed = len(pad_muxed_list)
+            # Max mux selector width
+            max_total_pad_mux_bitlengh = 0
+            if pad_muxed_list:
+                max_total_pad_mux_bitlengh = max(
+                    (len(p.alts) - 1).bit_length() for p in pad_muxed_list
+                )
 
-        # max mux selector width (0 if none)
-        max_total_pad_mux_bitlengh = 0
-        if pad_muxed_list:
-            max_total_pad_mux_bitlengh = max(
-                (len(p.alts) - 1).bit_length() for p in pad_muxed_list
+        else:
+            # Old PadDef-based model
+            pad_objs: List[Pad] = []
+            external_pad_list = []
+
+            pad_constant_driver_assign = ""
+            pad_mux_process = ""
+            bondpad_offsets = None
+            if self.pad_group.fp_dim is not None:
+                bondpad_offsets = prepare_pads_for_layout(self.pad_group)
+
+            pad_muxed_list = self.pad_group.get_multiplexed_pads()
+            (
+                pad_objs,
+                muxed,
+                pad_constant_driver_assign,
+                pad_mux_process,
+            ) = build_pads_from_block(
+                pad_group=self.pad_group,
+                pads_attributes_present=(self.pad_group.bits is not None),
+                pads_attributes_bits=pads_attributes_bits,
+                default_constant_attribute=False,
+                always_emit_ring=False,  # respect keep_internal for internal pads
             )
 
-        # remove trailing comma from last PAD io_interface (kept to preserve behavior)
-        if pad_objs:
-            last_pad = pad_objs.pop()
-            last_pad.remove_comma_io_interface()
-            pad_objs.append(last_pad)
+            # merge, totals
+            total_pad = len(pad_objs)
+            total_pad_muxed = len(pad_muxed_list)
 
-        # Separate pads by mapping (top, bottom, left, right)
-        pad_lists = separate_and_sort_pads(pad_objs, sort_by_layout_index=False)
-        top_pad_list = pad_lists[PadMapping.TOP]
-        bottom_pad_list = pad_lists[PadMapping.BOTTOM]
-        left_pad_list = pad_lists[PadMapping.LEFT]
-        right_pad_list = pad_lists[PadMapping.RIGHT]
-        bondpad_offsets = bondpad_offsets
+            # max mux selector width (0 if none)
+            max_total_pad_mux_bitlengh = 0
+            if pad_muxed_list:
+                max_total_pad_mux_bitlengh = max(
+                    (len(p.alts) - 1).bit_length() for p in pad_muxed_list
+                )
 
+            # remove trailing comma from last PAD io_interface (kept to preserve behavior)
+            if pad_objs:
+                last_pad = pad_objs.pop()
+                last_pad.remove_comma_io_interface()
+                pad_objs.append(last_pad)
+
+            # Separate pads by mapping (top, bottom, left, right)
+            pad_lists = separate_and_sort_pads(pad_objs, sort_by_layout_index=False)
+            top_pad_list = pad_lists[PadMapping.TOP]
+            bottom_pad_list = pad_lists[PadMapping.BOTTOM]
+            left_pad_list = pad_lists[PadMapping.LEFT]
+            right_pad_list = pad_lists[PadMapping.RIGHT]
+            bondpad_offsets = bondpad_offsets
+
+        # Store results (common to both models)
         self.pad_list = pad_objs
         self.total_pad_list = pad_objs
-        self.pad_muxed_list = muxed
+        self.pad_muxed_list = pad_muxed_list
         self.total_pad = total_pad
         self.total_pad_muxed = total_pad_muxed
         self.max_total_pad_mux_bitlengh = max_total_pad_mux_bitlengh

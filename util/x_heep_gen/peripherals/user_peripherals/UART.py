@@ -8,3 +8,4 @@ class UART(UserPeripheral):
     """
 
     _name = "uart"
+    _pins = ["uart_rx", "uart_tx"]
