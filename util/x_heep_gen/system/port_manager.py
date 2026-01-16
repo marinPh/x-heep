@@ -41,7 +41,7 @@ class PortManager:
         name: str,
         port_type: str = "custom",
         owner=None,
-        owner_port_index: int = 0
+        owner_port_index: int = 0,
     ) -> MasterPort:
         """
         Add a master port with minimal parameters.
@@ -56,13 +56,7 @@ class PortManager:
         spec = {"name": name, "type": port_type, "index": owner_port_index}
         return self._master_registry.register_from_spec(spec, owner=owner)
 
-    def add_slave(
-        self,
-        name: str,
-        start: int,
-        size: int,
-        owner=None
-    ) -> SlavePort:
+    def add_slave(self, name: str, start: int, size: int, owner=None) -> SlavePort:
         """
         Add a slave port with minimal parameters.
 
@@ -96,7 +90,6 @@ class PortManager:
 
         # Try slave
         return self._slave_registry.get_by_name(name)
-
 
     # ================================================================
     # COLLECTION ACCESS
@@ -134,10 +127,7 @@ class PortManager:
             for slave in ports['slaves']:
                 print(f"Slave: {slave.name}")
         """
-        return {
-            'masters': self.masters(),
-            'slaves': self.slaves()
-        }
+        return {"masters": self.masters(), "slaves": self.slaves()}
 
     def count(self) -> dict:
         """
@@ -147,9 +137,10 @@ class PortManager:
         :rtype: dict
         """
         return {
-            'masters': self._master_registry.get_total_count(),
-            'slaves': self._slave_registry.get_total_count(),
-            'total': self._master_registry.get_total_count() + self._slave_registry.get_total_count()
+            "masters": self._master_registry.get_total_count(),
+            "slaves": self._slave_registry.get_total_count(),
+            "total": self._master_registry.get_total_count()
+            + self._slave_registry.get_total_count(),
         }
 
     # ================================================================
@@ -175,7 +166,7 @@ class PortManager:
         return self._slave_registry.get_component_ports()
 
     # ================================================================
-    # DIRECT REGISTRY ACCESS 
+    # DIRECT REGISTRY ACCESS
     # ================================================================
 
     @property

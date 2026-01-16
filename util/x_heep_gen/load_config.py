@@ -87,7 +87,7 @@ def parse_master_ports(config_dict, peripheral=None, system=None):
             system.ports.add_master(
                 name=normalized_spec["name"],
                 port_type=normalized_spec["type"],
-                owner_port_index=normalized_spec["index"]
+                owner_port_index=normalized_spec["index"],
             )
         else:
             print("Warning: parse_master_ports called without peripheral or system")

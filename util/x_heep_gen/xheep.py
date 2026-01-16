@@ -209,7 +209,7 @@ class XHeep:
 
     def get_padring(self):
         return self._padring
-    
+
     # ------------------------------------------------------------
     # Extensions
     # ------------------------------------------------------------
@@ -260,7 +260,7 @@ class XHeep:
             self.ports.add_slave(
                 "AO_PERIPHERAL",
                 start=self._base_peripheral_domain.get_start_address(),
-                size=self._base_peripheral_domain.get_length()
+                size=self._base_peripheral_domain.get_length(),
             )
 
         # PERIPHERAL domain (from user peripheral domain)
@@ -268,7 +268,7 @@ class XHeep:
             self.ports.add_slave(
                 "PERIPHERAL",
                 start=self._user_peripheral_domain.get_start_address(),
-                size=self._user_peripheral_domain.get_length()
+                size=self._user_peripheral_domain.get_length(),
             )
 
         self.slave_registry._is_configured = True
