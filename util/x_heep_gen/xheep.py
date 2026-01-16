@@ -291,9 +291,9 @@ class XHeep:
 
         # Build registries
         if self.master_registry._is_configured:
-            self.master_registry.build()
+            self.ports.master_registry.build()
         if self.slave_registry._is_configured:
-            self.slave_registry.build()
+            self.ports.slave_registry.build()
 
     def validate(self) -> bool:
         """

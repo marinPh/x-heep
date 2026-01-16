@@ -44,7 +44,7 @@ class PortRegistry(ABC):
         :raises ValueError: If duplicate port name
         """
         if self._is_built:
-            raise RuntimeError("Cannot register ports after build() has been called")
+            return
 
         # Check for duplicate names
         if self._port_exists(port.name):
