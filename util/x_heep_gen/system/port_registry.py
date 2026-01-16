@@ -44,6 +44,7 @@ class PortRegistry(ABC):
         :raises ValueError: If duplicate port name
         """
         if self._is_built:
+
             return
 
         # Check for duplicate names

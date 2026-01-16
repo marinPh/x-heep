@@ -147,6 +147,28 @@ def generate_xheep(args):
     stack_size = string2int(config["linker_script"]["stack_size"])
     heap_size = string2int(config["linker_script"]["heap_size"])
 
+    xheep.master_registry.register_fixed_masters()
+    xheep.ports.add_slave(
+        name="DEBUG",
+        start=int(debug_start_address, 16),
+        size=int(debug_size_address, 16),
+        owner=None,
+    )
+
+    xheep.ports.add_slave(
+        name="FLASH_MEM",
+        start=int(flash_mem_start_address, 16),
+        size=int(flash_mem_size_address, 16),
+        owner=None,
+    )
+
+    xheep.ports.add_slave(
+        name="EXT_SLAVES",
+        start=int(ext_slave_start_address, 16),
+        size=int(ext_slave_size_address, 16),
+        owner=None,
+    )
+
     plic_used_n_interrupts = len(config["interrupts"]["list"])
     plit_n_interrupts = config["interrupts"]["number"]
     ext_int_list = {
