@@ -1,5 +1,5 @@
 import importlib
-from pathlib import PurePath
+from pathlib import PurePath,Path
 from typing import List, Union
 import hjson
 import os
@@ -552,10 +552,18 @@ def load_pad_cfg(f: PurePath) -> PadRing:
     elif f.suffix == ".py":
         # The python script should have a function config() that takes no parameters and
         # returns an instance of the PadRing type.
-        spec = importlib.util.spec_from_file_location("configs._config", f)
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        return mod.config()
+        # Add the config file's directory to sys.path so it can import local modules
+        config_dir = str(Path(f).parent.resolve())
+        sys.path.insert(0, config_dir)
+        try:
+            spec = importlib.util.spec_from_file_location("configs._config", f)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod.config()
+        finally:
+            # Remove the config directory from sys.path to avoid polluting it
+            if config_dir in sys.path:
+                sys.path.remove(config_dir)
 
     else:
         raise RuntimeError(f"unsupported file extension {f.suffix}")
