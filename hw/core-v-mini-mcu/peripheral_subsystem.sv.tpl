@@ -328,6 +328,7 @@ ${reg_to_tlul_inst('reg_to_tlul_plic_i', 'plic_tl_h2d', 'plic_tl_d2h', 'RV_PLIC_
   assign spi_sd_o = '0;
   assign spi_sd_en_o = '0;
   assign spi_rx_valid_o = '0;
+  assign spi_intr_event_o = '0;
   assign spi_tx_ready_o = '0;
 % endif
 
