@@ -327,7 +327,6 @@ ${reg_to_tlul_inst('reg_to_tlul_plic_i', 'plic_tl_h2d', 'plic_tl_d2h', 'RV_PLIC_
   assign spi_csb_en_o = '0;
   assign spi_sd_o = '0;
   assign spi_sd_en_o = '0;
-  assign spi_intr_event_o = '0;
   assign spi_rx_valid_o = '0;
   assign spi_tx_ready_o = '0;
 % endif
@@ -391,22 +390,6 @@ ${reg_to_tlul_inst('reg_to_tlul_i2c_i', 'i2c_tl_h2d', 'i2c_tl_d2h', 'I2C_IDX')}
   assign cio_scl_en_o = '0;
   assign cio_sda_o = '0;
   assign cio_sda_en_o = '0;
-  assign i2c_intr_fmt_watermark = '0;
-  assign i2c_intr_rx_watermark = '0;
-  assign i2c_intr_fmt_overflow = '0;
-  assign i2c_intr_rx_overflow = '0;
-  assign i2c_intr_nak = '0;
-  assign i2c_intr_scl_interference = '0;
-  assign i2c_intr_sda_interference = '0;
-  assign i2c_intr_stretch_timeout = '0;
-  assign i2c_intr_sda_unstable = '0;
-  assign i2c_intr_trans_complete = '0;
-  assign i2c_intr_tx_empty = '0;
-  assign i2c_intr_tx_nonempty = '0;
-  assign i2c_intr_tx_overflow = '0;
-  assign i2c_intr_acq_overflow = '0;
-  assign i2c_intr_ack_stop = '0;
-  assign i2c_intr_host_timeout = '0;
 % endif
 
 % if user_peripheral_domain.contains_peripheral('rv_timer'):
@@ -422,8 +405,6 @@ ${reg_to_tlul_inst('rv_timer_reg_to_tlul_i', 'rv_timer_tl_h2d', 'rv_timer_tl_d2h
   );
 % else:
   assign rv_timer_tl_d2h = '0;
-  assign rv_timer_2_intr_o = '0;
-  assign rv_timer_3_intr_o = '0;
 % endif
 
 % if user_peripheral_domain.contains_peripheral('spi2'):
@@ -458,7 +439,6 @@ ${reg_to_tlul_inst('rv_timer_reg_to_tlul_i', 'rv_timer_tl_h2d', 'rv_timer_tl_d2h
   assign spi2_csb_en_o = '0;
   assign spi2_sd_o = '0;
   assign spi2_sd_en_o = '0;
-  assign spi2_intr_event = '0;
 % endif
 
 % if user_peripheral_domain.contains_peripheral('pdm2pcm'):
@@ -509,7 +489,6 @@ ${reg_to_tlul_inst('rv_timer_reg_to_tlul_i', 'rv_timer_tl_h2d', 'rv_timer_tl_d2h
   assign i2s_ws_o         = 1'b0;
   assign i2s_sd_oe_o      = 1'b0;
   assign i2s_sd_o         = 1'b0;
-  assign i2s_intr_event   = 1'b0;
   assign i2s_rx_valid_o   = 1'b0;
 % endif
 
@@ -537,14 +516,6 @@ ${reg_to_tlul_inst('reg_to_tlul_uart_i', 'uart_tl_h2d', 'uart_tl_d2h', 'UART_IDX
 % else:
 
   assign uart_tl_d2h             = '0;
-  assign uart_intr_tx_watermark  = 1'b0;
-  assign uart_intr_rx_watermark  = 1'b0;
-  assign uart_intr_tx_empty      = 1'b0;
-  assign uart_intr_rx_overflow   = 1'b0;
-  assign uart_intr_rx_frame_err  = 1'b0;
-  assign uart_intr_rx_break_err  = 1'b0;
-  assign uart_intr_rx_timeout    = 1'b0;
-  assign uart_intr_rx_parity_err = 1'b0;
   assign uart_tx_o               = 1'b0;
 
 % endif
