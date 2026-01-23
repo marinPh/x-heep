@@ -9,6 +9,6 @@ class I2S(UserPeripheral):
 
     _name = "i2s"
 
-    _interrupts = {
-        "i2s_intr_event": Interrupt(50, peripheral="I2S"),
-    }
+    _interrupts = [
+        Interrupt(50, peripheral="I2S", name="i2s_intr_event"),
+    ]

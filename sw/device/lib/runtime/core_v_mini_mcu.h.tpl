@@ -129,8 +129,8 @@ extern "C" {
 % for key, value in intr_manager.get_unpacked_interrupts().items():
 #define ${key.upper()} ${value}
 % endfor
-% for key, intr_obj in external_interrupts.items():
-#define ${key.upper()} ${intr_obj.id}
+% for intr_obj in external_interrupts:
+#define ${intr_obj.name.upper()} ${intr_obj.id}
 % endfor
 
 % if xheep.get_padring().pads_attributes != None:

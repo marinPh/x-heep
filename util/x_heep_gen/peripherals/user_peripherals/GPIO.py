@@ -9,4 +9,4 @@ class GPIO(UserPeripheral):
 
     _name = "gpio"
 
-    _interrupts = {"gpio_intr": Interrupt(9, 24, 8, "GPIO")}
+    _interrupts = [Interrupt(9, 24, 8, "GPIO", name="gpio_intr")]

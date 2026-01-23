@@ -44,7 +44,7 @@ from .peripherals.user_peripherals import (
 )
 
 import re
-from typing import Dict
+from typing import Dict, List
 
 
 def to_int(input) -> Union[int, None]:
@@ -111,46 +111,50 @@ def ram_list(l: "List[int]", entry):
     )
 
 
-def parse_config_dict(interrupts: Dict[str, int]):
+def parse_config_dict(interrupts: Dict[str, int]) -> Dict[str, Interrupt]:
+    """
+    Parse HJSON interrupts (backward compatibility).
+    Interrupts should now be defined in Python peripheral classes.
+    """
+    if not interrupts:
+        return {}
 
-    holder: Dict[str, Interrupt] = dict()
+    holder: Dict[str, Interrupt] = {}
 
-    suffix_re = re.compile(r"^(.*)_(\d+)$")
-
-    #! this is a temporary fix for i2c interrupt naming in hjson configs must change the hsjon files later
+    # Normalize I2C interrupt names (legacy)
     interrupts = {
-        ("i2c_" + k.lower() if k.lower().startswith("intr") else k.lower()): v
+        (f"i2c_{k.lower()}" if k.lower().startswith("intr") else k.lower()): v
         for k, v in interrupts.items()
     }
 
-    # Find interrupts with sequential suffixes (e.g., gpio_0, gpio_1)
-    names = [
-        (
-            re.match(r"^(.*)_(\d+)$", name).group(1),  # base name
-            id,  # interrupt ID
-            re.match(r"^(.*)_(\d+)$", name).group(2),  # sequence number
+    def get_peripheral(name: str) -> str:
+        if name == "null_intr":
+            return "system"
+        match = re.match(r"^([a-z0-9_]+)_intr", name)
+        return match.group(1) if match else name.split("_")[0]
+
+    sequential = {}
+    for name, id in interrupts.items():
+        match = re.match(r"^(.*)_(\d+)$", name)
+        if match:
+            base, seq = match.groups()
+            if base not in sequential:
+                sequential[base] = []
+            sequential[base].append((id, int(seq)))
+
+    for base, items in sequential.items():
+        items.sort()
+        holder[base] = Interrupt(
+            id=items[0][0],
+            num=len(items),
+            start_seq=items[0][1],
+            peripheral=get_peripheral(base),
+            name=base
         )
-        for name, id in interrupts.items()
-        if re.match(r"^(.*)_(\d+)$", name)
-    ]
 
-    # Group sequential interrupts by base name
-    set_names = set([name for name, _, _ in names])
-    for name in list(set_names):
-        filtered = [x for x in names if x[0] == name]
-        filtered.sort(key=lambda x: x[1])  # Sort by interrupt ID
-        start: int = min([int(f[2]) for f in filtered])  # Find start sequence
-        irq = Interrupt(filtered[0][1], len(filtered), start)
-        holder[name] = irq
-
-    # Add non-sequential interrupts
-    names = [(name, id) for name, id in interrupts.items() if not suffix_re.match(name)]
-    for name, id in names:
-        irq = Interrupt(id)
-        holder[name] = irq
-
-    # Sort by interrupt ID
-    holder = dict(sorted(holder.items(), key=lambda item: item[1].id))
+    for name, id in interrupts.items():
+        if not re.match(r"^.*_\d+$", name):
+            holder[name] = Interrupt(id=id, peripheral=get_peripheral(name), name=name)
 
     return holder
 
@@ -291,7 +295,7 @@ def load_peripherals_config(system: XHeep, config_path: str):
     if interrupts:
         interrupts = interrupts.get("list", {})
 
-    interrupts_dict: Dict[str, int] = parse_config_dict(interrupts)
+    interrupts_dict: Dict[str, Interrupt] = parse_config_dict(interrupts)
 
     for name, fields in config.items():
         # Base Peripherals
@@ -409,11 +413,11 @@ def load_peripherals_config(system: XHeep, config_path: str):
                         )
                     # Adding peripheral to domain
                     peripheral_name_lower = peripheral_name.lower()
-                    filtered_interrupts = {
-                        k: interrupts_dict.pop(k)
+                    filtered_interrupts = [
+                        interrupts_dict.pop(k)
                         for k in list(interrupts_dict.keys())
                         if k.startswith(peripheral_name_lower)
-                    }
+                    ]
                     peripheral.reset_interrupts(filtered_interrupts)
 
                     base_peripherals.add_peripheral(peripheral)
@@ -473,11 +477,11 @@ def load_peripherals_config(system: XHeep, config_path: str):
                         )
 
                     peripheral_name_lower = peripheral_name.lower()
-                    filtered_interrupts = {
-                        k: interrupts_dict.pop(k)
+                    filtered_interrupts = [
+                        interrupts_dict.pop(k)
                         for k in list(interrupts_dict.keys())
                         if k.startswith(peripheral_name_lower)
-                    }
+                    ]
                     peripheral.reset_interrupts(filtered_interrupts)
 
                     # Adding peripheral to domain

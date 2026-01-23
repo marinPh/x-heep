@@ -13,17 +13,23 @@ from typing import List, Dict, Optional
 
 @dataclass
 class Interrupt:
+    """Interrupt definition with ID, count, and peripheral association."""
+
     id: int
     num: Optional[int] = 1
-    start_seq: Optional[int] = id
-    peripheral: Optional[str] = None  # Name of peripheral this interrupt belongs to
-    port_names: Optional[List[str]] = None  # Port names for the peripheral instance
+    start_seq: Optional[int] = None
+    peripheral: Optional[str] = None
+    name: Optional[str] = None
 
     def __post_init__(self):
         if self.num < 1:
-            raise ValueError("num should be above 1 cannot be less")
+            raise ValueError("num must be at least 1")
         if self.id < 0:
             raise ValueError("ID cannot be negative")
+
+        # Auto-set start_seq to id if not specified and num == 1
+        if self.start_seq is None and self.num == 1:
+            self.start_seq = self.id
 
 
 class Peripheral(ABC):
@@ -37,16 +43,9 @@ class Peripheral(ABC):
     _length: int = int("0x00010000", 16)  # default length of 64KB
     _name: str
     _address: int = None
-
-    _interrupts: Dict[str, Interrupt] = {}
+    _interrupts: List[Interrupt] = []
 
     def __init__(self, offset=None, length=None):
-        """
-        Initialize the peripheral with a given address.
-
-        :param int offset: The virtual (in peripheral domain) memory address of the peripheral. If None, the offset will be automatically compute during build function.
-        :param int length: The size taken in memory by the peripheral. If None, the length will be automatically set to 64KB.
-        """
         if type(offset) == int and offset >= 0x00000000:
             self._address = offset
         else:
@@ -68,11 +67,7 @@ class Peripheral(ABC):
         """
         self._interrupts = interrupts.copy()
 
-    def get_interrupts(self):
-        """
-        :return: The interrupts of the peripheral.
-        :rtype: Dict[str,int]
-        """
+    def get_interrupts(self) -> List[Interrupt]:
         return self._interrupts.copy()
 
     def set_address(self, address):

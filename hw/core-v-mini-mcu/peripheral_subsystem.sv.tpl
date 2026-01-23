@@ -6,11 +6,13 @@
   user_peripheral_domain = xheep.get_user_peripheral_domain()
   intr_manager = xheep.get_interrupt_manager()
 
-intrs = [
-  (name, irq)
-  for name, irq in intr_manager.get_interrupts().items()
-  if name != "EXT_INTR"
-]
+# Flatten nested interrupt structure: {peripheral: [Interrupt]} -> [(name, Interrupt)]
+intrs = sorted([
+  (irq.name, irq)
+  for peripheral, periph_intrs in intr_manager.get_interrupts().items()
+  for irq in periph_intrs
+  if not irq.name.startswith("EXT_INTR")
+], key=lambda x: x[1].id)
 %>
 <%def name="reg_to_tlul_inst(instance_name, tl_h2d, tl_d2h, idx_name)">
   reg_to_tlul #(
@@ -143,8 +145,14 @@ module peripheral_subsystem
 
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [${intr_manager.get_interrupts()["gpio_intr"].start_seq-1}:0] gpio_int_unused;
-
+<%
+  # Find GPIO interrupt to get start_seq
+  gpio_intrs = intr_manager.get_interrupts_for_peripheral("gpio")
+  gpio_intr = gpio_intrs[0] if gpio_intrs else None
+%>
+% if gpio_intr:
+  logic [${gpio_intr.start_seq-1}:0] gpio_int_unused;
+% endif
 % for name, irq in intrs:
   % if name != "null_intr":
     % if irq.num > 1:

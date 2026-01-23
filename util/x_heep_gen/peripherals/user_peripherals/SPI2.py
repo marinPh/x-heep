@@ -8,6 +8,6 @@ class SPI2(UserPeripheral):
 
     _name = "spi2"
 
-    _interrupts = {
-        "spi2_intr_event": Interrupt(49, peripheral="SPI2"),
-    }
+    _interrupts = [
+        Interrupt(49, peripheral="SPI2", name="spi2_intr_event"),
+    ]
