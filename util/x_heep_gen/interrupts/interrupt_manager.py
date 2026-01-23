@@ -155,7 +155,11 @@ class InterruptManager:
         return result
 
     def _assign_interrupts_from_domain(
-        self, domain: PeripheralDomain, possible_ids, validate=False, predefined_map=None
+        self,
+        domain: PeripheralDomain,
+        possible_ids,
+        validate=False,
+        predefined_map=None,
     ):
         """Assign interrupts from a peripheral domain."""
         for peri in domain.get_peripherals():

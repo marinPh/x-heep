@@ -149,7 +149,7 @@ def parse_config_dict(interrupts: Dict[str, int]) -> Dict[str, Interrupt]:
             num=len(items),
             start_seq=items[0][1],
             peripheral=get_peripheral(base),
-            name=base
+            name=base,
         )
 
     for name, id in interrupts.items():
