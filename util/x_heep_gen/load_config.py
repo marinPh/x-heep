@@ -2,10 +2,6 @@ import importlib
 from pathlib import PurePath
 from typing import List, Union
 import hjson
-import os
-import sys
-from jsonref import JsonRef
-
 
 from .cpu.cpu import CPU
 from .cpu.cv32e20 import cv32e20
