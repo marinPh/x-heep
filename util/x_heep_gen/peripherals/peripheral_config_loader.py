@@ -4,34 +4,97 @@
 
 import hjson
 
-# Import peripheral domain classes
-from .base_peripherals_domain import BasePeripheralDomain
-from .user_peripherals_domain import UserPeripheralDomain
+from x_heep_gen.peripherals.base_peripherals_domain import BasePeripheralDomain
+from x_heep_gen.peripherals.user_peripherals_domain import UserPeripheralDomain
+from x_heep_gen.peripherals.base_peripherals import (
+    SOC_ctrl,
+    Bootrom,
+    SPI_flash,
+    SPI_memio,
+    W25Q128JW_Controller,
+    DMA,
+    Power_manager,
+    RV_timer_ao,
+    Fast_intr_ctrl,
+    Ext_peripheral,
+    Pad_control,
+    GPIO_ao,
+)
+from .user_peripherals import (
+    RV_plic,
+    SPI_host,
+    GPIO,
+    I2C,
+    RV_timer,
+    SPI2,
+    PDM2PCM,
+    I2S,
+    UART,
+)
 
-# Import base peripheral classes
-from .base_peripherals.SOC_ctrl import SOC_ctrl
-from .base_peripherals.Bootrom import Bootrom
-from .base_peripherals.SPI_flash import SPI_flash
-from .base_peripherals.SPI_memio import SPI_memio
-from .base_peripherals.W25Q128JW_controller import W25Q128JW_controller
-from .base_peripherals.DMA import DMA
-from .base_peripherals.Power_manager import Power_manager
-from .base_peripherals.RV_timer_ao import RV_timer_ao
-from .base_peripherals.Fast_intr_ctrl import Fast_intr_ctrl
-from .base_peripherals.Ext_peripheral import Ext_peripheral
-from .base_peripherals.Pad_control import Pad_control
-from .base_peripherals.GPIO_ao import GPIO_ao
 
-# Import user peripheral classes
-from .user_peripherals.RV_plic import RV_plic
-from .user_peripherals.SPI_host import SPI_host
-from .user_peripherals.GPIO import GPIO
-from .user_peripherals.I2C import I2C
-from .user_peripherals.RV_timer import RV_timer
-from .user_peripherals.SPI2 import SPI2
-from .user_peripherals.PDM2PCM import PDM2PCM
-from .user_peripherals.I2S import I2S
-from .user_peripherals.UART import UART
+def load_peripherals_config(system, config: hjson.OrderedDict):
+    """
+    Load peripheral configurations from HJSON and add them to the system.
+
+    :param System system: The system to which peripherals will be added
+    :param hjson.OrderedDict config: The HJSON configuration dictionary
+    """
+
+    # Define peripheral factory maps
+    # Base peripherals are always-on peripherals in the AO (Always On) domain
+    base_peripheral_factories = {
+        "soc_ctrl": lambda o, l: SOC_ctrl(o, l),
+        "bootrom": lambda o, l: Bootrom(o, l),
+        "spi_flash": lambda o, l: SPI_flash(o, l),
+        "spi_memio": lambda o, l: SPI_memio(o, l),
+        "w25q128jw_controller": lambda o, l: W25Q128JW_Controller(o, l),
+        "dma": _create_dma_peripheral,  # Special handling for complex DMA config
+        "power_manager": lambda o, l: Power_manager(o, l),
+        "rv_timer_ao": lambda o, l: RV_timer_ao(o, l),
+        "fast_intr_ctrl": lambda o, l: Fast_intr_ctrl(o, l),
+        "ext_peripheral": lambda o, l: Ext_peripheral(o, l),
+        "pad_control": lambda o, l: Pad_control(o, l),
+        "gpio_ao": lambda o, l: GPIO_ao(o, l),
+    }
+
+    # User peripherals are peripherals in the user-controllable domain
+    user_peripheral_factories = {
+        "rv_plic": lambda o, l: RV_plic(o, l),
+        "spi_host": lambda o, l: SPI_host(o, l),
+        "gpio": lambda o, l: GPIO(o, l),
+        "i2c": lambda o, l: I2C(o, l),
+        "rv_timer": lambda o, l: RV_timer(o, l),
+        "spi2": lambda o, l: SPI2(o, l),
+        "pdm2pcm": lambda o, l: PDM2PCM(o, l),
+        "i2s": lambda o, l: I2S(o, l),
+        "uart": lambda o, l: UART(o, l),
+    }
+
+    for name, fields in config.items():
+        # Base Peripherals (Always-On Domain)
+        if name == "ao_peripherals":
+            _load_domain_peripherals(
+                system=system,
+                fields=fields,
+                domain_type="base",
+                peripheral_factory_map=base_peripheral_factories,
+                domain_constructor=BasePeripheralDomain,
+                are_configured_check=system.are_base_peripherals_configured,
+                get_domain_attr=lambda: system._base_peripheral_domain,
+            )
+
+        # User Peripherals (User Domain)
+        elif name == "peripherals":
+            _load_domain_peripherals(
+                system=system,
+                fields=fields,
+                domain_type="user",
+                peripheral_factory_map=user_peripheral_factories,
+                domain_constructor=UserPeripheralDomain,
+                are_configured_check=system.are_user_peripherals_configured,
+                get_domain_attr=lambda: system._user_peripheral_domain,
+            )
 
 
 def _create_dma_peripheral(peripheral_config, offset, length):
@@ -124,37 +187,6 @@ def _create_dma_peripheral(peripheral_config, offset, length):
     )
 
 
-def _create_peripheral_from_config(
-    peripheral_name, peripheral_config, peripheral_factory_map
-):
-    """
-    Create a peripheral instance from its configuration.
-
-    This function takes a peripheral name, its configuration dictionary, and a mapping of peripheral
-    names to factory functions. It extracts the necessary parameters from the configuration and uses
-    the appropriate factory function to create and return a peripheral instance.
-
-    :param str peripheral_name: Name of the peripheral to create
-    :param dict peripheral_config: Configuration dictionary for the peripheral
-    :param dict peripheral_factory_map: Mapping of peripheral names to factory functions
-    :return: Configured peripheral instance
-    """
-
-    offset = int(peripheral_config["offset"], 16)
-    length = int(peripheral_config["length"], 16)
-
-    if peripheral_name not in peripheral_factory_map:
-        raise ValueError(f"Peripheral {peripheral_name} does not exist.")
-
-    factory = peripheral_factory_map[peripheral_name]
-
-    # Special handling for DMA (has complex configuration)
-    if peripheral_name == "dma":
-        return factory(peripheral_config, offset, length)
-    else:
-        return factory(offset, length)
-
-
 def _load_domain_peripherals(
     system,
     fields,
@@ -225,65 +257,32 @@ def _load_domain_peripherals(
     system.add_peripheral_domain(domain)
 
 
-def load_peripherals_config(system, config: hjson.OrderedDict):
+def _create_peripheral_from_config(
+    peripheral_name, peripheral_config, peripheral_factory_map
+):
     """
-    Load peripheral configurations from HJSON and add them to the system.
+    Create a peripheral instance from its configuration.
 
-    :param System system: The system to which peripherals will be added
-    :param hjson.OrderedDict config: The HJSON configuration dictionary
+    This function takes a peripheral name, its configuration dictionary, and a mapping of peripheral
+    names to factory functions. It extracts the necessary parameters from the configuration and uses
+    the appropriate factory function to create and return a peripheral instance.
+
+    :param str peripheral_name: Name of the peripheral to create
+    :param dict peripheral_config: Configuration dictionary for the peripheral
+    :param dict peripheral_factory_map: Mapping of peripheral names to factory functions
+    :return: Configured peripheral instance
     """
 
-    # Define peripheral factory maps
-    # Base peripherals are always-on peripherals in the AO (Always On) domain
-    base_peripheral_factories = {
-        "soc_ctrl": lambda o, l: SOC_ctrl(o, l),
-        "bootrom": lambda o, l: Bootrom(o, l),
-        "spi_flash": lambda o, l: SPI_flash(o, l),
-        "spi_memio": lambda o, l: SPI_memio(o, l),
-        "w25q128jw_controller": lambda o, l: W25Q128JW_controller(o, l),
-        "dma": _create_dma_peripheral,  # Special handling for complex DMA config
-        "power_manager": lambda o, l: Power_manager(o, l),
-        "rv_timer_ao": lambda o, l: RV_timer_ao(o, l),
-        "fast_intr_ctrl": lambda o, l: Fast_intr_ctrl(o, l),
-        "ext_peripheral": lambda o, l: Ext_peripheral(o, l),
-        "pad_control": lambda o, l: Pad_control(o, l),
-        "gpio_ao": lambda o, l: GPIO_ao(o, l),
-    }
+    offset = int(peripheral_config["offset"], 16)
+    length = int(peripheral_config["length"], 16)
 
-    # User peripherals are peripherals in the user-controllable domain
-    user_peripheral_factories = {
-        "rv_plic": lambda o, l: RV_plic(o, l),
-        "spi_host": lambda o, l: SPI_host(o, l),
-        "gpio": lambda o, l: GPIO(o, l),
-        "i2c": lambda o, l: I2C(o, l),
-        "rv_timer": lambda o, l: RV_timer(o, l),
-        "spi2": lambda o, l: SPI2(o, l),
-        "pdm2pcm": lambda o, l: PDM2PCM(o, l),
-        "i2s": lambda o, l: I2S(o, l),
-        "uart": lambda o, l: UART(o, l),
-    }
+    if peripheral_name not in peripheral_factory_map:
+        raise ValueError(f"Peripheral {peripheral_name} does not exist.")
 
-    for name, fields in config.items():
-        # Base Peripherals (Always-On Domain)
-        if name == "ao_peripherals":
-            _load_domain_peripherals(
-                system=system,
-                fields=fields,
-                domain_type="base",
-                peripheral_factory_map=base_peripheral_factories,
-                domain_constructor=BasePeripheralDomain,
-                are_configured_check=system.are_base_peripherals_configured,
-                get_domain_attr=lambda: system._base_peripheral_domain,
-            )
+    factory = peripheral_factory_map[peripheral_name]
 
-        # User Peripherals (User Domain)
-        elif name == "peripherals":
-            _load_domain_peripherals(
-                system=system,
-                fields=fields,
-                domain_type="user",
-                peripheral_factory_map=user_peripheral_factories,
-                domain_constructor=UserPeripheralDomain,
-                are_configured_check=system.are_user_peripherals_configured,
-                get_domain_attr=lambda: system._user_peripheral_domain,
-            )
+    # Special handling for DMA (has complex configuration)
+    if peripheral_name == "dma":
+        return factory(peripheral_config, offset, length)
+    else:
+        return factory(offset, length)
