@@ -136,6 +136,9 @@ def main():
             outdir=out_main,
         )
 
+        print("\nCleaning up worktree...")
+        run(["git", "worktree", "remove", "--force", tmp])
+
         print("\n=== Generating on current branch ===")
         mcu_gen(
             repo_root=REPO_ROOT,
@@ -152,8 +155,10 @@ def main():
             for path in diff_files:
                 print(f" - {path}")
 
-        print("\nCleaning up worktree...")
-        run(["git", "worktree", "remove", "--force", tmp])
+        print(
+            "\nRemember to make sure that your main branch is up to date with the latest changes from the remote repository before running this script."
+            "\nYou can update your main branch with 'git fetch origin main' or 'git fetch upstream main' depending on your remote setup."
+        )
 
 
 if __name__ == "__main__":
