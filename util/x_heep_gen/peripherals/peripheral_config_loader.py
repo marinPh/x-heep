@@ -13,6 +13,7 @@ from .base_peripherals.SOC_ctrl import SOC_ctrl
 from .base_peripherals.Bootrom import Bootrom
 from .base_peripherals.SPI_flash import SPI_flash
 from .base_peripherals.SPI_memio import SPI_memio
+from .base_peripherals.W25Q128JW_controller import W25Q128JW_controller
 from .base_peripherals.DMA import DMA
 from .base_peripherals.Power_manager import Power_manager
 from .base_peripherals.RV_timer_ao import RV_timer_ao
@@ -126,6 +127,18 @@ def _create_dma_peripheral(peripheral_config, offset, length):
 def _create_peripheral_from_config(
     peripheral_name, peripheral_config, peripheral_factory_map
 ):
+    """
+    Create a peripheral instance from its configuration.
+
+    This function takes a peripheral name, its configuration dictionary, and a mapping of peripheral
+    names to factory functions. It extracts the necessary parameters from the configuration and uses
+    the appropriate factory function to create and return a peripheral instance.
+
+    :param str peripheral_name: Name of the peripheral to create
+    :param dict peripheral_config: Configuration dictionary for the peripheral
+    :param dict peripheral_factory_map: Mapping of peripheral names to factory functions
+    :return: Configured peripheral instance
+    """
 
     offset = int(peripheral_config["offset"], 16)
     length = int(peripheral_config["length"], 16)
@@ -151,7 +164,19 @@ def _load_domain_peripherals(
     are_configured_check,
     get_domain_attr,
 ):
+    """
+    Load peripherals for a specific domain (base or user) from configuration.
 
+    :param System system: The system to which peripherals will be added
+    :param dict fields: The configuration fields for the peripheral domain
+    :param str domain_type: The type of domain ("base" or "user")
+    :param dict peripheral_factory_map: Mapping of peripheral names to factory functions for this domain
+    :param function domain_constructor: Constructor function for the peripheral domain
+    :param function are_configured_check: Function to check if the domain is already configured
+    :param function get_domain_attr: Function to get the existing domain attribute from the system
+    """
+
+    # Create peripheral domain if not already configured
     domain = (
         domain_constructor(int(fields["address"], 16), int(fields["length"], 16))
         if not are_configured_check()
@@ -215,7 +240,8 @@ def load_peripherals_config(system, config: hjson.OrderedDict):
         "bootrom": lambda o, l: Bootrom(o, l),
         "spi_flash": lambda o, l: SPI_flash(o, l),
         "spi_memio": lambda o, l: SPI_memio(o, l),
-        "dma": _create_dma_peripheral,  # Special handling for complex config
+        "w25q128jw_controller": lambda o, l: W25Q128JW_controller(o, l),
+        "dma": _create_dma_peripheral,  # Special handling for complex DMA config
         "power_manager": lambda o, l: Power_manager(o, l),
         "rv_timer_ao": lambda o, l: RV_timer_ao(o, l),
         "fast_intr_ctrl": lambda o, l: Fast_intr_ctrl(o, l),
