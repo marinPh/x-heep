@@ -6,13 +6,16 @@ import os
 import sys
 from jsonref import JsonRef
 
+
 from .cpu.cpu import CPU
 from .cpu.cv32e20 import cv32e20
+from .cpu.cv32e40p import cv32e40p
+from .cpu.cv32e40px import cv32e40px
+from .cpu.cv32e40x import cv32e40x
 from .memory_ss.memory_ss import MemorySS
 from .memory_ss.linker_section import LinkerSection
-from .xheep import BusType, XHeep
-
 from .peripherals.peripheral_config_loader import load_peripherals_config
+from .xheep import BusType, XHeep
 
 
 def to_int(input) -> Union[int, None]:
@@ -79,7 +82,7 @@ def ram_list(l: "List[int]", entry):
     )
 
 
-def load_ram_configuration(memory_ss: MemorySS, mem: hjson.OrderedDict):
+def load_ram_config(memory_ss: MemorySS, mem: hjson.OrderedDict):
     """
     Reads the whole ram configuration.
 
@@ -189,6 +192,49 @@ def load_linker_config(memory_ss: MemorySS, config: list):
         memory_ss.add_linker_section(LinkerSection(name, start, end))
 
 
+def load_cpu_config(
+    system: XHeep, cpu_type_config: str, cpu_features_config: hjson.OrderedDict
+):
+    """
+    Reads the cpu configuration.
+    :param XHeep system: the system object where the cpu should be set.
+    :param str cpu_type_config: The cpu type configuration.
+    :param hjson.OrderedDict cpu_features_config: The cpu features configuration.
+    """
+    if type(cpu_type_config) is not str:
+        raise TypeError("cpu_type_config should be a string")
+    if type(cpu_features_config) is not hjson.OrderedDict:
+        raise TypeError(f"cpu_features_config should be an hjson.OrderedDict")
+
+    if cpu_type_config == "cv32e20":
+        cpu = cv32e20(
+            rv32e=cpu_features_config.get("cve2_rv32e", None),
+            rv32m=cpu_features_config.get("cve2_rv32m", None),
+            cv_x_if=cpu_features_config.get("cv_x_if", None),
+        )
+    elif cpu_type_config == "cv32e40p":
+        cpu = cv32e40p(
+            fpu=cpu_features_config.get("fpu", None),
+            zfinx=cpu_features_config.get("zfinx", None),
+            corev_pulp=cpu_features_config.get("corev_pulp", None),
+        )
+    elif cpu_type_config == "cv32e40px":
+        cpu = cv32e40px(
+            fpu=cpu_features_config.get("fpu", None),
+            zfinx=cpu_features_config.get("zfinx", None),
+            corev_pulp=cpu_features_config.get("corev_pulp", None),
+            cv_x_if=cpu_features_config.get("cv_x_if", None),
+        )
+    elif cpu_type_config == "cv32e40x":
+        cpu = cv32e40x(
+            cv_x_if=cpu_features_config.get("cv_x_if", None),
+        )
+    else:
+        cpu = CPU(cpu_type_config)
+
+    system.set_cpu(cpu)
+
+
 def load_cfg_hjson(src: str) -> XHeep:
     """
     Loads the configuration passed as a hjson string and creates an object representing the mcu.
@@ -204,9 +250,8 @@ def load_cfg_hjson(src: str) -> XHeep:
     bus_config = None
     linker_config = None
 
-    cpu_config = None
-    cve2_rv32e_config = None
-    cve2_rv32m_config = None
+    cpu_type_config = None
+    cpu_features_config = hjson.OrderedDict()
 
     for key, value in config.items():
         if key == "ram_banks":
@@ -216,33 +261,28 @@ def load_cfg_hjson(src: str) -> XHeep:
         elif key == "linker_sections":
             linker_config = value
         elif key == "cpu_type":
-            cpu_config = value
-        elif key == "cve2_rv32e":
-            cve2_rv32e_config = value
-        elif key == "cve2_rv32m":
-            cve2_rv32m_config = value
+            cpu_type_config = value
+        elif key == "cpu_features":
+            cpu_features_config = value
 
     if mem_config is None:
         raise RuntimeError("No memory configuration found")
     if bus_config is None:
         raise RuntimeError("No bus type configuration found")
+    if cpu_type_config is None:
+        raise RuntimeError("No CPU type configuration found")
 
     system = XHeep(BusType(bus_config))
     memory_ss = MemorySS()
 
-    load_ram_configuration(memory_ss, mem_config)
+    load_ram_config(memory_ss, mem_config)
 
     if linker_config is not None:
         load_linker_config(memory_ss, linker_config)
 
     system.set_memory_ss(memory_ss)
 
-    if cpu_config is not None:
-        if cpu_config == "cv32e20":
-            cpu = cv32e20(cve2_rv32e_config, cve2_rv32m_config)
-        else:
-            cpu = CPU(cpu_config)
-        system.set_cpu(cpu)
+    load_cpu_config(system, cpu_type_config, cpu_features_config)
 
     load_peripherals_config(system, config)
 
@@ -275,3 +315,25 @@ def load_cfg_file(f: PurePath) -> XHeep:
 
     else:
         raise RuntimeError(f"unsupported file extension {f.suffix}")
+
+
+def load_pad_cfg(pad_cfg_path: PurePath):
+    """
+    Load pad configuration a Python file and build the PadRing.
+
+    Imports the Python module and calls the config() function which must
+    not take any parameters and return a PadRing instance.
+
+    :param PurePath pad_cfg_path: Path to .py configuration file
+    :return: Built PadRing object ready for template generation
+    """
+    if not isinstance(pad_cfg_path, PurePath):
+        raise TypeError("parameter should be of type PurePath")
+
+    if pad_cfg_path.suffix != ".py":
+        raise RuntimeError(f"unsupported file extension {pad_cfg_path.suffix}")
+
+    spec = importlib.util.spec_from_file_location("configs._config", pad_cfg_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.config()
