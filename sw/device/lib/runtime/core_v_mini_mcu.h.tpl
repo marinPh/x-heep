@@ -7,6 +7,8 @@
     base_peripheral_domain = xheep.get_base_peripheral_domain()
     dma = base_peripheral_domain.get_dma()
     memory_ss = xheep.memory_ss()
+    intr_manager = xheep.get_interrupt_manager()
+    external_interrupts = intr_manager.get_external_interrupts()
 %>
 
 #ifndef COREV_MINI_MCU_H_
@@ -122,9 +124,13 @@ extern "C" {
 #define FLASH_MEM_SIZE 0x${flash_mem_size_address}
 #define FLASH_MEM_END_ADDRESS (FLASH_MEM_START_ADDRESS + FLASH_MEM_SIZE)
 
-#define QTY_INTR ${len(interrupts)}
-% for key, value in interrupts.items():
+
+#define QTY_INTR ${(intr_manager.get_max_interrupts())}
+% for key, value in intr_manager.get_unpacked_interrupts().items():
 #define ${key.upper()} ${value}
+% endfor
+% for key, intr_obj in external_interrupts.items():
+#define ${key.upper()} ${intr_obj.id}
 % endfor
 
 % if xheep.get_padring().pads_attributes != None:
@@ -132,6 +138,7 @@ extern "C" {
 #define ${pad.localparam}_ATTRIBUTE ${pad.index}
 % endfor
 % endif
+
 
 #define GPIO_AO_DOMAIN_LIMIT 8
 

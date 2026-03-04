@@ -6,6 +6,7 @@ from .peripherals.abstractions import PeripheralDomain
 from .peripherals.base_peripherals_domain import BasePeripheralDomain
 from .peripherals.user_peripherals_domain import UserPeripheralDomain
 from .pads.PadRing import PadRing
+from .interrupts import InterruptManager
 
 
 class XHeep:
@@ -21,10 +22,7 @@ class XHeep:
     IL_COMPATIBLE_BUS_TYPES = [BusType.NtoM]
     """Constant set of bus types that support interleaved memory banks"""
 
-    def __init__(
-        self,
-        bus_type: BusType,
-    ):
+    def __init__(self, bus_type: BusType):
         if not type(bus_type) is BusType:
             raise TypeError(
                 f"XHeep.bus_type should be of type BusType not {type(self._bus_type)}"
@@ -39,6 +37,7 @@ class XHeep:
         self._base_peripheral_domain = None
         self._user_peripheral_domain = None
         self._padring: PadRing = None
+        self._interrupt_manager = InterruptManager()
 
         self._extensions = {}
 
@@ -195,6 +194,30 @@ class XHeep:
         return self._padring
 
     # ------------------------------------------------------------
+    # Interrupts
+    # ------------------------------------------------------------
+
+    def get_interrupt_manager(self) -> InterruptManager:
+        """
+        Access the interrupt manager for this system.
+
+        :return: The interrupt manager instance
+        :rtype: InterruptManager
+
+        Example:
+            >>> system.get_interrupt_manager().add_interrupt("uart_tx", Interrupt(5))
+            >>> intrs = system.get_interrupt_manager().get_interrupts()
+        """
+        return self._interrupt_manager
+
+    @property
+    def interrupts(self) -> InterruptManager:
+        """
+        Backward-compatible alias for :meth:`get_interrupt_manager`.
+        """
+        return self.get_interrupt_manager()
+
+    # ------------------------------------------------------------
     # Extensions
     # ------------------------------------------------------------
 
@@ -230,6 +253,10 @@ class XHeep:
             self.memory_ss().build()
         if self.are_base_peripherals_configured():
             self._base_peripheral_domain.build()
+            self._interrupt_manager.assign_from_peripheral_domains(
+                self._base_peripheral_domain,
+                self._user_peripheral_domain,
+            )
         if self.are_user_peripherals_configured():
             self._user_peripheral_domain.build()
         if self.get_padring() is not None:

@@ -4,6 +4,7 @@
 
 
 
+
 module peripheral_subsystem
   import obi_pkg::*;
   import reg_pkg::*;
@@ -113,11 +114,20 @@ module peripheral_subsystem
   logic [$clog2(rv_plic_reg_pkg::NumSrc)-1:0] irq_id[rv_plic_reg_pkg::NumTarget];
   logic [$clog2(rv_plic_reg_pkg::NumSrc)-1:0] unused_irq_id[rv_plic_reg_pkg::NumTarget];
 
-  logic [31:8] gpio_intr;
+
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [7:0] gpio_int_unused;
+  logic [8-1:0] gpio_int_unused;
 
+  logic uart_intr_tx_watermark;
+  logic uart_intr_rx_watermark;
+  logic uart_intr_tx_empty;
+  logic uart_intr_rx_overflow;
+  logic uart_intr_rx_frame_err;
+  logic uart_intr_rx_break_err;
+  logic uart_intr_rx_timeout;
+  logic uart_intr_rx_parity_err;
+  logic [31:8] gpio_intr;
   logic i2c_intr_fmt_watermark;
   logic i2c_intr_rx_watermark;
   logic i2c_intr_fmt_overflow;
@@ -136,20 +146,12 @@ module peripheral_subsystem
   logic i2c_intr_host_timeout;
   logic spi2_intr_event;
   logic i2s_intr_event;
-  logic uart_intr_tx_watermark;
-  logic uart_intr_rx_watermark;
-  logic uart_intr_tx_empty;
-  logic uart_intr_rx_overflow;
-  logic uart_intr_rx_frame_err;
-  logic uart_intr_rx_break_err;
-  logic uart_intr_rx_timeout;
-  logic uart_intr_rx_parity_err;
 
   // this avoids lint errors
   assign unused_irq_id = irq_id;
 
   // Assign internal interrupts
-  assign intr_vector[0] = 1'b0;  // ID [0] is a special case and must be tied to zero.
+  assign intr_vector[0] = 1'b0;  // ID [0] is a special case and must be tied to zero
   assign intr_vector[1] = uart_intr_tx_watermark;
   assign intr_vector[2] = uart_intr_rx_watermark;
   assign intr_vector[3] = uart_intr_tx_empty;
@@ -177,6 +179,7 @@ module peripheral_subsystem
   assign intr_vector[48] = i2c_intr_host_timeout;
   assign intr_vector[49] = spi2_intr_event;
   assign intr_vector[50] = i2s_intr_event;
+
 
   // External interrupts assignement
   for (genvar i = 0; i < NEXT_INT; i++) begin : gen_external_intr_vect
@@ -279,6 +282,7 @@ module peripheral_subsystem
       .out_rsp_i(peripheral_slv_rsp)
   );
 
+
   reg_to_tlul #(
       .req_t(reg_pkg::reg_req_t),
       .rsp_t(reg_pkg::reg_rsp_t),
@@ -295,6 +299,7 @@ module peripheral_subsystem
       .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::RV_PLIC_IDX]),
       .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::RV_PLIC_IDX])
   );
+
 
   rv_plic rv_plic_i (
       .clk_i(clk_cg),
@@ -348,6 +353,7 @@ module peripheral_subsystem
       .global_interrupt_o()
   );
 
+
   reg_to_tlul #(
       .req_t(reg_pkg::reg_req_t),
       .rsp_t(reg_pkg::reg_rsp_t),
@@ -364,6 +370,7 @@ module peripheral_subsystem
       .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::I2C_IDX]),
       .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::I2C_IDX])
   );
+
 
   i2c i2c_i (
       .clk_i(clk_cg),
@@ -394,6 +401,7 @@ module peripheral_subsystem
       .intr_host_timeout_o(i2c_intr_host_timeout)
   );
 
+
   reg_to_tlul #(
       .req_t(reg_pkg::reg_req_t),
       .rsp_t(reg_pkg::reg_rsp_t),
@@ -410,6 +418,7 @@ module peripheral_subsystem
       .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::RV_TIMER_IDX]),
       .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::RV_TIMER_IDX])
   );
+
 
   rv_timer rv_timer_2_3_i (
       .clk_i(clk_cg),
@@ -488,6 +497,7 @@ module peripheral_subsystem
       .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::UART_IDX]),
       .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::UART_IDX])
   );
+
 
   uart uart_i (
       .clk_i(clk_cg),

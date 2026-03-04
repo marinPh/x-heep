@@ -18,6 +18,7 @@
   base_peripheral_domain = xheep.get_base_peripheral_domain()
   dma = base_peripheral_domain.get_dma()
   memory_ss = xheep.memory_ss()
+  intr_manager = xheep.get_interrupt_manager()
 %>
 
 package core_v_mini_mcu_pkg;
@@ -219,8 +220,8 @@ package core_v_mini_mcu_pkg;
 
   // Interrupts
   // ----------
-  localparam PLIC_NINT = ${plit_n_interrupts};
-  localparam PLIC_USED_NINT = ${plic_used_n_interrupts};
+  localparam PLIC_NINT = ${intr_manager.get_max_interrupts()};
+  localparam PLIC_USED_NINT = ${intr_manager.get_num_interrupts()};
   localparam NEXT_INT = PLIC_NINT - PLIC_USED_NINT;
 
 % for pad in xheep.get_padring().total_pad_list:

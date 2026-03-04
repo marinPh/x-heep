@@ -469,18 +469,16 @@ module core_v_mini_mcu
   assign peripheral_subsystem_rst_n = peripheral_subsystem_pwr_ctrl_out.rst_n;
   assign peripheral_subsystem_clkgate_en_n = peripheral_subsystem_pwr_ctrl_out.clkgate_en_n;
 
-  assign memory_subsystem_banks_powergate_switch_n[0] = memory_subsystem_pwr_ctrl_out[0].pwrgate_en_n;
-  assign memory_subsystem_pwr_ctrl_in[0].pwrgate_ack_n = memory_subsystem_banks_powergate_switch_ack_n[0];
-  //isogate exposed outside for UPF sim flow and switch cells
-  assign memory_subsystem_banks_powergate_iso_n[0] = memory_subsystem_pwr_ctrl_out[0].isogate_en_n;
-  assign memory_subsystem_banks_set_retentive_n[0] = memory_subsystem_pwr_ctrl_out[0].retentive_en_n;
-  assign memory_subsystem_clkgate_en_n[0] = memory_subsystem_pwr_ctrl_out[0].clkgate_en_n;
-  assign memory_subsystem_banks_powergate_switch_n[1] = memory_subsystem_pwr_ctrl_out[1].pwrgate_en_n;
-  assign memory_subsystem_pwr_ctrl_in[1].pwrgate_ack_n = memory_subsystem_banks_powergate_switch_ack_n[1];
-  //isogate exposed outside for UPF sim flow and switch cells
-  assign memory_subsystem_banks_powergate_iso_n[1] = memory_subsystem_pwr_ctrl_out[1].isogate_en_n;
-  assign memory_subsystem_banks_set_retentive_n[1] = memory_subsystem_pwr_ctrl_out[1].retentive_en_n;
-  assign memory_subsystem_clkgate_en_n[1] = memory_subsystem_pwr_ctrl_out[1].clkgate_en_n;
+  for (
+      genvar i = 0; i < core_v_mini_mcu_pkg::NUM_BANKS; i = i + 1
+  ) begin : gen_memory_subsystem_pwr_gating
+    assign memory_subsystem_banks_powergate_switch_n[i] = memory_subsystem_pwr_ctrl_out[i].pwrgate_en_n;
+    assign memory_subsystem_pwr_ctrl_in[i].pwrgate_ack_n = memory_subsystem_banks_powergate_switch_ack_n[i];
+    //isogate exposed outside for UPF sim flow and switch cells
+    assign memory_subsystem_banks_powergate_iso_n[i] = memory_subsystem_pwr_ctrl_out[i].isogate_en_n;
+    assign memory_subsystem_banks_set_retentive_n[i] = memory_subsystem_pwr_ctrl_out[i].retentive_en_n;
+    assign memory_subsystem_clkgate_en_n[i] = memory_subsystem_pwr_ctrl_out[i].clkgate_en_n;
+  end
 
   for (genvar i = 0; i < EXT_DOMAINS_RND; i = i + 1) begin : gen_external_subsystem_pwr_gating
     assign external_subsystem_powergate_switch_no[i]        = external_subsystem_pwr_ctrl_out[i].pwrgate_en_n;

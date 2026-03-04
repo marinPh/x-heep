@@ -1,5 +1,6 @@
 # Peripheral abstract classes
 
+from dataclasses import dataclass
 import os.path as path
 from abc import (
     ABC,
@@ -7,7 +8,22 @@ from abc import (
 )  # Used to define abstract classes that cannot be instantiated, only well defined subclasses can be instantiated.
 from enum import Enum
 from copy import deepcopy
-from typing import List
+from typing import List, Dict, Optional
+
+
+@dataclass
+class Interrupt:
+    id: int
+    num: Optional[int] = 1
+    start_seq: Optional[int] = id
+    peripheral: Optional[str] = None  # Name of peripheral this interrupt belongs to
+    port_names: Optional[List[str]] = None  # Port names for the peripheral instance
+
+    def __post_init__(self):
+        if self.num < 1:
+            raise ValueError("num should be above 1 cannot be less")
+        if self.id < 0:
+            raise ValueError("ID cannot be negative")
 
 
 class Peripheral(ABC):
@@ -21,6 +37,8 @@ class Peripheral(ABC):
     _length: int = int("0x00010000", 16)  # default length of 64KB
     _name: str
     _address: int = None
+
+    _interrupts: Dict[str, Interrupt] = {}
 
     def __init__(self, offset=None, length=None):
         """
@@ -43,6 +61,19 @@ class Peripheral(ABC):
         :rtype: int
         """
         return self._address
+
+    def reset_interrupts(self, interrupts: Dict[str, Interrupt]):
+        """
+        Reset the interrupts of the peripheral.
+        """
+        self._interrupts = interrupts.copy()
+
+    def get_interrupts(self):
+        """
+        :return: The interrupts of the peripheral.
+        :rtype: Dict[str,int]
+        """
+        return self._interrupts.copy()
 
     def set_address(self, address):
         """
@@ -95,7 +126,12 @@ class PeripheralDomain(ABC):
     ]  # type has to be precised for filtering in validation
 
     @abstractmethod
-    def __init__(self, name: str, start_address: int, length: int):
+    def __init__(
+        self,
+        name: str,
+        start_address: int,
+        length: int,
+    ):
         """
         Initialize the peripheral domain. Is abstract because each peripheral domain has its own way of initializing without letting the user define start address and length.
 
@@ -109,22 +145,39 @@ class PeripheralDomain(ABC):
         self._peripherals = []
 
     @abstractmethod
+    def _get_peripheral_type(self):
+        """
+        Get the expected peripheral type for this domain (used for validation).
+        Must be implemented by subclasses to return the appropriate type (e.g., BasePeripheral, UserPeripheral).
+
+        :return: The peripheral type class for validation.
+        :rtype: type
+        """
+        ...
+
     def add_peripheral(self, peripheral: Peripheral):
         """
-        Add a peripheral to the domain. The peripheral should be fully configured when added. If the peripheral has no offset, it will be automatically computed during build. Must be defined by the subclass.
+        Add a peripheral to the domain. The peripheral should be fully configured when added. If the peripheral has no offset, it will be automatically computed during build.
 
         :param Peripheral peripheral: The peripheral to add.
         """
-        ...
+        if not isinstance(peripheral, self._get_peripheral_type()):
+            raise ValueError(
+                f"Peripheral is not a {self._get_peripheral_type().__name__}"
+            )
+        self._peripherals.append(peripheral)
 
-    @abstractmethod
     def remove_peripheral(self, peripheral: Peripheral):
         """
-        Remove a peripheral from the domain. Must be defined by the subclass.
+        Remove a peripheral from the domain.
 
         :param Peripheral peripheral: The peripheral to remove.
         """
-        ...
+        if peripheral not in self._peripherals:
+            print(
+                f"Warning : Peripheral {peripheral.get_name()} is not in the domain {self._name}"
+            )
+        self._peripherals.remove(peripheral)
 
     def get_start_address(self):
         """

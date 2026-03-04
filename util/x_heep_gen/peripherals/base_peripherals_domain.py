@@ -57,27 +57,14 @@ class BasePeripheralDomain(PeripheralDomain):
             length=length,
         )
 
-    def add_peripheral(self, peripheral: BasePeripheral):
+    def _get_peripheral_type(self):
         """
-        Add a peripheral to the domain if it is a BasePeripheral. If not, raise an error.
+        Return the expected peripheral type for validation.
 
-        :param BasePeripheral peripheral: The peripheral to add.
+        :return: BasePeripheral type
+        :rtype: type
         """
-        if not isinstance(peripheral, BasePeripheral):
-            raise ValueError("Peripheral is not a BasePeripheral")
-        self._peripherals.append(peripheral)
-
-    def remove_peripheral(self, peripheral: BasePeripheral):
-        """
-        Remove a peripheral from the domain if it is a BasePeripheral.
-
-        :param BasePeripheral peripheral: The peripheral to remove.
-        """
-        if peripheral not in self._peripherals:
-            print(
-                f"Warning : Peripheral {peripheral.get_name()} is not in the domain {self._name}"
-            )
-        self._peripherals.remove(peripheral)
+        return BasePeripheral
 
     def add_missing_peripherals(self):
         """

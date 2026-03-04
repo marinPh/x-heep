@@ -4,7 +4,32 @@
 
 <%
   user_peripheral_domain = xheep.get_user_peripheral_domain()
+  intr_manager = xheep.get_interrupt_manager()
+
+intrs = [
+  (name, irq)
+  for name, irq in intr_manager.get_interrupts().items()
+  if name != "EXT_INTR"
+]
 %>
+<%def name="reg_to_tlul_inst(instance_name, tl_h2d, tl_d2h, idx_name)">
+  reg_to_tlul #(
+      .req_t(reg_pkg::reg_req_t),
+      .rsp_t(reg_pkg::reg_rsp_t),
+      .tl_h2d_t(tlul_pkg::tl_h2d_t),
+      .tl_d2h_t(tlul_pkg::tl_d2h_t),
+      .tl_a_user_t(tlul_pkg::tl_a_user_t),
+      .tl_a_op_e(tlul_pkg::tl_a_op_e),
+      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
+      .PutFullData(tlul_pkg::PutFullData),
+      .Get(tlul_pkg::Get)
+  ) ${instance_name} (
+      .tl_o(${tl_h2d}),
+      .tl_i(${tl_d2h}),
+      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::${idx_name}]),
+      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::${idx_name}])
+  );
+</%def>
 
 module peripheral_subsystem
   import obi_pkg::*;
@@ -115,70 +140,35 @@ module peripheral_subsystem
   logic [$clog2(rv_plic_reg_pkg::NumSrc)-1:0] irq_id[rv_plic_reg_pkg::NumTarget];
   logic [$clog2(rv_plic_reg_pkg::NumSrc)-1:0] unused_irq_id[rv_plic_reg_pkg::NumTarget];
 
-  logic [31:8] gpio_intr;
+
   logic [7:0] cio_gpio_unused;
   logic [7:0] cio_gpio_en_unused;
-  logic [7:0] gpio_int_unused;
+  logic [${intr_manager.get_interrupts()["gpio_intr"].start_seq}-1:0] gpio_int_unused;
 
-  logic i2c_intr_fmt_watermark;
-  logic i2c_intr_rx_watermark;
-  logic i2c_intr_fmt_overflow;
-  logic i2c_intr_rx_overflow;
-  logic i2c_intr_nak;
-  logic i2c_intr_scl_interference;
-  logic i2c_intr_sda_interference;
-  logic i2c_intr_stretch_timeout;
-  logic i2c_intr_sda_unstable;
-  logic i2c_intr_trans_complete;
-  logic i2c_intr_tx_empty;
-  logic i2c_intr_tx_nonempty;
-  logic i2c_intr_tx_overflow;
-  logic i2c_intr_acq_overflow;
-  logic i2c_intr_ack_stop;
-  logic i2c_intr_host_timeout;
-  logic spi2_intr_event;
-  logic i2s_intr_event;
-  logic uart_intr_tx_watermark;
-  logic uart_intr_rx_watermark;
-  logic uart_intr_tx_empty;
-  logic uart_intr_rx_overflow;
-  logic uart_intr_rx_frame_err;
-  logic uart_intr_rx_break_err;
-  logic uart_intr_rx_timeout;
-  logic uart_intr_rx_parity_err;
+% for name, irq in intrs:
+  % if name != "null_intr":
+    % if irq.num > 1:
+  logic [${irq.start_seq + irq.num -1}:${irq.start_seq}] ${name};
+    % elif not name.startswith('EXT_INTR'):
+  logic ${name};
+    % endif
+  % endif
+% endfor
 
   // this avoids lint errors
   assign unused_irq_id = irq_id;
 
   // Assign internal interrupts
-  assign intr_vector[${interrupts["null_intr"]}] = 1'b0;  // ID [0] is a special case and must be tied to zero.
-  assign intr_vector[${interrupts["uart_intr_tx_watermark"]}] = uart_intr_tx_watermark;
-  assign intr_vector[${interrupts["uart_intr_rx_watermark"]}] = uart_intr_rx_watermark;
-  assign intr_vector[${interrupts["uart_intr_tx_empty"]}] = uart_intr_tx_empty;
-  assign intr_vector[${interrupts["uart_intr_rx_overflow"]}] = uart_intr_rx_overflow;
-  assign intr_vector[${interrupts["uart_intr_rx_frame_err"]}] = uart_intr_rx_frame_err;
-  assign intr_vector[${interrupts["uart_intr_rx_break_err"]}] = uart_intr_rx_break_err;
-  assign intr_vector[${interrupts["uart_intr_rx_timeout"]}] = uart_intr_rx_timeout;
-  assign intr_vector[${interrupts["uart_intr_rx_parity_err"]}] = uart_intr_rx_parity_err;
-  assign intr_vector[${interrupts["gpio_intr_31"]}:${interrupts["gpio_intr_8"]}] = gpio_intr;
-  assign intr_vector[${interrupts["intr_fmt_watermark"]}] = i2c_intr_fmt_watermark;
-  assign intr_vector[${interrupts["intr_rx_watermark"]}] = i2c_intr_rx_watermark;
-  assign intr_vector[${interrupts["intr_fmt_overflow"]}] = i2c_intr_fmt_overflow;
-  assign intr_vector[${interrupts["intr_rx_overflow"]}] = i2c_intr_rx_overflow;
-  assign intr_vector[${interrupts["intr_nak"]}] = i2c_intr_nak;
-  assign intr_vector[${interrupts["intr_scl_interference"]}] = i2c_intr_scl_interference;
-  assign intr_vector[${interrupts["intr_sda_interference"]}] = i2c_intr_sda_interference;
-  assign intr_vector[${interrupts["intr_stretch_timeout"]}] = i2c_intr_stretch_timeout;
-  assign intr_vector[${interrupts["intr_sda_unstable"]}] = i2c_intr_sda_unstable;
-  assign intr_vector[${interrupts["intr_trans_complete"]}] = i2c_intr_trans_complete;
-  assign intr_vector[${interrupts["intr_tx_empty"]}] = i2c_intr_tx_empty;
-  assign intr_vector[${interrupts["intr_tx_nonempty"]}] = i2c_intr_tx_nonempty;
-  assign intr_vector[${interrupts["intr_tx_overflow"]}] = i2c_intr_tx_overflow;
-  assign intr_vector[${interrupts["intr_acq_overflow"]}] = i2c_intr_acq_overflow;
-  assign intr_vector[${interrupts["intr_ack_stop"]}] = i2c_intr_ack_stop;
-  assign intr_vector[${interrupts["intr_host_timeout"]}] = i2c_intr_host_timeout;
-  assign intr_vector[${interrupts["spi2_intr_event"]}] = spi2_intr_event;
-  assign intr_vector[${interrupts["i2s_intr_event"]}] = i2s_intr_event;
+% for name, irq in intrs:
+% if name == "null_intr":
+  assign intr_vector[${irq.id}] = 1'b0;  // ID [0] is a special case and must be tied to zero
+% elif irq.num > 1:
+  assign intr_vector[${irq.id+irq.num-1}:${irq.id}] = ${name};
+% elif not name.startswith('EXT_INTR'): 
+  assign intr_vector[${irq.id}] = ${name};
+% endif
+% endfor
+
 
   // External interrupts assignement
   for (genvar i = 0; i < NEXT_INT; i++) begin : gen_external_intr_vect
@@ -282,22 +272,7 @@ module peripheral_subsystem
   );
 
 % if user_peripheral_domain.contains_peripheral('rv_plic'):
-  reg_to_tlul #(
-      .req_t(reg_pkg::reg_req_t),
-      .rsp_t(reg_pkg::reg_rsp_t),
-      .tl_h2d_t(tlul_pkg::tl_h2d_t),
-      .tl_d2h_t(tlul_pkg::tl_d2h_t),
-      .tl_a_user_t(tlul_pkg::tl_a_user_t),
-      .tl_a_op_e(tlul_pkg::tl_a_op_e),
-      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
-      .PutFullData(tlul_pkg::PutFullData),
-      .Get(tlul_pkg::Get)
-  ) reg_to_tlul_plic_i (
-      .tl_o(plic_tl_h2d),
-      .tl_i(plic_tl_d2h),
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::RV_PLIC_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::RV_PLIC_IDX])
-  );
+${reg_to_tlul_inst('reg_to_tlul_plic_i', 'plic_tl_h2d', 'plic_tl_d2h', 'RV_PLIC_IDX')}
 
   rv_plic rv_plic_i (
       .clk_i(clk_cg),
@@ -380,22 +355,7 @@ module peripheral_subsystem
 % endif
 
 % if user_peripheral_domain.contains_peripheral('i2c'):
-  reg_to_tlul #(
-      .req_t(reg_pkg::reg_req_t),
-      .rsp_t(reg_pkg::reg_rsp_t),
-      .tl_h2d_t(tlul_pkg::tl_h2d_t),
-      .tl_d2h_t(tlul_pkg::tl_d2h_t),
-      .tl_a_user_t(tlul_pkg::tl_a_user_t),
-      .tl_a_op_e(tlul_pkg::tl_a_op_e),
-      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
-      .PutFullData(tlul_pkg::PutFullData),
-      .Get(tlul_pkg::Get)
-  ) reg_to_tlul_i2c_i (
-      .tl_o(i2c_tl_h2d),
-      .tl_i(i2c_tl_d2h),
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::I2C_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::I2C_IDX])
-  );
+${reg_to_tlul_inst('reg_to_tlul_i2c_i', 'i2c_tl_h2d', 'i2c_tl_d2h', 'I2C_IDX')}
 
   i2c i2c_i (
       .clk_i(clk_cg),
@@ -450,22 +410,7 @@ module peripheral_subsystem
 % endif
 
 % if user_peripheral_domain.contains_peripheral('rv_timer'):
-  reg_to_tlul #(
-      .req_t(reg_pkg::reg_req_t),
-      .rsp_t(reg_pkg::reg_rsp_t),
-      .tl_h2d_t(tlul_pkg::tl_h2d_t),
-      .tl_d2h_t(tlul_pkg::tl_d2h_t),
-      .tl_a_user_t(tlul_pkg::tl_a_user_t),
-      .tl_a_op_e(tlul_pkg::tl_a_op_e),
-      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
-      .PutFullData(tlul_pkg::PutFullData),
-      .Get(tlul_pkg::Get)
-  ) rv_timer_reg_to_tlul_i (
-      .tl_o(rv_timer_tl_h2d),
-      .tl_i(rv_timer_tl_d2h),
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::RV_TIMER_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::RV_TIMER_IDX])
-  );
+${reg_to_tlul_inst('rv_timer_reg_to_tlul_i', 'rv_timer_tl_h2d', 'rv_timer_tl_d2h', 'RV_TIMER_IDX')}
 
   rv_timer rv_timer_2_3_i (
       .clk_i(clk_cg),
@@ -569,23 +514,7 @@ module peripheral_subsystem
 % endif
 
 % if user_peripheral_domain.contains_peripheral('uart'):
-
-  reg_to_tlul #(
-      .req_t(reg_pkg::reg_req_t),
-      .rsp_t(reg_pkg::reg_rsp_t),
-      .tl_h2d_t(tlul_pkg::tl_h2d_t),
-      .tl_d2h_t(tlul_pkg::tl_d2h_t),
-      .tl_a_user_t(tlul_pkg::tl_a_user_t),
-      .tl_a_op_e(tlul_pkg::tl_a_op_e),
-      .TL_A_USER_DEFAULT(tlul_pkg::TL_A_USER_DEFAULT),
-      .PutFullData(tlul_pkg::PutFullData),
-      .Get(tlul_pkg::Get)
-  ) reg_to_tlul_uart_i (
-      .tl_o(uart_tl_h2d),
-      .tl_i(uart_tl_d2h),
-      .reg_req_i(peripheral_slv_req[core_v_mini_mcu_pkg::UART_IDX]),
-      .reg_rsp_o(peripheral_slv_rsp[core_v_mini_mcu_pkg::UART_IDX])
-  );
+${reg_to_tlul_inst('reg_to_tlul_uart_i', 'uart_tl_h2d', 'uart_tl_d2h', 'UART_IDX')}
 
   uart uart_i (
       .clk_i(clk_cg),

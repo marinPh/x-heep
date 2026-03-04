@@ -1,8 +1,17 @@
+# Copyright 2025 EPFL.
+# Solderpad Hardware License, Version 0.51, see LICENSE for details.
+# SPDX-License-Identifier: SHL-0.51
+#
+# X-HEEP general configuration. Python version of general.hjson.
+#
+# For detailed documentation and usage instructions, please refer to docs/source/Configuration
+
 from x_heep_gen.xheep import XHeep
 from x_heep_gen.cpu.cpu import CPU
 from x_heep_gen.bus_type import BusType
 from x_heep_gen.memory_ss.memory_ss import MemorySS
 from x_heep_gen.memory_ss.linker_section import LinkerSection
+from x_heep_gen.peripherals.abstractions import Interrupt
 from x_heep_gen.peripherals.base_peripherals import (
     SOC_ctrl,
     Bootrom,
@@ -44,6 +53,7 @@ def config():
     system.set_memory_ss(memory_ss)
 
     # Peripheral domains initialization
+
     base_peripheral_domain = BasePeripheralDomain()
     user_peripheral_domain = UserPeripheralDomain()
 
@@ -82,5 +92,7 @@ def config():
     # Add the peripheral domains to the system
     system.add_peripheral_domain(base_peripheral_domain)
     system.add_peripheral_domain(user_peripheral_domain)
+
+    system.get_interrupt_manager().add_interrupt("null_intr", Interrupt(0))
 
     return system

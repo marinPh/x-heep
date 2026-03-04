@@ -137,6 +137,8 @@ def generate_xheep(args):
         exit("debug start address must be greater than 0x10000")
 
     debug_size_address = string2int(config["debug"]["length"])
+
+    # FIXME: Change these to a peripheral or an address map python class?
     ext_slave_start_address = string2int(config["ext_slaves"]["address"])
     ext_slave_size_address = string2int(config["ext_slaves"]["length"])
 
@@ -145,15 +147,6 @@ def generate_xheep(args):
 
     stack_size = string2int(config["linker_script"]["stack_size"])
     heap_size = string2int(config["linker_script"]["heap_size"])
-
-    plic_used_n_interrupts = len(config["interrupts"]["list"])
-    plit_n_interrupts = config["interrupts"]["number"]
-    ext_int_list = {
-        f"EXT_INTR_{k}": v
-        for k, v in enumerate(range(plic_used_n_interrupts, plit_n_interrupts))
-    }
-
-    interrupts = {**config["interrupts"]["list"], **ext_int_list}
 
     # Here the xheep system is built, and the missing gaps are filled
     xheep.build()
@@ -183,9 +176,6 @@ def generate_xheep(args):
         "flash_mem_size_address": flash_mem_size_address,
         "stack_size": stack_size,
         "heap_size": heap_size,
-        "plic_used_n_interrupts": plic_used_n_interrupts,
-        "plit_n_interrupts": plit_n_interrupts,
-        "interrupts": interrupts,
     }
 
     return kwargs

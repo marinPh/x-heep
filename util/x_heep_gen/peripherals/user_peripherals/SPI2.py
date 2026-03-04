@@ -1,4 +1,4 @@
-from ..abstractions import UserPeripheral
+from ..abstractions import UserPeripheral, Interrupt
 
 
 class SPI2(UserPeripheral):
@@ -7,3 +7,7 @@ class SPI2(UserPeripheral):
     """
 
     _name = "spi2"
+
+    _interrupts = {
+        "spi2_intr_event": Interrupt(49, peripheral="SPI2"),
+    }
